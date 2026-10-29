@@ -52,3 +52,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:520px){.story-grid{grid-template-columns:1fr}.story-image{height:205px}.section-heading{flex-direction:column}.section-heading>.demo-label{max-width:none;text-align:left}}
 @media(max-width:390px){.nav-actions .button-hot{display:none}.lead-copy h1{font-size:43px}.lead-story{height:420px}.lead-actions>b{font-size:9px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+.footer-credit{font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:#77796d;opacity:.78;white-space:nowrap}
+@media(max-width:760px){.footer-credit{font-size:7px;letter-spacing:.1em}}
