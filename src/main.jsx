@@ -133,7 +133,7 @@ function App() {
       <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
       <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a></nav>
-      <div className="nav-actions"><button className="text-button" onClick={() => setModal("login")}>Log in</button><button className="button button-hot button-small" onClick={() => setModal("submit")}>📣 Spill the gist</button><button className="button button-green button-small" onClick={() => setModal("signup")}>Join Nochalant ↗</button></div>
+      <div className="nav-actions"><button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button><button className="nav-spill" onClick={() => setModal("submit")}><span className="nav-spill-mark" aria-hidden="true">✳</span><span>Spill the tea</span></button><button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span><span className="nav-join-arrow" aria-hidden="true">↗</span></button></div>
     </div></header>
 
     <main id="top">
