@@ -26,8 +26,70 @@ function App() {
   const [commentDraft, setCommentDraft] = useState("");
   const [toast, setToast] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioCurrent, setAudioCurrent] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioVolume, setAudioVolume] = useState(0.8);
+  const [audioError, setAudioError] = useState(false);
   const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
+
+  const formatAudioTime = (seconds) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+  const toggleAudio = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!audio.paused) {
+      audio.pause();
+      return;
+    }
+    try {
+      setAudioError(false);
+      await audio.play();
+    } catch {
+      setAudioPlaying(false);
+      setAudioError(true);
+      notify("Audio could not start. Check your connection and try again.");
+    }
+  };
+  const seekAudio = (event) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration)) return;
+    const nextTime = Number(event.target.value);
+    audio.currentTime = nextTime;
+    setAudioCurrent(nextTime);
+  };
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = audioVolume;
+    const updateTime = () => setAudioCurrent(audio.currentTime || 0);
+    const updateDuration = () => setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const onPlay = () => { setAudioPlaying(true); setAudioError(false); };
+    const onPause = () => setAudioPlaying(false);
+    const onEnded = () => setAudioPlaying(false);
+    const onError = () => { setAudioPlaying(false); setAudioError(true); };
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateDuration);
+    audio.addEventListener("durationchange", updateDuration);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", updateDuration);
+      audio.removeEventListener("durationchange", updateDuration);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+    };
+  }, [audioVolume]);
 
   const filtered = useMemo(() => demoStories.slice(1).filter(item =>
     (category === "All Gist" || item.category === category) &&
@@ -85,7 +147,7 @@ function App() {
         <article className="lead-story" role="button" aria-label={`Open featured story: ${demoStories[0].title}`} onClick={() => openStory(demoStories[0])} tabIndex="0" onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(demoStories[0])}>
           <img src={demoStories[0].image} alt="Live music crowd"/>
           <div className="lead-overlay"></div><div className="lead-story-top"><span className="pill pill-hot">✦ HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span></div>
-          <div className="lead-story-bottom"><div className="story-meta"><span>{demoStories[0].category}</span><span>· {demoStories[0].read}</span></div><h2>{demoStories[0].title}</h2><p>{demoStories[0].excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); notify("No audio file is connected yet. Playback is unavailable.");}}>▶ <span>30-sec audio snippet · Coming soon</span></button><b>Read full parapo ↗</b></div></div>
+          <div className="lead-story-bottom"><div className="story-meta"><span>{demoStories[0].category}</span><span>· {demoStories[0].read}</span></div><h2>{demoStories[0].title}</h2><p>{demoStories[0].excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation();toggleAudio();}}>▶ <span>{audioPlaying ? "Pause demo audio" : "Play demo audio"} · {formatAudioTime(audioCurrent)}</span></button><b>Read full parapo ↗</b></div></div>
         </article>
       </section>
 
@@ -105,7 +167,21 @@ function App() {
 
     <footer className="footer"><div className="container footer-main"><div><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>No Dey Form, Just Pure Gist 🇳🇬<br/>Worry no more, Nochalant is here.</p></div><div className="footer-links"><a href="#latest">Latest gist</a><a href="#categories">Categories</a><a href="#agenda">Agenda</a><button onClick={() => setModal("submit")}>Submit gist</button><a href="mailto:hello@nochalant.com">Contact</a></div></div><div className="container footer-bottom"><span>© 2026 Nochalant. All rights reserved.</span><span>Made for the culture. 🇳🇬</span></div></footer>
 
-    <div className="mini-player"><span className="mini-player-icon">♫</span><div><b>Nochalant Radio</b><small>Audio drops coming soon</small></div><button disabled aria-label="Audio player unavailable">▶</button><span className="player-status">OFFLINE</span></div>
+    <audio ref={audioRef} preload="metadata" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" />
+    <section className="mini-player" aria-label="Nochalant audio player">
+      <span className={audioPlaying ? "mini-player-icon spinning" : "mini-player-icon"} aria-hidden="true">♫</span>
+      <div className="player-main">
+        <div className="player-title"><b>Nochalant Player</b><small>{audioError ? "Audio unavailable — tap retry" : "Demo track · Replace with licensed audio"}</small></div>
+        <div className="player-progress">
+          <span>{formatAudioTime(audioCurrent)}</span>
+          <input aria-label="Seek audio" type="range" min="0" max={audioDuration || 0} step="0.1" value={Math.min(audioCurrent, audioDuration || 0)} onChange={seekAudio} disabled={!audioDuration} />
+          <span>{formatAudioTime(audioDuration)}</span>
+        </div>
+      </div>
+      <button className="player-toggle" onClick={toggleAudio} aria-label={audioPlaying ? "Pause audio" : "Play audio"}>{audioPlaying ? "Ⅱ" : "▶"}</button>
+      <label className="player-volume" aria-label="Volume"><span>♪</span><input type="range" min="0" max="1" step="0.05" value={audioVolume} onChange={e => setAudioVolume(Number(e.target.value))}/></label>
+      <span className={audioError ? "player-status error" : "player-status"}>{audioError ? "ERROR" : audioPlaying ? "PLAYING" : "READY"}</span>
+    </section>
 
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
