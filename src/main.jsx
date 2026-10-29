@@ -1,152 +1,109 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const stories = [
-  { id: 1, category: "Afrobeats", title: "The new sound shaping the next wave of Afrobeats", excerpt: "Fresh releases, rising voices and the conversations moving Nigerian music forward.", image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1000&q=85", time: "Just now", comments: 24 },
-  { id: 2, category: "Nollywood", title: "The Nollywood stories everyone will be talking about", excerpt: "A closer look at the films, actors and moments shaping the screen culture.", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=85", time: "2 hours ago", comments: 18 },
-  { id: 3, category: "Street Buzz", title: "The city is outside: where the weekend energy is", excerpt: "From intimate link-ups to big nights out, catch the pulse of the scene.", image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1000&q=85", time: "4 hours ago", comments: 41 },
-  { id: 4, category: "Lifestyle", title: "Style, culture and the people setting the pace", excerpt: "The looks, places and everyday details defining a new generation.", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1000&q=85", time: "Today", comments: 12 },
-  { id: 5, category: "Events", title: "The live shows and experiences to put on your agenda", excerpt: "Keep up with upcoming concerts, parties, launches and cultural experiences.", image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=1000&q=85", time: "Today", comments: 9 },
-  { id: 6, category: "Entertainers", title: "Meet the creatives making moves behind the scenes", excerpt: "Artists, creators, hosts and tastemakers worth knowing right now.", image: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=1000&q=85", time: "Yesterday", comments: 33 }
+const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
+const demoStories = [
+  { id: "lead", category: "Afrobeats & Jamz", label: "EDITORIAL PREVIEW", title: "The sound, the scene and the next wave of Afrobeats", excerpt: "A closer look at the artists, releases and creative energy shaping the conversation.", image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=85", time: "Preview story", views: "—", read: "3 min read", body: "This is a sample editorial layout used to demonstrate how a Nochalant feature story will appear. Replace this preview with a fact-checked story, original reporting, approved images and a named editorial byline before publication." },
+  { id: "nollywood", category: "Nollywood Drama", label: "EDITORIAL PREVIEW", title: "The conversations shaping Nollywood right now", excerpt: "From new productions to the people behind the camera, here is the culture worth following.", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "4 min read", body: "Sample article content. No real celebrity claim or breaking-news headline is being presented here." },
+  { id: "street", category: "Street Buzz", label: "EDITORIAL PREVIEW", title: "The city is outside: style, sound and street culture", excerpt: "The places, people and moments giving the city its own rhythm.", image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "2 min read", body: "Sample article content. No real event details are being advertised here." },
+  { id: "fashion", category: "Fashion & Swag", label: "EDITORIAL PREVIEW", title: "The looks bringing a fresh perspective to Naija style", excerpt: "A style desk preview for fashion, personal expression and emerging creatives.", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "3 min read", body: "Sample article content for the Nochalant fashion desk." },
+  { id: "reality", category: "BBNaija / Reality", label: "EDITORIAL PREVIEW", title: "Reality TV, fan culture and the conversations after the show", excerpt: "A place for reality entertainment coverage, reactions and verified updates.", image: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "3 min read", body: "Sample article content for the reality desk." },
+  { id: "life", category: "Lifestyle", label: "EDITORIAL PREVIEW", title: "The everyday culture shaping how we live and link up", excerpt: "Lifestyle, food, places and experiences from across the culture.", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "2 min read", body: "Sample article content for the lifestyle desk." }
 ];
-
-const agenda = [
-  { day: "08", month: "NOV", title: "The Lagos Sound Experience", type: "Live music", place: "Victoria Island, Lagos", time: "7:00 PM" },
-  { day: "14", month: "NOV", title: "The Weekend Link-Up", type: "Nightlife", place: "Lekki Phase 1, Lagos", time: "9:00 PM" },
-  { day: "22", month: "NOV", title: "Creative Culture Market", type: "Lifestyle", place: "Ikeja, Lagos", time: "12:00 PM" }
-];
-
-const categories = ["All", "Afrobeats", "Nollywood", "Street Buzz", "Lifestyle", "Events", "Entertainers"];
 
 function App() {
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [vote, setVote] = useState("");
-  const [modal, setModal] = useState("");
-  const [selectedStory, setSelectedStory] = useState(null);
-  const [plan, setPlan] = useState("free");
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [toast, setToast] = useState("");
+  const [category, setCategory] = useState("All Gist");
   const [search, setSearch] = useState("");
+  const [modal, setModal] = useState("");
+  const [story, setStory] = useState(demoStories[0]);
+  const [vote, setVote] = useState("");
+  const [comments, setComments] = useState({});
+  const [commentDraft, setCommentDraft] = useState("");
+  const [toast, setToast] = useState("");
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
 
-  const visibleStories = useMemo(() => stories.filter(story =>
-    (activeCategory === "All" || story.category === activeCategory) &&
-    (story.title.toLowerCase().includes(search.toLowerCase()) || story.category.toLowerCase().includes(search.toLowerCase()))
-  ), [activeCategory, search]);
+  const filtered = useMemo(() => demoStories.slice(1).filter(item =>
+    (category === "All Gist" || item.category === category) &&
+    (item.title.toLowerCase().includes(search.toLowerCase()) || item.excerpt.toLowerCase().includes(search.toLowerCase()))
+  ), [category, search]);
 
-  const showToast = (message) => {
+  const notify = (message) => {
     setToast(message);
-    window.setTimeout(() => setToast(""), 3200);
+    window.setTimeout(() => setToast(""), 3000);
   };
+  const openStory = (item) => { setStory(item); setCommentDraft(""); setModal("story"); };
+  const closeModal = () => setModal("");
+  useEffect(() => {
+    if (!modal) return;
+    const onKey = (event) => { if (event.key === "Escape") closeModal(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modal]);
 
-  const openStory = (story) => {
-    setSelectedStory(story);
-    setModal("story");
-  };
-
-  const submitPost = (event) => {
+  const submitGist = (event) => {
     event.preventDefault();
-    showToast(plan === "paid"
-      ? "Your carousel request is ready for payment integration."
-      : "Your submission form is ready. Editorial queue connection is the next build step.");
-    setModal("");
+    notify("Your gist is ready for editorial review once submissions are connected.");
+    closeModal();
+  };
+  const addComment = (event) => {
+    event.preventDefault();
+    if (!commentDraft.trim()) return;
+    setComments(current => ({ ...current, [story.id]: [...(current[story.id] || []), commentDraft.trim()] }));
+    setCommentDraft("");
+    notify("Comment added to this local preview.");
   };
 
-  return (
-    <div className="site-shell">
-      <div className="ticker">
-        <span className="ticker-label">GOBE ALERT</span>
-        <div className="ticker-window"><div className="ticker-track">
-          <span>🔥 The latest from Nigerian music and entertainment</span><span>👀 Who is making moves this week?</span><span>🎬 Nollywood, culture and everything in between</span><span>📍 Find your next outing in Agenda</span>
-        </div></div>
-      </div>
+  return <div className="site-shell">
+    <div className="ticker"><span className="ticker-label">GOBE ALERT</span><div className="ticker-window"><div className="ticker-track"><span>🔥 NO DEY FORM, JUST PURE GIST</span><span>🇳🇬 YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>✳ FREE DAILY SUBMISSIONS</span><span>📍 WHAT'S HAPPENING? CHECK THE AGENDA</span><span>🔥 NO DEY FORM, JUST PURE GIST</span><span>🇳🇬 YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
+    <header className="site-header"><div className="nav-wrap">
+      <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
+      <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
+      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a></nav>
+      <div className="nav-actions"><button className="text-button" onClick={() => setModal("login")}>Log in</button><button className="button button-green button-small" onClick={() => setModal("signup")}>Join Nochalant ↗</button></div>
+    </div></header>
 
-      <header className="site-header">
-        <div className="nav-wrap">
-          <a className="brand" href="#" aria-label="Nochalant home">NOCHALANT<span>.</span><small>YOUR CULTURE. YOUR BUZZ.</small></a>
-          <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">☰</button>
-          <nav className={mobileMenu ? "main-nav open" : "main-nav"}>
-            <a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a>
-            <a href="#categories" onClick={() => setMobileMenu(false)}>Explore</a>
-            <a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a>
-            <a href="#how-it-works" onClick={() => setMobileMenu(false)}>Submit a post</a>
-          </nav>
-          <div className="nav-actions">
-            <button className="text-button" onClick={() => setModal("login")}>Log in</button>
-            <button className="button button-green button-small" onClick={() => setModal("signup")}>Register <span>↗</span></button>
-          </div>
+    <main id="top">
+      <section className="container lead-layout">
+        <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
+          <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
+          <p>Your plug for Nigerian entertainment, music, nightlife, lifestyle and everything happening around you. No long talk — just the gist that matters.</p>
+          <div className="hero-actions"><button className="button button-green" onClick={() => setModal("submit")}>Spill the gist ↗</button><a className="button button-outline" href="#latest">Catch up on gist</a></div>
+          <div className="lead-note"><span>✳</span><div><b>Free daily submissions</b><small>Send your story. Our editorial team reviews it.</small></div></div>
         </div>
-      </header>
+        <article className="lead-story" onClick={() => openStory(demoStories[0])} tabIndex="0" onKeyDown={e => e.key === "Enter" && openStory(demoStories[0])}>
+          <img src={demoStories[0].image} alt="Live music crowd"/>
+          <div className="lead-overlay"></div><div className="lead-story-top"><span className="pill pill-hot">✦ HOT DROP</span><span className="demo-label">DEMO CONTENT</span></div>
+          <div className="lead-story-bottom"><div className="story-meta"><span>{demoStories[0].category}</span><span>· {demoStories[0].read}</span></div><h2>{demoStories[0].title}</h2><p>{demoStories[0].excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); notify("Audio previews will appear when an approved audio file is available.");}}>▶ <span>30-sec audio snippet · Coming soon</span></button><b>Read full parapo ↗</b></div></div>
+        </article>
+      </section>
 
-      <main>
-        <section className="hero-section container">
-          <div className="hero-copy">
-            <div className="eyebrow"><span className="live-dot"></span> THE HOME OF NAIJA CULTURE</div>
-            <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
-            <p>Your plug for entertainment, lifestyle, music, nightlife and everything happening around you. Discover the buzz or put your own story out there.</p>
-            <div className="hero-actions">
-              <button className="button button-green" onClick={() => setModal("submit")}>Spill your gist <span>↗</span></button>
-              <a className="button button-outline" href="#latest">Explore the latest</a>
-            </div>
-            <div className="hero-proof"><div className="proof-avatars"><b>NG</b><b>✦</b><b>+</b></div><span>For the people. By the culture.</span></div>
-          </div>
-          <div className="hero-visual">
-            <div className="hero-image-main"><img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=90" alt="Crowd enjoying a live music event"/><div className="image-shade"></div><div className="hero-image-caption"><span className="pill pill-hot">THE CULTURE IS LIVE</span><strong>Everything happening.<br/>One place.</strong></div></div>
-            <div className="floating-note"><span>✳</span><div><b>Got something?</b><small>Submit it. Let's get it seen.</small></div></div>
-            <div className="hero-stamp">NJA<br/>VIBES<br/><span>✳</span></div>
-          </div>
-        </section>
+      <section className="container value-strip"><div><span className="value-icon">↗</span><div><b>Free daily submissions</b><small>Share your news, music, brand or event.</small></div></div><div><span className="value-icon gold">✦</span><div><b>Carousel placement</b><small>Optional premium feature · ₦5,999.</small></div></div><div><span className="value-icon">◷</span><div><b>Editorial review</b><small>Every post is checked before publishing.</small></div></div></section>
 
-        <section className="value-strip container">
-          <div><span className="value-icon">↗</span><div><b>Free daily submissions</b><small>Put your story forward at no cost.</small></div></div>
-          <div><span className="value-icon gold">✦</span><div><b>Premium carousel</b><small>Get featured for ₦5,999.</small></div></div>
-          <div><span className="value-icon">◷</span><div><b>Editorial review</b><small>Submissions enter our review queue.</small></div></div>
-        </section>
+      <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
+        <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span>⌕</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
+        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} onClick={() => openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span><span className="story-open">↗</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><p>{item.excerpt}</p><div className="story-foot"><span>♡ Like</span><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist ↗</b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
+      </section>
 
-        <section className="section container" id="latest">
-          <div className="section-heading"><div><div className="eyebrow">WHAT'S HAPPENING</div><h2>Latest <em>gist & tales</em></h2></div><a href="#categories" className="arrow-link">Explore all stories ↗</a></div>
-          <div className="filter-row" id="categories">
-            <div className="category-tabs">{categories.map(category => <button key={category} className={activeCategory === category ? "category-tab active" : "category-tab"} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
-            <label className="search-box"><span>⌕</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the buzz"/></label>
-          </div>
-          <div className="story-grid">
-            {visibleStories.map((story, index) => <article className={index === 0 ? "story-card story-featured" : "story-card"} key={story.id} onClick={() => openStory(story)}>
-              <div className="story-image"><img src={story.image} alt=""/><span className="story-category">{story.category}</span><span className="story-open">↗</span></div>
-              <div className="story-content"><div className="story-meta"><span>{story.time}</span><span>◌ {story.comments} conversations</span></div><h3>{story.title}</h3><p>{story.excerpt}</p></div>
-            </article>)}
-            {visibleStories.length === 0 && <div className="empty-state">No stories match that search yet. Try another category.</div>}
-          </div>
-        </section>
+      <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p><div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => setVote("hot")}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => setVote("trash")}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>68% Fire</span><span>32% Off key</span></div><div className="vote-bar"><i style={{width: vote === "hot" ? "70%" : vote === "trash" ? "64%" : "68%"}}/></div></div><small className="muted">{vote ? "Your choice is selected in this preview; votes are not saved." : "Illustrative preview results — voting backend not connected."}</small></div></section>
 
-        <section className="section container split-section" id="hot-or-trash">
-          <div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Fashion street style"/><span className="image-tag">THE STREET JURY</span></div>
-          <div className="jury-panel"><div className="eyebrow">YOU DECIDE THE VIBE</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Cast your vote and let the streets decide what's giving and what's not.</p><div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => setVote("hot")}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => setVote("trash")}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>68% Fire</span><span>32% Off key</span></div><div className="vote-bar"><i style={{width: vote === "hot" ? "72%" : vote === "trash" ? "61%" : "68%"}}></i></div></div><small className="muted">{vote ? "Your vote has been counted in this preview." : "Vote on the conversation."}</small></div>
-        </section>
+      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div><div className="agenda-empty"><span>✳</span><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event ↗</button></div></div></section>
 
-        <section className="section agenda-section" id="agenda">
-          <div className="container"><div className="section-heading"><div><div className="eyebrow">SAVE THE DATE</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">THE CITY NEVER SLEEPS ✳</span></div>
-            <div className="agenda-list">{agenda.map((item, index) => <article className="agenda-item" key={item.title}><div className="agenda-date"><b>{item.day}</b><span>{item.month}</span></div><div className="agenda-details"><span>{item.type}</span><h3>{item.title}</h3><p>⌖ {item.place} <i>·</i> ◷ {item.time}</p></div><button className="agenda-arrow" onClick={() => showToast("Event details and submissions are coming with the Agenda tools.")}>↗</button></article>)}</div>
-            <div className="agenda-submit"><span>Hosting something worth knowing?</span><button className="button button-outline" onClick={() => setModal("submit")}>Add to the Agenda ↗</button></div>
-          </div>
-        </section>
+      <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist ↗</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">OPTIONAL FEATURE</span><span className="spark">✳</span></div><h3>Get on the <em>carousel.</em></h3><p>Give your promotion a premium spot in the Nochalant spotlight.</p><div className="price">₦5,999 <small>/ placement</small></div><ul><li>Premium carousel consideration</li><li>Editorial review required</li><li>Payment confirmation required</li></ul><button className="button button-dark" onClick={() => {setFormCategory("Afrobeats & Jamz");setModal("submit");}}>Request a placement ↗</button><small className="fine-print">Payment processing is not connected yet. No payment will be collected in this preview.</small></div></section>
+    </main>
 
-        <section className="promo-section container" id="how-it-works">
-          <div className="promo-copy"><div className="eyebrow">YOUR MOMENT. YOUR PLATFORM.</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Register and send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Submit your post <span>↗</span></button></div>
-          <div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">MORE VISIBILITY</span><span className="spark">✳</span></div><h3>Get on the <em>carousel.</em></h3><p>Give your promotion a premium spot in the Nochalant spotlight.</p><div className="price">₦5,999 <small>/ placement</small></div><ul><li>Premium carousel placement</li><li>Priority review queue</li><li>Editorial approval required</li></ul><button className="button button-dark" onClick={() => {setPlan("paid");setModal("submit");}}>Choose carousel placement ↗</button><small className="fine-print">Placement is subject to content review and payment confirmation.</small></div>
-        </section>
-      </main>
+    <footer className="footer"><div className="container footer-main"><div><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>No Dey Form, Just Pure Gist 🇳🇬<br/>Worry no more, Nochalant is here.</p></div><div className="footer-links"><a href="#latest">Latest gist</a><a href="#categories">Categories</a><a href="#agenda">Agenda</a><button onClick={() => setModal("submit")}>Submit gist</button><a href="mailto:hello@nochalant.com">Contact</a></div></div><div className="container footer-bottom"><span>© 2026 Nochalant. All rights reserved.</span><span>Made for the culture. 🇳🇬</span></div></footer>
 
-      <footer className="footer"><div className="container footer-main"><div><a className="brand footer-brand" href="#">NOCHALANT<span>.</span></a><p>Worry no more, Nochalant is here.<br/>Unfiltered Nigerian entertainment, lifestyle and culture.</p></div><div className="footer-links"><a href="#latest">Latest gist</a><a href="#agenda">Agenda</a><a href="#how-it-works">Submit a post</a><button onClick={() => setModal("signup")}>Register</button></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media. All rights reserved.</span><span>Made for the culture. 🇳🇬</span></div></footer>
+    <div className="mini-player"><span className="mini-player-icon">♫</span><div><b>Nochalant Radio</b><small>Audio drops coming soon</small></div><button disabled aria-label="Audio player unavailable">▶</button><span className="player-status">OFFLINE</span></div>
 
-      {modal && <div className="modal-backdrop" onMouseDown={e => {if(e.target === e.currentTarget) setModal("");}}><div className="modal-card">
-        <button className="modal-close" onClick={() => setModal("")}>×</button>
-        {modal === "story" && selectedStory && <><span className="eyebrow">{selectedStory.category} · {selectedStory.time}</span><h2>{selectedStory.title}</h2><img className="modal-story-image" src={selectedStory.image} alt=""/><p>{selectedStory.excerpt}</p><p className="muted">This is a starter editorial preview. Full article publishing and reader conversations will be connected to the content system.</p></>}
-        {modal === "submit" && <><span className="eyebrow">PUT YOUR STORY OUT THERE</span><h2>Submit to <em>Nochalant.</em></h2><p className="modal-intro">Free daily submissions or premium carousel placement. Every submission is reviewed before publication.</p><div className="plan-switch"><button className={plan === "free" ? "chosen" : ""} onClick={() => setPlan("free")}>Free submit <b>₦0</b></button><button className={plan === "paid" ? "chosen" : ""} onClick={() => setPlan("paid")}>Carousel <b>₦5,999</b></button></div><form onSubmit={submitPost}><label>Your name<input required placeholder="Name or brand name"/></label><label>Email address<input required type="email" placeholder="you@example.com"/></label><label>What are you submitting?<select required defaultValue=""><option value="" disabled>Select a category</option><option>Lifestyle</option><option>Clubs & nightlife</option><option>Entertainers</option><option>Musicians</option><option>Events / Agenda</option><option>Business / Brand</option><option>Other</option></select></label><label>Post title<input required placeholder="Give your post a clear title"/></label><label>Tell us about it<textarea required rows="4" placeholder="Share the details, links and useful context..."/></label><button className="button button-green full-width" type="submit">{plan === "paid" ? "Continue to ₦5,999 placement" : "Send free submission"} ↗</button><small className="fine-print">Submitting does not guarantee publication. Duplicate submissions may be declined. Backend, account and payment processing are being connected.</small></form></>}
-        {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2>{modal === "signup" ? "Create your Nochalant account." : "Welcome back."}</h2><p className="modal-intro">Register to submit stories, follow your submissions and promote what you're building.</p><form onSubmit={e => {e.preventDefault();showToast("Account authentication will be enabled when the backend is connected.");setModal("");}}>{modal === "signup" && <label>Full name<input required placeholder="Your name"/></label>}<label>Email address<input type="email" required placeholder="you@example.com"/></label><label>Password<input type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit">{modal === "signup" ? "Create account" : "Log in"} ↗</button></form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New to Nochalant? Register"}</button></>}
-      </div></div>}
-      {toast && <div className="toast">{toast}</div>}
-    </div>
-  );
+    {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
+      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
+      {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send your story for editorial review. Submissions are not published automatically.</p><form onSubmit={submitGist}><label>Your name<input required placeholder="Name or brand name"/></label><label>Email address<input required type="email" placeholder="you@example.com"/></label><label>Category<select value={formCategory} onChange={e => setFormCategory(e.target.value)}>{categories.filter(x => x !== "All Gist").map(x => <option key={x}>{x}</option>)}<option>Agenda</option><option>Business / Brand</option></select></label><label>Post title<input required maxLength="120" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea required rows="5" placeholder="Add details, links and useful context..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Send for editorial review ↗</button><small className="fine-print">Submission storage, duplicate checks and account login are not connected yet. This preview does not send your information to a server.</small></form></>}
+      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Account registration and login will be enabled when secure authentication is connected.</p><form onSubmit={e => {e.preventDefault();notify("Authentication is not connected in this preview.");closeModal();}}>{modal === "signup" && <label>Full name<input required placeholder="Your name"/></label>}<label>Email address<input type="email" required placeholder="you@example.com"/></label><label>Password<input type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit">{modal === "signup" ? "Create account" : "Log in"} ↗</button></form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
+    </div></div>}
+    {toast && <div className="toast" role="status">{toast}</div>}
+  </div>;
 }
-
 createRoot(document.getElementById("root")).render(<App />);
