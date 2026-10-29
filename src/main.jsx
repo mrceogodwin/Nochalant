@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];\nconst submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
+const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
+const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
 const demoStories = [
   { id: "lead", category: "Afrobeats & Jamz", label: "EDITORIAL PREVIEW", title: "The sound, the scene and the next wave of Afrobeats", excerpt: "A closer look at the artists, releases and creative energy shaping the conversation.", image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=85", time: "Preview story", views: "—", read: "3 min read", body: "This is a sample editorial layout used to demonstrate how a Nochalant feature story will appear. Replace this preview with a fact-checked story, original reporting, approved images and a named editorial byline before publication." },
   { id: "nollywood", category: "Nollywood Drama", label: "EDITORIAL PREVIEW", title: "The conversations shaping Nollywood right now", excerpt: "From new productions to the people behind the camera, here is the culture worth following.", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "4 min read", body: "Sample article content. No real celebrity claim or breaking-news headline is being presented here." },
@@ -17,7 +18,10 @@ function App() {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState("");
   const [story, setStory] = useState(demoStories[0]);
-  const [vote, setVote] = useState("");\n  const [likes, setLikes] = useState({});\n  const modalCloseRef = useRef(null);\n  const previouslyFocusedRef = useRef(null);
+  const [vote, setVote] = useState("");
+  const [likes, setLikes] = useState({});
+  const modalCloseRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
   const [comments, setComments] = useState({});
   const [commentDraft, setCommentDraft] = useState("");
   const [toast, setToast] = useState("");
@@ -38,9 +42,14 @@ function App() {
   const closeModal = () => setModal("");
   useEffect(() => {
     if (!modal) return;
+    previouslyFocusedRef.current = document.activeElement;
     const onKey = (event) => { if (event.key === "Escape") closeModal(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    requestAnimationFrame(() => modalCloseRef.current?.focus());
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      previouslyFocusedRef.current?.focus?.();
+    };
   }, [modal]);
 
   const submitGist = (event) => {
@@ -48,7 +57,8 @@ function App() {
     notify("Your gist is ready for editorial review once submissions are connected.");
     closeModal();
   };
-  const toggleLike = (id) => setLikes(current => ({ ...current, [id]: !current[id] }));\n  const addComment = (event) => {
+  const toggleLike = (id) => setLikes(current => ({ ...current, [id]: !current[id] }));
+  const addComment = (event) => {
     event.preventDefault();
     if (!commentDraft.trim()) return;
     setComments(current => ({ ...current, [story.id]: [...(current[story.id] || []), commentDraft.trim()] }));
