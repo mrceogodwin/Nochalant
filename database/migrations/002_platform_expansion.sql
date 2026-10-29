@@ -347,7 +347,7 @@ BEGIN
     'artist_profiles','music_releases','music_tracks','promotion_campaigns',
     'payment_orders','payment_refunds','user_subscriptions','community_posts','community_comments'
   ] LOOP
-    EXECUTE format('DROP TRIGGER IF EXISTS %I_updated_at ON %I', t, t);
-    EXECUTE format('CREATE TRIGGER %I_updated_at BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION set_updated_at()', t, t);
+    EXECUTE format('DROP TRIGGER IF EXISTS %I ON %I', t || '_updated_at', t);
+    EXECUTE format('CREATE TRIGGER %I BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION set_updated_at()', t || '_updated_at', t);
   END LOOP;
 END $$;
