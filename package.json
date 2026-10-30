@@ -14,7 +14,8 @@
     "react": "latest",
     "react-dom": "latest",
     "@neondatabase/auth": "latest",
-    "@neondatabase/serverless": "latest"
+    "@neondatabase/serverless": "latest",
+    "jose": "^6.1.0"
   },
   "devDependencies": {}
 }
