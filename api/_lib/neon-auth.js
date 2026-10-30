@@ -13,7 +13,8 @@ export async function requireActiveUser(req) {
   try {
     remoteKeys ||= createRemoteJWKSet(new URL(jwksUrl));
     const token = authorization.slice(7).trim();
-    const issuer = new URL(authBaseUrl).origin;
+    const authUrl = new URL(authBaseUrl);
+    const issuer = [authUrl.origin, authUrl.href.replace(/\\/$/, "")];
     const { payload } = await jwtVerify(token, remoteKeys, { issuer });
     if (typeof payload.sub !== "string" || !payload.sub) return { error: { status: 401, message: "Your session is invalid. Please sign in again." } };
     const sql = neon(databaseUrl);
