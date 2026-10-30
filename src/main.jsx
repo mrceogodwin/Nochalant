@@ -136,6 +136,20 @@ function App() {
     window.setTimeout(() => setToast(""), 3000);
   };
   useEffect(() => {
+    fetch("/api/community/faces")
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (data?.ok && Array.isArray(data.profiles) && data.profiles.length) {
+          setCommunityFaces(data.profiles.map((profile, index) => ({
+            ...profile,
+            tone: ["lime", "orange", "cream", "pink", "purple"][index % 5]
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     demoStories.forEach(item => {
       fetch(`/api/posts/${encodeURIComponent(item.id)}/views`)
         .then(response => response.ok ? response.json() : null)
