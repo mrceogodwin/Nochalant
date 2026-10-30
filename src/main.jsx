@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
-import { authClient } from "./auth.js";
+import { authClient, getAuthToken } from "./auth.js";
 import OpinionsPanel from "./OpinionsPanel.jsx";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
