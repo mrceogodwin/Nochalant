@@ -138,6 +138,19 @@ function App() {
     window.setTimeout(() => setToast(""), 3000);
   };
   useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/opinions", { signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (data?.ok && Array.isArray(data.opinions)) setOpinions(data.opinions);
+      })
+      .catch(error => {
+        if (error?.name !== "AbortError") console.error("Nochalant opinions could not load:", error);
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
     fetch("/api/community/faces")
       .then(response => response.ok ? response.json() : null)
       .then(data => {
