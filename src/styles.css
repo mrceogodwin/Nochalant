@@ -122,3 +122,26 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .opinion-author-detail{color:#a9aa9e;font-size:13px}
 @keyframes opinion-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.opinion-rail-track{animation:none}}
+
+
+/* Opinions dashboard and moderation */
+.opinions-panel{max-width:650px}
+.opinion-compose{display:grid;gap:13px;margin:18px 0 24px}
+.opinion-compose label,.opinions-panel form label{display:grid;gap:7px;color:#c4c5b8;font-size:11px;font-weight:800}
+.opinions-panel select,.opinions-panel textarea{width:100%;background:#0d0f0c;border:1px solid #414638;color:#f3f4ec;padding:12px 13px;border-radius:3px;font:inherit;font-size:13px;outline:none}
+.opinions-panel select:focus,.opinions-panel textarea:focus{border-color:var(--lime,#d6f667)}
+.opinions-panel textarea{resize:vertical;min-height:88px;line-height:1.55}
+.opinion-dashboard-list{border-top:1px solid #34382d;margin-top:20px;padding-top:16px}
+.opinion-dashboard-list h3{font-size:14px;margin:0 0 12px;color:#f0f1e9}
+.opinion-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.opinion-status-item{padding:13px 0;border-top:1px solid #292d25}
+.opinion-status-item p{font-size:13px;line-height:1.55;color:#e5e6dc;margin:8px 0}
+.opinion-status-item small{font-size:10px;color:#a4a895}
+.opinion-admin-actions,.opinion-detail-actions,.opinion-panel-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.opinion-admin-actions button,.opinion-panel-tabs button{background:#20241b;border:1px solid #454c35;color:#e7e9dd;padding:8px 11px;font-size:10px;font-weight:800;cursor:pointer}
+.opinion-admin-actions button:disabled{opacity:.45}
+.opinion-panel-tabs{margin:14px 0}
+.opinion-panel-tabs button.active{border-color:var(--lime,#d6f667);color:var(--lime,#d6f667)}
+.opinion-panel-error{background:#351b18;border:1px solid #8b4236;color:#ffd2c8;padding:10px;font-size:12px}
+.opinion-report-quote{border-left:2px solid var(--lime,#d6f667);padding:10px 14px;background:#10120e;color:#dfe2d5;font-size:13px;line-height:1.55}
+@media(max-width:600px){.opinions-panel{padding:22px 18px;max-height:88vh}.opinion-detail-actions{flex-direction:column}.opinion-admin-actions button{flex:1}}
