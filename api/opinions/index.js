@@ -11,9 +11,9 @@ export default async function handler(req, res) {
     if (body.length < 8 || body.length > 500) return res.status(400).json({ ok: false, error: "Opinions must be between 8 and 500 characters." });
     if (!allowedTopics.includes(topic)) return res.status(400).json({ ok: false, error: "Choose a valid opinion topic." });
     try {
-      const rows = await auth.sql\`INSERT INTO community_opinions (author_id, body, topic, status)
-        VALUES (\${auth.profile.id}, \${body}, \${topic}, 'pending')
-        RETURNING id, body, topic, status, created_at\`;
+      const rows = await auth.sql`INSERT INTO community_opinions (author_id, body, topic, status)
+        VALUES (${auth.profile.id}, ${body}, ${topic}, 'pending')
+        RETURNING id, body, topic, status, created_at`;
       return res.status(201).json({ ok: true, opinion: rows[0], message: "Your opinion has been submitted for review." });
     } catch (error) {
       console.error("Nochalant opinion submission failed:", error?.message || error);
