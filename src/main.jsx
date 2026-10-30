@@ -487,6 +487,7 @@ function App() {
         <a className="feature-nav-link active" href="#top" aria-current="page"><span className="feature-nav-icon">⌂</span><span>Home</span></a>
         <a className="feature-nav-link" href="#hot-or-trash"><span className="feature-nav-icon">◉</span><span>Social</span></a>
         <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">✳</span><span>Discover</span></a>
+        <a className="feature-nav-link" href="#podcast-show"><span className="feature-nav-icon">▶</span><span>Podcast</span></a>
         <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">▦</span><span>Agenda</span></a>
         <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">◷</span><span>Events</span></a>
         <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">↗</span><span>Bookings</span></a>
@@ -531,6 +532,16 @@ function App() {
             <span className="artist-name">{artist.name}</span>
             {artist.genre && <span className="artist-genre">{artist.genre}</span>}
           </a>)}</div> : <div className="artists-empty">{artistsLoading ? "Loading artists…" : "The artist spotlight is getting ready. Check back soon."}</div>}
+        </div>
+      </section>
+
+      <section className="podcast-section container" id="podcast-show" aria-labelledby="podcast-show-title">
+        <div className="podcast-heading">
+          <div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h2 id="podcast-show-title">The Nochalant <em>Show.</em></h2><p>Real conversations, culture, music and the people shaping the gist.</p></div>
+          <span className="podcast-mark" aria-hidden="true">N<span>.</span></span>
+        </div>
+        <div className="podcast-grid" aria-label="Nochalant Show video episodes">
+          <div className="podcast-empty"><span className="podcast-play" aria-hidden="true">▶</span><strong>New episodes are on the way.</strong><p>Our original video conversations will live here. Watch full episodes and clips from Nochalant Studios.</p><span className="podcast-status">NOCHALANT ORIGINALS</span></div>
         </div>
       </section>
 
