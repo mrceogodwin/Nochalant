@@ -8,18 +8,14 @@ if (!authUrl) {
 
 export const authClient = authUrl ? createAuthClient(authUrl) : null;
 
-// Neon Auth exposes the JWKS-verifiable JWT as session.access_token.
-// session.token is the opaque Better Auth cookie/session identifier and must
-// never be sent to APIs that verify JWTs with the Neon Auth JWKS.
+// Neon Auth's SDK reads the set-auth-jwt response header and injects that
+// signed JWT into session.token before updating the Better Auth session cache.
+// In this SDK integration, session.token is therefore the backend JWT.
 let activeSessionToken = null;
 
 export function rememberAuthSession(result) {
   const session = result?.data?.session ?? result?.session ?? null;
-  const token =
-    session?.access_token ||
-    result?.data?.session?.access_token ||
-    null;
-
+  const token = session?.token ?? null;
   if (typeof token === "string" && token.trim()) {
     activeSessionToken = token.trim();
   }
@@ -39,7 +35,7 @@ export async function getAuthToken() {
     throw new Error(result.error.message || "Your Neon Auth session could not be retrieved.");
   }
   const session = result?.data?.session ?? result?.session ?? null;
-  const token = session?.access_token ?? null;
+  const token = session?.token ?? null;
   if (typeof token !== "string" || !token.trim()) return null;
 
   activeSessionToken = token.trim();
