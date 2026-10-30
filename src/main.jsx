@@ -485,14 +485,14 @@ function App() {
     </div></header>
     <nav className="feature-nav" aria-label="Explore Nochalant">
       <div className="feature-nav-inner">
-        <a className="feature-nav-link active" href="#top" aria-current="page"><span className="feature-nav-icon">⌂</span><span>Home</span></a>
-        <a className="feature-nav-link" href="#social"><span className="feature-nav-icon">◉</span><span>Social</span></a>
-        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">✳</span><span>Discover</span></a>
-        <a className="feature-nav-link" href="#podcast-show"><span className="feature-nav-icon">▶</span><span>Podcast</span></a>
-        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">▦</span><span>Agenda</span></a>
-        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">◷</span><span>Events</span></a>
-        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">↗</span><span>Bookings</span></a>
-        <button className="feature-nav-link feature-nav-submit" type="button" onClick={() => setModal("submit")}><span className="feature-nav-icon">＋</span><span>Submit</span></button>
+        <a className="feature-nav-link active" href="#top" aria-current="page"><span className="feature-nav-icon" data-mark="01" aria-hidden="true"><b>N</b><i>.</i></span><span>Home</span></a>
+        <a className="feature-nav-link" href="#social"><span className="feature-nav-icon" data-mark="02" aria-hidden="true"><b>N</b><i>•</i></span><span>Social</span></a>
+        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon" data-mark="03" aria-hidden="true"><b>N</b><i>✳</i></span><span>Discover</span></a>
+        <a className="feature-nav-link" href="#podcast-show"><span className="feature-nav-icon" data-mark="04" aria-hidden="true"><b>N</b><i>▶</i></span><span>Podcast</span></a>
+        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon" data-mark="05" aria-hidden="true"><b>N</b><i>▤</i></span><span>Agenda</span></a>
+        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon" data-mark="06" aria-hidden="true"><b>N</b><i>✦</i></span><span>Events</span></a>
+        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon" data-mark="07" aria-hidden="true"><b>N</b><i>↗</i></span><span>Bookings</span></a>
+        <button className="feature-nav-link feature-nav-submit" type="button" onClick={() => setModal("submit")}><span className="feature-nav-icon" data-mark="08" aria-hidden="true"><b>N</b><i>+</i></span><span>Submit</span></button>
       </div>
     </nav>
 
