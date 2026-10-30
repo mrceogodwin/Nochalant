@@ -26,10 +26,21 @@ export default async function handler(req, res) {
       `;
       if (!rows.length) return res.status(404).json({ ok: false, error: "This poll is not available." });
       const poll = rows[0];
+      let userVote = null;
+      if ((req.headers.authorization || "").toLowerCase().startsWith("bearer ")) {
+        const auth = await requireActiveUser(req);
+        if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
+        const mine = await auth.sql`
+          SELECT v.choice FROM hot_trash_votes v
+          WHERE v.poll_id = ${poll.id} AND v.voter_id = ${auth.profile.id}
+          LIMIT 1
+        `;
+        userVote = mine[0]?.choice || null;
+      }
       const total = Number(poll.total_votes) || 0;
       const hot = Number(poll.hot_votes) || 0;
       const trash = Number(poll.trash_votes) || 0;
-      return res.status(200).json({ ok: true, poll: { ...poll, total_votes: total, hot_votes: hot, trash_votes: trash, hot_percent: total ? Math.round(hot * 100 / total) : 0, trash_percent: total ? Math.round(trash * 100 / total) : 0 } });
+      return res.status(200).json({ ok: true, poll: { ...poll, user_vote: userVote, total_votes: total, hot_votes: hot, trash_votes: trash, hot_percent: total ? Math.round(hot * 100 / total) : 0, trash_percent: total ? Math.round(trash * 100 / total) : 0 } });
     } catch (error) {
       console.error("Nochalant Hot or Trash feed failed:", error?.message || error);
       return res.status(503).json({ ok: false, error: "Voting results are temporarily unavailable." });
