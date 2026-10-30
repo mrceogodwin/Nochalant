@@ -482,6 +482,17 @@ function App() {
       <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button>{currentUser ? <span className="nav-auth-menu"><span className="nav-signed-in">Signed in · {currentUser.name || currentUser.email}</span><button onClick={() => {setMobileMenu(false);signOutUser();}}>Log out</button></span> : <span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span>}</nav>
       <div className="nav-actions">{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
     </div></header>
+    <nav className="feature-nav" aria-label="Explore Nochalant">
+      <div className="feature-nav-inner">
+        <a className="feature-nav-link active" href="#top" aria-current="page"><span className="feature-nav-icon">⌂</span><span>Home</span></a>
+        <a className="feature-nav-link" href="#hot-or-trash"><span className="feature-nav-icon">◉</span><span>Social</span></a>
+        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">✳</span><span>Discover</span></a>
+        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">▦</span><span>Agenda</span></a>
+        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">◷</span><span>Events</span></a>
+        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">↗</span><span>Bookings</span></a>
+        <button className="feature-nav-link feature-nav-submit" type="button" onClick={() => setModal("submit")}><span className="feature-nav-icon">＋</span><span>Submit</span></button>
+      </div>
+    </nav>
 
     <main id="top">
       <section className="container lead-layout">
