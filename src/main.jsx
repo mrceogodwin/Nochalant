@@ -239,6 +239,7 @@ function App() {
 
   const submitGist = async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     if (!currentUser) {
       setModal("login");
       setAuthMessage("Log in to submit your gist. Your draft has not been sent.");
@@ -248,7 +249,7 @@ function App() {
       notify("Account services are not configured. Please try again later.");
       return;
     }
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       title: String(formData.get("title") || "").trim(),
       body: String(formData.get("body") || "").trim(),
@@ -265,7 +266,7 @@ function App() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) throw new Error(data.error || "We couldn't submit your gist.");
-      event.currentTarget.reset();
+      form.reset();
       setFormCategory("Afrobeats & Jamz");
       closeModal();
       notify("Your gist has been submitted for editorial review.");
