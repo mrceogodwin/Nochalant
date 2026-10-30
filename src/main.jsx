@@ -176,7 +176,7 @@ function App() {
             <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
             <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>›</button>
           </div>
-        </article>article>
+        </article>
       </section>
 
       <section className="container value-strip"><div><span className="value-icon">↗</span><div><b>Free daily submissions</b><small>Share your news, music, brand or event.</small></div></div><div><span className="value-icon gold">✦</span><div><b>Carousel placement</b><small>Optional premium feature · ₦5,999.</small></div></div><div><span className="value-icon">◷</span><div><b>Editorial review</b><small>Every post is checked before publishing.</small></div></div></section>
