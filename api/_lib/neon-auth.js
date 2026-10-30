@@ -30,12 +30,12 @@ export async function requireActiveUser(req) {
     // Super Admin, and only while no Super Admin exists. The conditional UPDATE
     // is atomic, so concurrent first logins cannot create multiple owners.
     const firstOwnerEmail = "squadempireng@gmail.com";
-    const accountEmail = String(profile.email || email || "").trim().toLowerCase();
+    const accountEmail = String(email || profile.email || "").trim().toLowerCase();
     if (accountEmail === firstOwnerEmail && profile.role !== "super_admin") {
       const promoted = await sql`UPDATE user_profiles
         SET role = 'super_admin', email = COALESCE(email, ${email})
         WHERE id = ${profile.id}
-          AND lower(email) = ${firstOwnerEmail}
+          AND lower(COALESCE(email, ${email})) = ${firstOwnerEmail}
           AND role <> 'super_admin'
           AND NOT EXISTS (SELECT 1 FROM user_profiles WHERE role = 'super_admin')
         RETURNING role`;
