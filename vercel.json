@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/control-room",
+      "destination": "/"
+    },
+    {
+      "source": "/control-room/:path*",
+      "destination": "/"
+    }
+  ]
+}
