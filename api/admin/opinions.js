@@ -30,17 +30,28 @@ export default async function handler(req, res) {
     if (Object.hasOwn(opinionStatuses, action)) {
       if (!/^[0-9a-f-]{36}$/i.test(opinionId)) return res.status(400).json({ ok:false,error:"Invalid opinion." });
       const status = opinionStatuses[action];
-      const rows = await auth.sql`UPDATE community_opinions SET status = ${status}, published_at = CASE WHEN ${status} = 'published' THEN COALESCE(published_at, now()) ELSE published_at END, moderated_by = ${auth.profile.id}, moderated_at = now(), moderation_note = ${reason} WHERE id = ${opinionId} RETURNING id,status`;
+      const auditAction = action === "approve" ? "approve_opinion" : action === "reject" ? "reject_opinion" : action;
+      const rows = await auth.sql`WITH changed AS (
+        UPDATE community_opinions SET status = ${status}, published_at = CASE WHEN ${status} = 'published' THEN COALESCE(published_at, now()) ELSE published_at END, moderated_by = ${auth.profile.id}, moderated_at = now(), moderation_note = ${reason}
+        WHERE id = ${opinionId} RETURNING id, status
+      ), logged AS (
+        INSERT INTO moderation_actions (moderator_id, opinion_id, action, reason)
+        SELECT ${auth.profile.id}, changed.id, ${auditAction}, ${reason || "Moderation review"} FROM changed RETURNING id
+      ) SELECT changed.id, changed.status FROM changed`;
       if (!rows.length) return res.status(404).json({ ok:false,error:"Opinion not found." });
-      await auth.sql`INSERT INTO moderation_actions (moderator_id, opinion_id, action, reason) VALUES (${auth.profile.id}, ${opinionId}, ${action === "approve" ? "approve_opinion" : action === "reject" ? "reject_opinion" : action}, ${reason || "Moderation review"})`;
       return res.status(200).json({ ok:true, opinion:rows[0] });
     }
     if (action === "resolve_report" || action === "dismiss_report") {
       if (!/^[0-9a-f-]{36}$/i.test(reportId)) return res.status(400).json({ ok:false,error:"Invalid report." });
       const status = action === "resolve_report" ? "resolved" : "dismissed";
-      const rows = await auth.sql`UPDATE opinion_reports SET status = ${status}, reviewed_by = ${auth.profile.id}, reviewed_at = now() WHERE id = ${reportId} AND status IN ('open','reviewing') RETURNING id,status,opinion_id`;
+      const rows = await auth.sql`WITH changed AS (
+        UPDATE opinion_reports SET status = ${status}, reviewed_by = ${auth.profile.id}, reviewed_at = now()
+        WHERE id = ${reportId} AND status IN ('open','reviewing') RETURNING id, status, opinion_id
+      ), logged AS (
+        INSERT INTO moderation_actions (moderator_id, opinion_id, action, reason)
+        SELECT ${auth.profile.id}, changed.opinion_id, ${action}, ${reason || status} FROM changed RETURNING id
+      ) SELECT changed.id, changed.status, changed.opinion_id FROM changed`;
       if (!rows.length) return res.status(404).json({ ok:false,error:"Open report not found." });
-      await auth.sql`INSERT INTO moderation_actions (moderator_id, opinion_id, action, reason) VALUES (${auth.profile.id}, ${rows[0].opinion_id}, ${action}, ${reason || status})`;
       return res.status(200).json({ ok:true, report:rows[0] });
     }
     if (accountActions.includes(action)) {
@@ -49,9 +60,14 @@ export default async function handler(req, res) {
       const status = action === "ban" ? "banned" : action === "suspend" ? "suspended" : "active";
       const until = action === "suspend" && req.body?.suspendedUntil ? new Date(req.body.suspendedUntil) : null;
       if (until && Number.isNaN(until.getTime())) return res.status(400).json({ ok:false,error:"Invalid suspension expiry." });
-      const rows = await auth.sql`UPDATE user_profiles SET account_status = ${status}, suspended_until = ${status === "suspended" ? until : null}, moderation_note = ${reason}, moderated_at = now(), moderated_by = ${auth.profile.id} WHERE id = ${targetUserId} AND role <> 'super_admin' RETURNING id,account_status,suspended_until`;
+      const rows = await auth.sql`WITH changed AS (
+        UPDATE user_profiles SET account_status = ${status}, suspended_until = ${status === "suspended" ? until : null}, moderation_note = ${reason}, moderated_at = now(), moderated_by = ${auth.profile.id}
+        WHERE id = ${targetUserId} AND role <> 'super_admin' RETURNING id, account_status, suspended_until
+      ), logged AS (
+        INSERT INTO moderation_actions (moderator_id, target_user_id, action, reason)
+        SELECT ${auth.profile.id}, changed.id, ${action}, ${reason || action} FROM changed RETURNING id
+      ) SELECT changed.id, changed.account_status, changed.suspended_until FROM changed`;
       if (!rows.length) return res.status(404).json({ ok:false,error:"Account not found or protected." });
-      await auth.sql`INSERT INTO moderation_actions (moderator_id,target_user_id,action,reason) VALUES (${auth.profile.id},${targetUserId},${action},${reason || action})`;
       return res.status(200).json({ ok:true, account:rows[0] });
     }
     return res.status(400).json({ ok:false,error:"Unsupported moderation action." });
