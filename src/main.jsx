@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { authClient } from "./auth.js";
+import OpinionsPanel from "./OpinionsPanel.jsx";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
@@ -54,6 +55,10 @@ function App() {
   const [communityFaces, setCommunityFaces] = useState(demoFaces);
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [opinionsPanelOpen, setOpinionsPanelOpen] = useState(false);
+  const [opinionsPanelMode, setOpinionsPanelMode] = useState("dashboard");
+  const [reportOpinion, setReportOpinion] = useState(null);
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const leadSlides = [
@@ -138,6 +143,13 @@ function App() {
     window.setTimeout(() => setToast(""), 3000);
   };
   useEffect(() => {
+    if (!authClient) return;
+    let active = true;
+    authClient.getSession().then(result => { if (active && result?.data?.user) setCurrentUser(result.data.user); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
     fetch("/api/opinions", { signal: controller.signal })
       .then(response => response.ok ? response.json() : null)
@@ -213,6 +225,8 @@ function App() {
         ? await authClient.signUp.email({ name, email, password })
         : await authClient.signIn.email({ email, password });
       if (result?.error) throw new Error(result.error.message || "Authentication failed.");
+      const sessionResult = await authClient.getSession();
+      if (sessionResult?.data?.user) setCurrentUser(sessionResult.data.user);
       setAuthMessage(modal === "signup" ? "Account created. Check your email if verification is required." : "You are signed in.");
       notify(modal === "signup" ? "Your Nochalant account was created." : "Welcome back to Nochalant.");
       closeModal();
@@ -241,7 +255,7 @@ function App() {
     <header className="site-header"><div className="nav-wrap">
       <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
-      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span></nav>
+      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button><span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span></nav>
       <div className="nav-actions"><button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button><button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button><button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button></div>
     </div></header>
 
@@ -321,7 +335,8 @@ function App() {
       {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send your story for editorial review. Submissions are not published automatically.</p><form onSubmit={submitGist}><label>Your name<input required placeholder="Name or brand name"/></label><label>Email address<input required type="email" placeholder="you@example.com"/></label><label>Category<select value={submissionCategories.includes(formCategory) ? formCategory : "Entertainment"} onChange={e => setFormCategory(e.target.value)}>{submissionCategories.map(x => <option key={x} value={x}>{x}</option>)}</select></label><label>Post title<input required maxLength="120" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea required rows="5" placeholder="Add details, links and useful context..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Test submission form </button><small className="fine-print">Submission storage, duplicate checks and account login are not connected yet. This preview does not send your information to a server.</small></form></>}
       {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <label>Full name<input name="name" required placeholder="Your name"/></label>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
     </div></div>}
-    {selectedOpinion && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && setSelectedOpinion(null)}><div className="modal-card opinion-detail" role="dialog" aria-modal="true" aria-labelledby="opinion-detail-title"><button className="modal-close" onClick={() => setSelectedOpinion(null)} aria-label="Close opinion">×</button><span className="eyebrow">{selectedOpinion.topic} · NOCHALANT OPINION</span><h2 id="opinion-detail-title">The people have a say.</h2><blockquote>“{selectedOpinion.body}”</blockquote><p className="opinion-author-detail">Shared by {selectedOpinion.author_name}</p><button className="button button-outline full-width" onClick={() => {setSelectedOpinion(null);setModal("login");setAuthMessage("Log in to report content or share your own opinion.");}}>Report or share an opinion</button><small className="fine-print">Reporting and publishing will be enabled with the secure account dashboard.</small></div></div>}
+    {selectedOpinion && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && setSelectedOpinion(null)}><div className="modal-card opinion-detail" role="dialog" aria-modal="true" aria-labelledby="opinion-detail-title"><button className="modal-close" onClick={() => setSelectedOpinion(null)} aria-label="Close opinion">×</button><span className="eyebrow">{selectedOpinion.topic} · NOCHALANT OPINION</span><h2 id="opinion-detail-title">The people have a say.</h2><blockquote>“{selectedOpinion.body}”</blockquote><p className="opinion-author-detail">Shared by {selectedOpinion.author_name}</p><div className="opinion-detail-actions"><button className="button button-outline full-width" onClick={() => {setReportOpinion(selectedOpinion);setSelectedOpinion(null);setOpinionsPanelMode("report");setOpinionsPanelOpen(true);}}>Report this opinion</button><button className="button button-green full-width" onClick={() => {setSelectedOpinion(null);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>Share your take</button></div></div></div>}
+    <OpinionsPanel open={opinionsPanelOpen} mode={opinionsPanelMode} opinion={reportOpinion} onClose={() => setOpinionsPanelOpen(false)} onNotice={notify} />
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
 }
