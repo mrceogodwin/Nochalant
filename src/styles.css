@@ -79,3 +79,33 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .search-box input,.newsletter-form input{font-size:16px!important}
   input,textarea,select{-webkit-text-size-adjust:100%}
 }
+
+/* Nochalant Faces — compact community identity rail */
+.nochalant-faces{margin:28px 0 34px;padding:20px 0 17px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden}
+.faces-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.faces-title{display:flex;align-items:center;gap:10px}
+.faces-title h3{font-size:17px;letter-spacing:-.035em;margin:0;font-weight:700}
+.faces-caption,.faces-demo-note{font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--muted)}
+.faces-brand-mark{width:27px;height:27px;display:inline-flex;position:relative;align-items:center;justify-content:center;border-radius:9px;background:var(--lime);transform:rotate(-7deg);flex:none;overflow:hidden}
+.faces-brand-mark:before,.faces-brand-mark:after{content:"";position:absolute;background:#171a13;border-radius:50%}
+.faces-brand-mark:before{width:5px;height:5px;left:7px;top:8px}
+.faces-brand-mark:after{width:5px;height:5px;right:7px;top:8px}
+.faces-brand-mark span{position:absolute;width:13px;height:6px;left:7px;bottom:6px;border-bottom:2px solid #171a13;border-radius:0 0 12px 12px}
+.faces-brand-mark i{position:absolute;width:4px;height:4px;border-radius:50%;background:#171a13;right:2px;top:2px}
+.faces-viewport{overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.faces-track{display:flex;align-items:flex-start;gap:20px;width:max-content;animation:faces-drift 46s linear infinite}
+.faces-viewport:hover .faces-track,.faces-viewport:focus-within .faces-track{animation-play-state:paused}
+.face-item{width:66px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--ink);flex:none}
+.face-avatar{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;border:2px solid #34382a;box-shadow:0 0 0 3px #11130f;transition:transform .2s,border-color .2s}
+.face-item:hover .face-avatar,.face-item:focus-visible .face-avatar{transform:translateY(-3px) scale(1.05);border-color:var(--lime)}
+.face-avatar>span{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;letter-spacing:-.06em}
+.tone-lime{background:linear-gradient(145deg,#e2f69b,#8eaa3d);color:#15190d}
+.tone-orange{background:linear-gradient(145deg,#ffb28a,#b84e2d);color:#21130d}
+.tone-cream{background:linear-gradient(145deg,#f2e8ce,#a99b7e);color:#211e17}
+.tone-pink{background:linear-gradient(145deg,#f4b6c6,#a95370);color:#24131b}
+.tone-purple{background:linear-gradient(145deg,#c7b5f1,#6e5a9b);color:#171225}
+.face-name{font-size:9px;font-weight:600;white-space:nowrap;color:#d6d7ca;max-width:76px;overflow:hidden;text-overflow:ellipsis}
+.faces-demo-note{display:block;margin-top:13px;font-size:8px;letter-spacing:.08em;text-transform:none;font-weight:500}
+@keyframes faces-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.faces-track{animation:none}}
+@media(max-width:600px){.nochalant-faces{margin:22px 0 28px;padding:17px 0 14px}.faces-track{gap:15px;animation-duration:38s}.face-item{width:58px}.face-avatar{width:48px;height:48px}.faces-title h3{font-size:15px}.faces-caption{font-size:8px}.faces-demo-note{font-size:8px}}
