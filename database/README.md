@@ -32,12 +32,13 @@ Open the SQL Editor for the Nochalant Neon project and select the `production` b
 2. `database/migrations/002_platform_expansion.sql`
 3. `database/migrations/003_article_views.sql`
 4. `database/migrations/004_nochalant_faces.sql`
+5. `database/migrations/005_nochalant_opinions_moderation.sql`
 
 Do not skip a failed migration or run a later migration first. If a script errors, stop and inspect the error before retrying. These files are intended to be re-runnable in most respects, but do not assume a partially failed script completed.
 
 ## 4. Verify the schema
 
-After all four migrations complete, open:
+After all five migrations complete, open:
 
 `https://nochalant.vercel.app/api/health/database`
 
@@ -45,7 +46,7 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 30`
+- `present_tables: 32`
 - `missing_tables: []`
 
 If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, apply or repair the listed migrations in order.
@@ -64,3 +65,12 @@ After migration 004, the response should include the ten explicitly marked demo 
 - Never trust a role, user ID, or payment status supplied by the browser.
 - Keep Neon Auth and PostgreSQL connection configuration distinct.
 - Do not manually edit production tables to bypass the migration sequence.
+
+
+## 6. Nochalant Opinions and moderation
+
+Migration 005 creates the user-generated Opinions feed and reporting queue, plus account enforcement fields:
+- Opinions are created as pending and require moderation before appearing publicly.
+- Users can report an opinion once; reports enter the admin review queue.
+- Admin moderation records approve, reject, hide, restore, suspend, unsuspend, ban and unban actions.
+- Account states are active, suspended or banned. The application API must enforce these states on every write request; hiding a button in the browser is not security.
