@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
-import { authClient, getAuthToken } from "./auth.js";
+import { authClient, getAuthToken, rememberAuthSession, clearRememberedAuthSession } from "./auth.js";
 import OpinionsPanel from "./OpinionsPanel.jsx";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
@@ -211,8 +211,10 @@ function App() {
       if (!authClient) throw new Error("Authentication is not configured.");
       const result = await authClient.signIn.email({ email, password });
       if (result?.error) throw new Error(result.error.message || "Sign-in failed.");
+      const signedInUser = rememberAuthSession(result);
       const session = await authClient.getSession();
-      if (session?.data?.user) setCurrentUser(session.data.user);
+      const sessionUser = rememberAuthSession(session);
+      if (sessionUser || signedInUser) setCurrentUser(sessionUser || signedInUser);
       await verifyControlRoomAccess();
     } catch (error) {
       setControlRoomStatus("login");
@@ -372,6 +374,7 @@ function App() {
   const signOutUser = async () => {
     try {
       await authClient?.signOut?.();
+      clearRememberedAuthSession();
       setCurrentUser(null);
       setOpinionsPanelOpen(false);
       notify("You have been signed out.");
