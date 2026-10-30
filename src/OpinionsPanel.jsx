@@ -6,10 +6,9 @@ const reportReasons = ["Harassment or bullying","Hate or discrimination","Sexual
 
 async function getToken() {
   if (!authClient) throw new Error("Authentication is not configured.");
-  const result = await authClient.token();
-  if (result?.error) throw new Error(result.error.message || "Please sign in again.");
-  if (!result?.data?.token) throw new Error("Please sign in again to continue.");
-  return result.data.token;
+  const token = await authClient.getJWTToken?.();
+  if (typeof token !== "string" || !token) throw new Error("Please sign in again to continue.");
+  return token;
 }
 
 export default function OpinionsPanel({ open, onClose, mode = "dashboard", opinion = null, onNotice = () => {} }) {
