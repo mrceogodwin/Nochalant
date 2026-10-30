@@ -176,7 +176,7 @@ function App() {
       }
     })();
     return () => controller.abort();
-  }, []);
+  }, [currentUser?.id]);
 
   const castVote = async (choice) => {
     if (!currentUser) {
