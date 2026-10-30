@@ -1,4 +1,4 @@
-import { createInternalNeonAuth } from "@neondatabase/auth";
+import { createAuthClient } from "@neondatabase/auth";
 
 const authUrl = import.meta.env.VITE_NEON_AUTH_URL;
 
@@ -6,21 +6,20 @@ if (!authUrl) {
   console.warn("Neon Auth is not configured. Set VITE_NEON_AUTH_URL.");
 }
 
-const neonAuth = authUrl ? createInternalNeonAuth(authUrl) : null;
-export const authClient = neonAuth?.adapter ?? null;
+export const authClient = authUrl ? createAuthClient(authUrl) : null;
 
-// Keep the JWT returned by the successful sign-in response in memory. Neon
-// Auth attaches it to session data via the set-auth-jwt response header.
+// Neon Auth exposes the JWKS-verifiable JWT as session.access_token.
+// session.token is the opaque Better Auth cookie/session identifier and must
+// never be sent to APIs that verify JWTs with the Neon Auth JWKS.
 let activeSessionToken = null;
 
 export function rememberAuthSession(result) {
   const session = result?.data?.session ?? result?.session ?? null;
   const token =
-    session?.token ||
     session?.access_token ||
-    result?.data?.token ||
-    result?.token ||
+    result?.data?.session?.access_token ||
     null;
+
   if (typeof token === "string" && token.trim()) {
     activeSessionToken = token.trim();
   }
@@ -32,11 +31,17 @@ export function clearRememberedAuthSession() {
 }
 
 export async function getAuthToken() {
-  if (!neonAuth) throw new Error("Authentication is not configured.");
+  if (!authClient) throw new Error("Authentication is not configured.");
   if (activeSessionToken) return activeSessionToken;
 
-  const token = await neonAuth.getJWTToken();
+  const result = await authClient.getSession();
+  if (result?.error) {
+    throw new Error(result.error.message || "Your Neon Auth session could not be retrieved.");
+  }
+  const session = result?.data?.session ?? result?.session ?? null;
+  const token = session?.access_token ?? null;
   if (typeof token !== "string" || !token.trim()) return null;
+
   activeSessionToken = token.trim();
   return activeSessionToken;
 }
