@@ -18,6 +18,7 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
   const [reports, setReports] = useState([]);
   const [users, setUsers] = useState([]);
   const [artists, setArtists] = useState([]);
+  const [artistsAvailable, setArtistsAvailable] = useState(true);
   const [artistDraft, setArtistDraft] = useState({ id: "", name: "", genre: "", image_url: "", profile_url: "", sort_order: 0, is_active: true });
   const [reason, setReason] = useState("Other");
   const [details, setDetails] = useState("");
@@ -45,6 +46,7 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
     setReports(data.reports || []);
     setUsers(data.users || []);
     setArtists(data.artists || []);
+    setArtistsAvailable(data.artistsAvailable !== false);
   };
 
   useEffect(() => {
@@ -99,6 +101,7 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
       {activeMode === "report" && <><p className="modal-intro">Report content that breaks community standards. Reports are private.</p><blockquote className="opinion-report-quote">{opinion?.body || "Selected opinion"}</blockquote><form onSubmit={submit}><label>Reason<select value={reason} onChange={e => setReason(e.target.value)}>{reportReasons.map(r => <option key={r}>{r}</option>)}</select></label><label>Details<textarea rows={3} maxLength={500} value={details} onChange={e => setDetails(e.target.value)} placeholder="Optional details (up to 500 characters)" /></label><button className="button button-green full-width" disabled={busy}>{busy ? "Sending…" : "Send report"}</button></form></>}
       {activeMode === "admin" && <><p className="modal-intro">Restricted moderation queue. Only database-authorized Super Admin accounts can use these actions.</p>
       <div className="opinion-dashboard-list">
+        {!artistsAvailable && <p className="opinion-panel-error" role="status">Artist database setup is pending. Existing moderation tools remain available; artist changes will work after migration 006 is applied.</p>}
         <div className="opinion-list-heading"><h3>Artists on Nochalant ({artists.length})</h3><button className="button button-outline" type="button" onClick={() => setArtistDraft({ id: "", name: "", genre: "", image_url: "", profile_url: "", sort_order: artists.length, is_active: true })}>Add artist</button></div>
         <form className="artist-admin-form" onSubmit={saveArtist}>
           <h4>{artistDraft.id ? "Edit artist" : "New artist"}</h4>
