@@ -68,7 +68,7 @@ ALTER TABLE moderation_actions
   ADD CONSTRAINT moderation_actions_action_check
   CHECK (action IN (
     'warning','hide','remove','restore','suspend','unsuspend',
-    'ban','unban','dismiss_report','approve_opinion','reject_opinion'
+    'ban','unban','dismiss_report','resolve_report','approve_opinion','reject_opinion'
   ));
 
 DROP TRIGGER IF EXISTS community_opinions_updated_at ON community_opinions;
