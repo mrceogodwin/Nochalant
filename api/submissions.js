@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
   const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
   const category = typeof req.body?.category === "string" ? req.body.category : "";
-  const sourceUrl = typeof req.body?.source_url === "string" ? req.body.source_url.trim() : "";
+  const rawSourceUrl = req.body?.sourceUrl ?? req.body?.source_url;\n  const sourceUrl = typeof rawSourceUrl === "string" ? rawSourceUrl.trim() : "";
 
   if (title.length < 8 || title.length > 180) return res.status(400).json({ ok: false, error: "Title must be between 8 and 180 characters." });
   if (body.length < 20 || body.length > 12000) return res.status(400).json({ ok: false, error: "Your gist must be between 20 and 12,000 characters." });
