@@ -62,3 +62,20 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 .footer-credit{font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:#77796d;opacity:.78;white-space:nowrap}
 @media(max-width:760px){.footer-credit{font-size:7px;letter-spacing:.1em}}
+
+/* Article attribution and reader metrics */
+.story-byline,.article-byline{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#b9c18f;font-size:9px;font-weight:700}
+.story-byline{padding:0 0 12px;margin-top:-5px}
+.article-byline{justify-content:flex-start;gap:15px;padding:11px 0 14px;margin-top:-3px;border-bottom:1px solid var(--line)}
+.article-byline span+span{color:var(--lime)}
+.story-byline span:last-child{color:var(--lime);font-variant-numeric:tabular-nums}
+
+/* Text-only carousel controls; no decorative arrow or play glyphs */
+.lead-carousel-arrow{min-width:52px;height:29px;border-radius:4px;font-size:8px;font-weight:900;letter-spacing:.1em}
+
+/* Prevent iOS Safari from zooming into small form controls on focus. */
+@media(max-width:760px){
+  input,textarea,select,.modal-card input,.modal-card textarea,.modal-card select,
+  .search-box input,.newsletter-form input{font-size:16px!important}
+  input,textarea,select{-webkit-text-size-adjust:100%}
+}
