@@ -326,3 +326,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .footer-social-links a{width:56px;height:56px}
  .footer-bottom{font-size:11px;line-height:1.5}
 }
+
+.screen-page{min-height:calc(100vh - 220px);padding-top:64px;padding-bottom:72px}.screen-page.social-section{padding-top:64px}.screen-page.podcast-section{padding-top:64px}
