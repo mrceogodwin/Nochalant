@@ -371,3 +371,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .footer-social-links svg{width:16px;height:16px}
  .footer-bottom{font-size:10px;gap:8px}
 }
+
+/* Flagship destinations live inside the classic mobile menu drawer */
+.feature-nav{display:none!important}
+.drawer-flagship{display:none}
+@media(max-width:760px){
+ .main-nav{z-index:60;max-height:calc(100dvh - 70px);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 24px 48px #0009}
+ .drawer-flagship{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:0 10px;padding:0 0 17px;margin:0 0 2px;border-bottom:1px solid #353a2c}
+ .drawer-kicker{grid-column:1/-1;margin:0 0 12px;color:var(--lime,#d6f667);font-size:9px;font-weight:900;letter-spacing:.17em}
+ .drawer-flagship>a,.drawer-flagship>button{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 11px;border:1px solid #303529;border-radius:6px;background:#171a14;color:#eceee3;text-decoration:none;text-align:left;font:700 12px 'DM Sans',sans-serif}
+ .drawer-flagship>a:active,.drawer-flagship>button:active{border-color:var(--lime);color:var(--lime)}
+ .drawer-flagship>a span,.drawer-flagship>button span{color:#7e856d;font:700 9px 'Space Grotesk',sans-serif;letter-spacing:.08em}
+}
