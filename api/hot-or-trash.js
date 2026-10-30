@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { requireActiveUser } from "../_lib/neon-auth.js";
+import { requireActiveUser } from "./_lib/neon-auth.js";
 
 const slugPattern = /^[a-z0-9][a-z0-9-]{1,79}$/;
 
