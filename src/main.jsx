@@ -156,7 +156,7 @@ function App() {
     setControlRoomStatus("checking");
     setControlRoomError("");
     try {
-      const token = await authClient?.getJWTToken?.();
+      const token = await getAuthToken();
       if (!token) { setControlRoomStatus("login"); return false; }
       const response = await fetch("/api/admin/opinions", { headers: { Authorization: `Bearer ${token}` } });
       const data = await response.json().catch(() => ({}));
@@ -216,7 +216,7 @@ function App() {
     const controller = new AbortController();
     (async () => {
       try {
-        const token = await authClient?.getJWTToken?.();
+        const token = await getAuthToken();
         const response = await fetch("/api/hot-or-trash?slug=homepage-fashion-feature", {
           signal: controller.signal,
           headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -247,7 +247,7 @@ function App() {
     setVoteBusy(true);
     setPollError("");
     try {
-      const token = await authClient?.getJWTToken?.();
+      const token = await getAuthToken();
       if (!token) throw new Error("Your session has expired. Please log in again.");
       const response = await fetch("/api/hot-or-trash", {
         method: "POST",
@@ -402,7 +402,7 @@ function App() {
       sourceUrl: String(formData.get("sourceUrl") || "").trim()
     };
     try {
-      const token = await authClient.getJWTToken?.();
+      const token = await getAuthToken();
       if (!token) throw new Error("Your session has expired. Please log in again.");
       const response = await fetch("/api/submissions", {
         method: "POST",
