@@ -32,6 +32,7 @@ function App() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioVolume, setAudioVolume] = useState(0.8);
   const [audioError, setAudioError] = useState(false);
+  const [audioPlayerVisible, setAudioPlayerVisible] = useState(true);
   const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
@@ -196,10 +197,10 @@ function App() {
     <footer className="footer"><div className="container footer-main"><div><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>No Dey Form, Just Pure Gist 🇳🇬<br/>Worry no more, Nochalant is here.</p></div><div className="footer-links"><a href="#latest">Latest gist</a><a href="#categories">Categories</a><a href="#agenda">Agenda</a><button onClick={() => setModal("submit")}>Submit gist</button><a href="mailto:hello@nochalant.com">Contact</a></div></div><div className="container footer-bottom"><span>© 2026 Nochalant. All rights reserved.</span><span>Made for the culture. 🇳🇬</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>
 
     <audio ref={audioRef} preload="metadata" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" />
-    <section className="mini-player" aria-label="Nochalant audio player">
-      <span className={audioPlaying ? "mini-player-icon spinning" : "mini-player-icon"} aria-hidden="true">♫</span>
+    {audioPlayerVisible ? <section className="mini-player" aria-label="Nochalant audio player">
+      <img className="player-artwork" src={demoStories[0].image} alt="Nochalant demo track artwork"/>
       <div className="player-main">
-        <div className="player-title"><b>Nochalant Player</b><small>{audioError ? "Audio unavailable — tap retry" : "Demo track · Replace with licensed audio"}</small></div>
+        <div className="player-title"><b>Nochalant Player</b><small>{audioError ? "Audio unavailable — tap play to retry" : "Demo audio · Sample artwork"}</small></div>
         <div className="player-progress">
           <span>{formatAudioTime(audioCurrent)}</span>
           <input aria-label="Seek audio" type="range" min="0" max={audioDuration || 0} step="0.1" value={Math.min(audioCurrent, audioDuration || 0)} onChange={seekAudio} disabled={!audioDuration} />
@@ -207,9 +208,8 @@ function App() {
         </div>
       </div>
       <button className="player-toggle" onClick={toggleAudio} aria-label={audioPlaying ? "Pause audio" : "Play audio"}>{audioPlaying ? "Ⅱ" : "▶"}</button>
-      <label className="player-volume" aria-label="Volume"><span>♪</span><input type="range" min="0" max="1" step="0.05" value={audioVolume} onChange={e => setAudioVolume(Number(e.target.value))}/></label>
-      <span className={audioError ? "player-status error" : "player-status"}>{audioError ? "ERROR" : audioPlaying ? "PLAYING" : "READY"}</span>
-    </section>
+      <button className="player-close" onClick={() => setAudioPlayerVisible(false)} aria-label="Close player" title="Close player">×</button>
+    </section> : <button className="player-reopen" onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
 
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
