@@ -8,15 +8,24 @@ if (!authUrl) {
 
 export const authClient = authUrl ? createAuthClient(authUrl) : null;
 
-// Neon Auth returns the short-lived API JWT as part of the SDK session.
-// Read it from the supported session shape rather than manually guessing an endpoint.
+// Use Neon Auth's documented JWT helper. getSession() exposes session metadata,
+// but the bearer JWT is retrieved separately by the SDK.
 export async function getAuthToken() {
   if (!authClient) throw new Error("Authentication is not configured.");
-  const result = await authClient.getSession();
-  if (result?.error) throw new Error(result.error.message || "Your sign-in session could not be checked.");
-  const token = result?.data?.session?.access_token;
+  let result;
+  if (typeof authClient.getJWTToken === "function") {
+    result = await authClient.getJWTToken();
+  } else if (typeof authClient.token === "function") {
+    result = await authClient.token();
+  } else {
+    throw new Error("This Neon Auth SDK version does not expose a JWT token method. Please update the authentication package.");
+  }
+  if (result?.error) throw new Error(result.error.message || "Your sign-in token could not be retrieved.");
+  const token = typeof result === "string"
+    ? result
+    : result?.data?.token || result?.token || result?.data?.access_token || result?.data?.session?.access_token;
   if (typeof token !== "string" || !token.trim()) {
-    const error = new Error("Please sign in to continue.");
+    const error = new Error("Neon Auth did not return a signed-in JWT. Please sign in again.");
     error.code = "AUTH_SESSION_REQUIRED";
     throw error;
   }
