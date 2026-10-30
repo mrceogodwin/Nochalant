@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import { authClient } from "./auth.js";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
@@ -35,6 +36,8 @@ function App() {
   const [audioPlayerVisible, setAudioPlayerVisible] = useState(true);
   const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
   const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [leadVideoPlaying, setLeadVideoPlaying] = useState(false);
@@ -136,6 +139,34 @@ function App() {
     };
   }, [modal]);
 
+  const submitAuth = async (event) => {
+    event.preventDefault();
+    if (!authClient) {
+      setAuthMessage("Authentication is not configured yet. Please try again later.");
+      return;
+    }
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const email = String(formData.get("email") || "").trim();
+    const password = String(formData.get("password") || "");
+    const name = String(formData.get("name") || "").trim();
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      const result = modal === "signup"
+        ? await authClient.signUp.email({ name, email, password })
+        : await authClient.signIn.email({ email, password });
+      if (result?.error) throw new Error(result.error.message || "Authentication failed.");
+      setAuthMessage(modal === "signup" ? "Account created. Check your email if verification is required." : "You are signed in.");
+      notify(modal === "signup" ? "Your Nochalant account was created." : "Welcome back to Nochalant.");
+      closeModal();
+    } catch (error) {
+      setAuthMessage(error?.message || "We couldn't complete that request. Please try again.");
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
   const submitGist = (event) => {
     event.preventDefault();
     notify("Preview only: your gist has not been sent or saved. Submission services are not connected yet.");
@@ -224,7 +255,7 @@ function App() {
       {modal === "newsletter-success" && <div className="newsletter-success"><span className="brand-signature" aria-hidden="true">N</span><span className="eyebrow">YOU'RE IN THE LOOP</span><h2 id="modal-title">Good things are coming.</h2><p>Thanks for wanting the Nochalant update. Email signups aren't connected yet, so your address hasn't been saved.</p><button className="button button-green full-width" onClick={closeModal}>Got you</button></div>}
       {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
       {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send your story for editorial review. Submissions are not published automatically.</p><form onSubmit={submitGist}><label>Your name<input required placeholder="Name or brand name"/></label><label>Email address<input required type="email" placeholder="you@example.com"/></label><label>Category<select value={submissionCategories.includes(formCategory) ? formCategory : "Entertainment"} onChange={e => setFormCategory(e.target.value)}>{submissionCategories.map(x => <option key={x} value={x}>{x}</option>)}</select></label><label>Post title<input required maxLength="120" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea required rows="5" placeholder="Add details, links and useful context..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Test submission form </button><small className="fine-print">Submission storage, duplicate checks and account login are not connected yet. This preview does not send your information to a server.</small></form></>}
-      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Account registration and login will be enabled when secure authentication is connected.</p><form onSubmit={e => {e.preventDefault();notify("Authentication is not connected in this preview.");closeModal();}}>{modal === "signup" && <label>Full name<input required placeholder="Your name"/></label>}<label>Email address<input type="email" required placeholder="you@example.com"/></label><label>Password<input type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit">{modal === "signup" ? "Create account" : "Log in"} </button></form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
+      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <label>Full name<input name="name" required placeholder="Your name"/></label>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
     </div></div>}
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
