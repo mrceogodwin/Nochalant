@@ -63,6 +63,9 @@ function App() {
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isControlRoom] = useState(() => window.location.pathname.replace(/\\/+$/, "") === "/control-room");
+  const [controlRoomStatus, setControlRoomStatus] = useState("checking");
+  const [controlRoomError, setControlRoomError] = useState("");
   const [opinionsPanelOpen, setOpinionsPanelOpen] = useState(false);
   const [opinionsPanelMode, setOpinionsPanelMode] = useState("dashboard");
   const [reportOpinion, setReportOpinion] = useState(null);
@@ -149,10 +152,64 @@ function App() {
     setToast(message);
     window.setTimeout(() => setToast(""), 3000);
   };
+  const verifyControlRoomAccess = async () => {
+    setControlRoomStatus("checking");
+    setControlRoomError("");
+    try {
+      const token = await authClient?.getJWTToken?.();
+      if (!token) { setControlRoomStatus("login"); return false; }
+      const response = await fetch("/api/admin/access", { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) { setControlRoomStatus("login"); return false; }
+      if (response.status === 403) { setControlRoomStatus("denied"); setControlRoomError(data.error || "This account is not authorized for the Nochalant Control Room."); return false; }
+      if (!response.ok || !data.ok) throw new Error(data.error || "Control Room access could not be verified.");
+      setControlRoomStatus("authorized");
+      return true;
+    } catch (error) {
+      setControlRoomStatus("error");
+      setControlRoomError(error?.message || "Control Room access could not be verified.");
+      return false;
+    }
+  };
+
+  const submitControlRoomLogin = async event => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim();
+    const password = String(formData.get("password") || "");
+    setControlRoomStatus("checking");
+    setControlRoomError("");
+    try {
+      if (!authClient) throw new Error("Authentication is not configured.");
+      const result = await authClient.signIn.email({ email, password });
+      if (result?.error) throw new Error(result.error.message || "Sign-in failed.");
+      const session = await authClient.getSession();
+      if (session?.data?.user) setCurrentUser(session.data.user);
+      const allowed = await verifyControlRoomAccess();
+      if (!allowed && controlRoomStatus === "login") setControlRoomError("Please sign in with your authorized owner account.");
+    } catch (error) {
+      setControlRoomStatus("login");
+      setControlRoomError(error?.message || "Unable to sign in.");
+    }
+  };
+
   useEffect(() => {
-    if (!authClient) return;
+    if (!authClient) {
+      if (isControlRoom) { setControlRoomStatus("error"); setControlRoomError("Authentication is not configured."); }
+      return;
+    }
     let active = true;
-    authClient.getSession().then(result => { if (active && result?.data?.user) setCurrentUser(result.data.user); }).catch(() => {});
+    authClient.getSession().then(async result => {
+      if (!active) return;
+      if (result?.data?.user) {
+        setCurrentUser(result.data.user);
+        if (isControlRoom) await verifyControlRoomAccess();
+      } else if (isControlRoom) {
+        setControlRoomStatus("login");
+      }
+    }).catch(error => {
+      if (active && isControlRoom) { setControlRoomStatus("login"); setControlRoomError(error?.message || "Please sign in to continue."); }
+    });
     return () => { active = false; };
   }, []);
 
@@ -360,6 +417,21 @@ function App() {
     setCommentDraft("");
     notify("Comment added to this local preview.");
   };
+
+  if (isControlRoom) return <div className="control-room-shell">
+    <header className="control-room-header">
+      <a className="brand" href="/">NOCHALANT<span>.</span><small>PRIVATE ADMINISTRATION</small></a>
+      <a className="control-room-home" href="/">Back to public site</a>
+    </header>
+    <main className="control-room-content">
+      {controlRoomStatus === "checking" && <section className="control-room-gate"><span className="eyebrow">SECURE ACCESS CHECK</span><h1>Opening Control Room…</h1><p>Verifying your session and administrator permissions.</p></section>}
+      {controlRoomStatus === "login" && <section className="control-room-gate"><span className="eyebrow">PRIVATE ADMINISTRATION</span><h1>Nochalant Control Room.</h1><p>Sign in with the authorized owner account. This entrance is not available to public members.</p><form className="control-room-login" onSubmit={submitControlRoomLogin}><label>Email address<input name="email" type="email" autoComplete="username" required placeholder="Owner email"/></label><label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Your password"/></label><button className="button button-green full-width" type="submit">Sign in securely</button></form>{controlRoomError && <p className="control-room-error" role="alert">{controlRoomError}</p>}</section>}
+      {controlRoomStatus === "denied" && <section className="control-room-gate"><span className="eyebrow">ACCESS RESTRICTED</span><h1>Administrator access required.</h1><p>{controlRoomError || "This account does not have permission to enter the Control Room."}</p><a className="button button-outline" href="/">Return to Nochalant</a></section>}
+      {controlRoomStatus === "error" && <section className="control-room-gate"><span className="eyebrow">SECURE ACCESS UNAVAILABLE</span><h1>We couldn't verify access.</h1><p>{controlRoomError}</p><button className="button button-green" onClick={verifyControlRoomAccess}>Try again</button></section>}
+      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /></>}
+    </main>
+    {toast && <div className="toast" role="status">{toast}</div>}
+  </div>;
 
   return <div className="site-shell">
     <div className="ticker"><span className="ticker-label">NOCHALANT LIVE</span><div className="ticker-window"><div className="ticker-track"><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>FREE DAILY SUBMISSIONS</span><span>WHAT'S HAPPENING? CHECK THE AGENDA</span><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
