@@ -20,11 +20,26 @@ export async function requireActiveUser(req) {
     const sql = neon(databaseUrl);
     const displayName = typeof payload.name === "string" && payload.name.trim() ? payload.name.trim().slice(0,120) : (typeof payload.email === "string" ? payload.email.split("@")[0] : "Nochalant member");
     const email = typeof payload.email === "string" ? payload.email.slice(0,254) : null;
-    let rows = await sql`SELECT id, auth_user_id, display_name, role, account_status, suspended_until FROM user_profiles WHERE auth_user_id = ${payload.sub} LIMIT 1`;
+    let rows = await sql`SELECT id, auth_user_id, display_name, email, role, account_status, suspended_until FROM user_profiles WHERE auth_user_id = ${payload.sub} LIMIT 1`;
     let profile = rows[0];
     if (!profile) {
-      rows = await sql`INSERT INTO user_profiles (auth_user_id, display_name, email) VALUES (${payload.sub}, ${displayName}, ${email}) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = COALESCE(NULLIF(user_profiles.display_name, ''), EXCLUDED.display_name), email = COALESCE(user_profiles.email, EXCLUDED.email) RETURNING id, auth_user_id, display_name, role, account_status, suspended_until`;
+      rows = await sql`INSERT INTO user_profiles (auth_user_id, display_name, email) VALUES (${payload.sub}, ${displayName}, ${email}) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = COALESCE(NULLIF(user_profiles.display_name, ''), EXCLUDED.display_name), email = COALESCE(user_profiles.email, EXCLUDED.email) RETURNING id, auth_user_id, display_name, email, role, account_status, suspended_until`;
       profile = rows[0];
+    }
+    // One-time first-owner bootstrap: only this exact owner identity may claim
+    // Super Admin, and only while no Super Admin exists. The conditional UPDATE
+    // is atomic, so concurrent first logins cannot create multiple owners.
+    const firstOwnerEmail = "squadempireng@gmail.com";
+    const accountEmail = String(profile.email || email || "").trim().toLowerCase();
+    if (accountEmail === firstOwnerEmail && profile.role !== "super_admin") {
+      const promoted = await sql`UPDATE user_profiles
+        SET role = 'super_admin', email = COALESCE(email, ${email})
+        WHERE id = ${profile.id}
+          AND lower(email) = ${firstOwnerEmail}
+          AND role <> 'super_admin'
+          AND NOT EXISTS (SELECT 1 FROM user_profiles WHERE role = 'super_admin')
+        RETURNING role`;
+      if (promoted.length) profile.role = promoted[0].role;
     }
     const suspensionExpired = profile.account_status === "suspended" && profile.suspended_until && new Date(profile.suspended_until) <= new Date();
     if (profile.account_status === "banned" || (profile.account_status === "suspended" && !suspensionExpired)) return { error: { status: 403, message: "Your account is restricted from posting and reporting." } };
