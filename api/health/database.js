@@ -30,7 +30,9 @@ const REQUIRED_TABLES = [
   "moderation_actions",
   "post_view_counts",
   "post_viewers",
-  "community_profiles"
+  "community_profiles",
+  "community_opinions",
+  "opinion_reports"
 ];
 
 export default async function handler(req, res) {
