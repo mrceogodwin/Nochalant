@@ -33,6 +33,26 @@ function App() {
   const [audioVolume, setAudioVolume] = useState(0.8);
   const [audioError, setAudioError] = useState(false);
   const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
+  const [leadSlide, setLeadSlide] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
+  const [leadVideoPlaying, setLeadVideoPlaying] = useState(false);
+  const leadVideoRef = useRef(null);
+  const leadSlides = [
+    { story: demoStories[0], type: "image" },
+    { story: demoStories[2], type: "image" },
+    { story: demoStories[3], type: "image" },
+    { story: demoStories[4], type: "video", video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" }
+  ];
+  useEffect(() => {
+    if (carouselPaused || leadVideoPlaying) return;
+    const timer = window.setInterval(() => setLeadSlide(current => (current + 1) % leadSlides.length), 5500);
+    return () => window.clearInterval(timer);
+  }, [carouselPaused, leadVideoPlaying, leadSlides.length]);
+  const changeLeadSlide = (index) => {
+    if (leadVideoRef.current) { leadVideoRef.current.pause(); leadVideoRef.current.currentTime = 0; }
+    setLeadVideoPlaying(false);
+    setLeadSlide((index + leadSlides.length) % leadSlides.length);
+  };
 
   const formatAudioTime = (seconds) => {
     if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -142,13 +162,21 @@ function App() {
           <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
           <p>Your plug for Nigerian entertainment, music, nightlife, lifestyle and everything happening around you. No long talk — just the gist that matters.</p>
           <div className="hero-actions"><button className="button button-green" onClick={() => setModal("submit")}>Spill the gist ↗</button><a className="button button-outline" href="#latest">Catch up on gist</a></div>
-          <div className="lead-note"><span>✳</span><div><b>Free daily submissions</b><small>Send your story. Our editorial team reviews it.</small></div></div>
+          
         </div>
-        <article className="lead-story" role="button" aria-label={`Open featured story: ${demoStories[0].title}`} onClick={() => openStory(demoStories[0])} tabIndex="0" onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(demoStories[0])}>
-          <img src={demoStories[0].image} alt="Live music crowd"/>
-          <div className="lead-overlay"></div><div className="lead-story-top"><span className="pill pill-hot">✦ HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span></div>
-          <div className="lead-story-bottom"><div className="story-meta"><span>{demoStories[0].category}</span><span>· {demoStories[0].read}</span></div><h2>{demoStories[0].title}</h2><p>{demoStories[0].excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation();toggleAudio();}}>▶ <span>{audioPlaying ? "Pause demo audio" : "Play demo audio"} · {formatAudioTime(audioCurrent)}</span></button><b>Read full parapo ↗</b></div></div>
-        </article>
+        <article className="lead-story" aria-label="Featured Nochalant carousel" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
+          {leadSlides.map((slide, index) => <div className={index === leadSlide ? "lead-slide active" : "lead-slide"} key={slide.story.id} aria-hidden={index !== leadSlide}>
+            {slide.type === "video" ? <video ref={leadVideoRef} className="lead-media" src={slide.video} poster={slide.story.image} controls playsInline preload="none" onPlay={() => setLeadVideoPlaying(true)} onPause={() => setLeadVideoPlaying(false)} onEnded={() => {setLeadVideoPlaying(false); changeLeadSlide(0);}} onClick={e => e.stopPropagation()} aria-label="Video preview player"/> : <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>}
+            <div className="lead-overlay"></div>
+            <div className="lead-story-top"><span className="pill pill-hot">{slide.type === "video" ? "▶ VIDEO PREVIEW" : "✦ HOT DROP"}</span><span className="demo-label">EDITORIAL PREVIEW</span></div>
+            <div className="lead-story-bottom"><div className="story-meta"><span>{slide.story.category}</span><span>· {slide.story.read}</span></div><h2>{slide.story.title}</h2><p>{slide.story.excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); openStory(slide.story);}}>Read story ↗</button><b>{index + 1} / {leadSlides.length}</b></div></div>
+          </div>)}
+          <div className="lead-carousel-controls">
+            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>‹</button>
+            <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
+            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>›</button>
+          </div>
+        </article>article>
       </section>
 
       <section className="container value-strip"><div><span className="value-icon">↗</span><div><b>Free daily submissions</b><small>Share your news, music, brand or event.</small></div></div><div><span className="value-icon gold">✦</span><div><b>Carousel placement</b><small>Optional premium feature · ₦5,999.</small></div></div><div><span className="value-icon">◷</span><div><b>Editorial review</b><small>Every post is checked before publishing.</small></div></div></section>
