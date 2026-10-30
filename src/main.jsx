@@ -317,13 +317,13 @@ function App() {
 
       <section className="container got-gist" aria-labelledby="got-gist-title">
         <div className="got-gist-copy">
-          <span className="eyebrow">YOUR STORY BELONGS HERE</span>
-          <h2 id="got-gist-title">Got gist? <em>Let's hear it.</em></h2>
-          <p>Share your news, music, brand, event or something happening around you. No long talk — send it to Nochalant.</p>
-          <div className="got-gist-trust"><span><b>✓</b> Free daily submissions</span><span><b>✓</b> Editorial review</span></div>
+          <span className="eyebrow">GOT SOMETHING?</span>
+          <h2 id="got-gist-title">Got gist? <em>Send it.</em></h2>
+          <p>News, music, events or fresh gist. Send it our way.</p>
+          <div className="got-gist-trust"><span><b>✓</b> Free submissions</span><span><b>✓</b> Reviewed before publishing</span></div>
         </div>
         <button className="got-gist-cta" onClick={() => {setFormCategory("Afrobeats & Jamz");if (!currentUser) {setAuthMessage("Log in to submit your gist.");setModal("login");} else setModal("submit");}}>
-          <span>Submit your gist</span><b aria-hidden="true">↗</b>
+          <span>Submit your gist</span><svg className="got-gist-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 19 19 5M7 5h12v12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       </section>
 
