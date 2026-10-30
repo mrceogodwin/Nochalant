@@ -6,7 +6,7 @@ const accountActions = ["suspend","unsuspend","ban","unban"];
 export default async function handler(req, res) {
   const auth = await requireActiveUser(req);
   if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
-  if (!["admin","super_admin"].includes(auth.profile.role)) return res.status(403).json({ ok: false, error: "You do not have permission to moderate content." });
+  if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Only the Super Admin can moderate content." });
   if (req.method === "GET") {
     try {
       const [opinions, reports] = await Promise.all([
