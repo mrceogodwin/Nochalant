@@ -145,3 +145,26 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .opinion-panel-error{background:#351b18;border:1px solid #8b4236;color:#ffd2c8;padding:10px;font-size:12px}
 .opinion-report-quote{border-left:2px solid var(--lime,#d6f667);padding:10px 14px;background:#10120e;color:#dfe2d5;font-size:13px;line-height:1.55}
 @media(max-width:600px){.opinions-panel{padding:22px 18px;max-height:88vh}.opinion-detail-actions{flex-direction:column}.opinion-admin-actions button{flex:1}}
+
+
+/* Opinions dashboard and moderation */
+.opinions-panel{max-width:680px;max-height:88vh;overflow-y:auto}
+.opinion-compose{display:grid;gap:12px;margin:18px 0}
+.opinion-compose label,.opinions-panel form label{display:grid;gap:7px;color:#c9cbbd;font-size:11px;font-weight:800}
+.opinion-compose select,.opinion-compose textarea,.opinions-panel form select,.opinions-panel form textarea{width:100%;border:1px solid #414638;background:#0c0e0b;color:#f4f5ec;border-radius:8px;padding:12px;font:inherit;font-size:13px;outline:none}
+.opinion-compose select:focus,.opinion-compose textarea:focus,.opinions-panel form select:focus,.opinions-panel form textarea:focus{border-color:var(--lime,#d6f667);box-shadow:0 0 0 2px #d6f66722}
+.opinion-dashboard-list{display:grid;gap:12px;margin:22px 0;padding-top:16px;border-top:1px solid #34382e}
+.opinion-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.opinion-list-heading h3,.opinion-dashboard-list h3{margin:0;color:#f2f3e9;font-size:14px;font-weight:900}
+.opinion-status-item{padding:13px;border:1px solid #353a2e;background:#10130e;border-radius:9px}
+.opinion-status-item p{margin:8px 0;color:#e9ebdf;font-size:13px;line-height:1.55}
+.opinion-status-item small{color:#a4a895;font-size:10px}
+.opinion-topic{color:var(--lime,#d6f667);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.opinion-admin-actions,.opinion-panel-tabs,.opinion-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.opinion-admin-actions button,.opinion-panel-tabs button{border:1px solid #4a503d;background:#1b2016;color:#e9ebdf;padding:8px 11px;border-radius:6px;font-size:10px;font-weight:800}
+.opinion-admin-actions button:disabled{opacity:.45}
+.opinion-panel-tabs button.active{border-color:var(--lime,#d6f667);color:var(--lime,#d6f667)}
+.opinion-panel-error{padding:10px;border:1px solid #a64c42;background:#351b18;color:#ffd5ce;font-size:12px}
+.opinion-report-quote{margin:12px 0;padding:12px;border-left:3px solid var(--lime,#d6f667);background:#10130e;color:#e9ebdf;font-size:13px}
+.opinion-detail-actions>*{flex:1}
+@media(max-width:600px){.opinions-panel{padding:22px 18px;max-height:90vh}.opinion-detail-actions{flex-direction:column}.opinion-admin-actions button{flex:1}}
