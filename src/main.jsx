@@ -33,6 +33,10 @@ function App() {
   const [modal, setModal] = useState("");
   const [story, setStory] = useState(demoStories[0]);
   const [vote, setVote] = useState("");
+  const [poll, setPoll] = useState(null);
+  const [pollLoading, setPollLoading] = useState(true);
+  const [pollError, setPollError] = useState("");
+  const [voteBusy, setVoteBusy] = useState(false);
   const [likes, setLikes] = useState({});
   const modalCloseRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -148,6 +152,51 @@ function App() {
     authClient.getSession().then(result => { if (active && result?.data?.user) setCurrentUser(result.data.user); }).catch(() => {});
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/hot-or-trash?slug=homepage-fashion-feature", { signal: controller.signal })
+      .then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error || "Voting is temporarily unavailable.");
+        if (!controller.signal.aborted) { setPoll(data.poll); setPollError(""); }
+      })
+      .catch(error => {
+        if (error?.name !== "AbortError") setPollError(error?.message || "Voting is temporarily unavailable.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setPollLoading(false); });
+    return () => controller.abort();
+  }, []);
+
+  const castVote = async (choice) => {
+    if (!currentUser) {
+      setAuthMessage("Log in to cast your vote. One vote per account for this poll.");
+      setModal("login");
+      return;
+    }
+    if (voteBusy || vote || !poll) return;
+    setVoteBusy(true);
+    setPollError("");
+    try {
+      const token = await authClient?.getJWTToken?.();
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+      const response = await fetch("/api/hot-or-trash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ slug: poll.slug, choice })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 409) throw new Error(data.error || "You have already voted in this poll.");
+      if (!response.ok || !data.ok) throw new Error(data.error || "Your vote could not be saved.");
+      setVote(choice);
+      setPoll(current => current ? { ...current, ...data.results } : current);
+      notify("Your vote has been counted.");
+    } catch (error) {
+      setPollError(error?.message || "Your vote could not be saved. Please try again.");
+    } finally {
+      setVoteBusy(false);
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -332,7 +381,7 @@ function App() {
         <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><p>{item.excerpt}</p><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
       </section>
 
-      <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>{opinions.length > 0 && <div className="opinion-rail" aria-label="Opinions from Nochalant users"><div className="opinion-rail-top"><span>THE PEOPLE HAVE SPOKEN</span><span>{opinions.length} COMMUNITY {opinions.length === 1 ? "TAKE" : "TAKES"}</span></div><div className="opinion-rail-window"><div className="opinion-rail-track">{[...opinions, ...opinions].map((item, index) => <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}><span className="opinion-topic">{item.topic}</span><span className="opinion-quote">“{item.body}”</span><span className="opinion-author">— {item.author_name}</span></button>)}</div></div></div>}<div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => setVote("hot")}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => setVote("trash")}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>YOUR VIBE CHECK</span><span>{vote ? (vote === "hot" ? "PURE FIRE" : "OFF KEY") : "NO VOTE YET"}</span></div><div className="vote-bar"><i style={{width: vote ? "100%" : "0%"}}/></div></div><small className="muted">{vote ? "Your selection is shown locally only. It has not been counted or saved." : "Cast a preview vote. Live community results will appear when voting is connected."}</small></div></section>
+      <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>{opinions.length > 0 && <div className="opinion-rail" aria-label="Opinions from Nochalant users"><div className="opinion-rail-top"><span>THE PEOPLE HAVE SPOKEN</span><span>{opinions.length} COMMUNITY {opinions.length === 1 ? "TAKE" : "TAKES"}</span></div><div className="opinion-rail-window"><div className="opinion-rail-track">{[...opinions, ...opinions].map((item, index) => <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}><span className="opinion-topic">{item.topic}</span><span className="opinion-quote">“{item.body}”</span><span className="opinion-author">— {item.author_name}</span></button>)}</div></div></div>}<div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>{poll ? `COMMUNITY VOTES · ${poll.total_votes}` : "COMMUNITY VOTES"}</span><span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : pollLoading ? "LOADING" : "LIVE RESULTS"}</span></div><div className="vote-result-row"><span>🔥 Pure fire</span><b>{poll?.hot_percent ?? 0}%</b></div><div className="vote-bar"><i style={{width: `${poll?.hot_percent ?? 0}%`}}/></div><div className="vote-result-row"><span>✕ Off key</span><b>{poll?.trash_percent ?? 0}%</b></div><div className="vote-bar vote-bar-trash"><i style={{width: `${poll?.trash_percent ?? 0}%`}}/></div></div><small className="muted">{pollError || (pollLoading ? "Loading community results…" : vote ? "Your vote has been recorded. Thanks for having your say." : currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")}</small></div></section>
 
       <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
         <div className="nochalant-faces">
