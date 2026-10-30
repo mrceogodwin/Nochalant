@@ -13,7 +13,7 @@
     "vite": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "@neondatabase/neon-js": "latest"
+    "@neondatabase/auth": "latest"
   },
   "devDependencies": {}
 }
