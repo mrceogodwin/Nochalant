@@ -45,6 +45,7 @@ function App() {
   const [commentDraft, setCommentDraft] = useState("");
   const [toast, setToast] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [activeScreen, setActiveScreen] = useState("home");
   const audioRef = useRef(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioCurrent, setAudioCurrent] = useState(0);
@@ -485,10 +486,10 @@ function App() {
     </div></header>
     <nav className="feature-nav" aria-label="Explore Nochalant">
       <div className="feature-nav-inner">
-        <a className="feature-nav-link active" href="#top" aria-current="page"><span className="feature-nav-icon" data-mark="01" aria-hidden="true"><b>N</b><i>.</i></span><span>Home</span></a>
-        <a className="feature-nav-link" href="#social"><span className="feature-nav-icon" data-mark="02" aria-hidden="true"><b>N</b><i>•</i></span><span>Social</span></a>
+        <button className={"feature-nav-link" + (activeScreen === "home" ? " active" : "")} type="button" onClick={() => {setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}><span className="feature-nav-icon" data-mark="01" aria-hidden="true"><b>N</b><i>.</i></span><span>Home</span></button>
+        <button className={"feature-nav-link" + (activeScreen === "social" ? " active" : "")} type="button" onClick={() => {setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}><span className="feature-nav-icon" data-mark="02" aria-hidden="true"><b>N</b><i>•</i></span><span>Social</span></button>
         <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon" data-mark="03" aria-hidden="true"><b>N</b><i>✳</i></span><span>Discover</span></a>
-        <a className="feature-nav-link" href="#podcast-show"><span className="feature-nav-icon" data-mark="04" aria-hidden="true"><b>N</b><i>▶</i></span><span>Podcast</span></a>
+        <button className={"feature-nav-link" + (activeScreen === "podcast" ? " active" : "")} type="button" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}><span className="feature-nav-icon" data-mark="04" aria-hidden="true"><b>N</b><i>▶</i></span><span>Podcast</span></button>
         <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon" data-mark="05" aria-hidden="true"><b>N</b><i>▤</i></span><span>Agenda</span></a>
         <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon" data-mark="06" aria-hidden="true"><b>N</b><i>✦</i></span><span>Events</span></a>
         <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon" data-mark="07" aria-hidden="true"><b>N</b><i>↗</i></span><span>Bookings</span></a>
@@ -497,6 +498,7 @@ function App() {
     </nav>
 
     <main id="top">
+      {activeScreen === "home" ? <>
       <section className="container lead-layout">
         <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
           <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
@@ -536,18 +538,6 @@ function App() {
         </div>
       </section>
 
-      <section className="social-section container" id="social" aria-labelledby="social-title"><SocialFeed currentUser={currentUser} onJoin={() => setModal("signup")} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></section>
-
-      <section className="podcast-section container" id="podcast-show" aria-labelledby="podcast-show-title">
-        <div className="podcast-heading">
-          <div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h2 id="podcast-show-title">The Nochalant <em>Show.</em></h2><p>Real conversations, culture, music and the people shaping the gist.</p></div>
-          <span className="podcast-mark" aria-hidden="true">N<span>.</span></span>
-        </div>
-        <div className="podcast-grid" aria-label="Nochalant Show video episodes">
-          <div className="podcast-empty"><span className="podcast-play" aria-hidden="true">▶</span><strong>New episodes are on the way.</strong><p>Our original video conversations will live here. Watch full episodes and clips from Nochalant Studios.</p><span className="podcast-status">NOCHALANT ORIGINALS</span></div>
-        </div>
-      </section>
-
       <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
         <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
         <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><p>{item.excerpt}</p><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
@@ -566,6 +556,7 @@ function App() {
         <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
 
       <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">OPTIONAL FEATURE</span></div><h3>Get on the <em>carousel.</em></h3><p>Give your promotion a premium spot in the Nochalant spotlight.</p><div className="price">₦5,999 <small>/ placement</small></div><ul><li>Premium carousel consideration</li><li>Editorial review required</li><li>Payment confirmation required</li></ul><button className="button button-dark" onClick={() => {setFormCategory("Afrobeats & Jamz");setModal("submit");}}>Request a placement </button><small className="fine-print">Payment processing is not connected yet. No payment will be collected in this preview.</small></div></section>
+      </> : activeScreen === "social" ? <section className="social-section container screen-page" id="social" aria-labelledby="social-title"><SocialFeed currentUser={currentUser} onJoin={() => setModal("signup")} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></section> : activeScreen === "podcast" ? <section className="podcast-section container screen-page" id="podcast-show" aria-labelledby="podcast-show-title"><div className="podcast-heading"><div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h2 id="podcast-show-title">The Nochalant <em>Show.</em></h2><p>Real conversations, culture, music and the people shaping the gist.</p></div><span className="podcast-mark" aria-hidden="true">N<span>.</span></span></div><div className="podcast-grid" aria-label="Nochalant Show video episodes"><div className="podcast-empty"><span className="podcast-play" aria-hidden="true">▶</span><strong>New episodes are on the way.</strong><p>Our original video conversations will live here. Watch full episodes and clips from Nochalant Studios.</p><span className="podcast-status">NOCHALANT ORIGINALS</span></div></div></section> : null}
     </main>
 
     <section className="newsletter-section container" aria-labelledby="newsletter-title">
