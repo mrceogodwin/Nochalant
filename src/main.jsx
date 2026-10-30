@@ -155,24 +155,47 @@ function App() {
   const verifyControlRoomAccess = async () => {
     setControlRoomStatus("checking");
     setControlRoomError("");
+    let token;
     try {
-      const token = await getAuthToken();
-      if (!token) { setControlRoomStatus("login"); return false; }
-      const response = await fetch("/api/admin/opinions", { headers: { Authorization: `Bearer ${token}` } });
+      token = await getAuthToken();
+    } catch (error) {
+      const detail = error?.message || "Unknown Neon Auth session error.";
+      setControlRoomStatus("error");
+      setControlRoomError(`Neon Auth session check failed: ${detail}`);
+      return false;
+    }
+    if (!token) {
+      setControlRoomStatus("login");
+      setControlRoomError("No active Nochalant session was found. Please sign in again.");
+      return false;
+    }
+    try {
+      const response = await fetch("/api/admin/opinions", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store"
+      });
       const data = await response.json().catch(() => ({}));
-      if (response.status === 401) { setControlRoomStatus("login"); return false; }
-      if (response.status === 403) { setControlRoomStatus("denied"); setControlRoomError(data.error || "This account is not authorized for the Nochalant Control Room."); return false; }
-      if (!response.ok || !data.ok) throw new Error(data.error || "Control Room access could not be verified.");
+      if (response.status === 401) {
+        setControlRoomStatus("login");
+        setControlRoomError(data.error || "Your session was not accepted by Nochalant. Please sign in again.");
+        return false;
+      }
+      if (response.status === 403) {
+        setControlRoomStatus("denied");
+        setControlRoomError(data.error || "This account is not authorized for the Nochalant Control Room.");
+        return false;
+      }
+      if (response.status === 404) {
+        throw new Error("Nochalant's admin API returned HTTP 404. The deployed API route is missing or not being resolved.");
+      }
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `Nochalant admin API returned HTTP ${response.status}.`);
+      }
       setControlRoomStatus("authorized");
       return true;
     } catch (error) {
-      if (error?.code === "AUTH_SESSION_REQUIRED" || error?.status === 401) {
-        setControlRoomStatus("login");
-        setControlRoomError("Please sign in with your Nochalant owner account.");
-      } else {
-        setControlRoomStatus("error");
-        setControlRoomError(error?.message || "Control Room access could not be verified.");
-      }
+      setControlRoomStatus("error");
+      setControlRoomError(error?.message || "Control Room access could not be verified.");
       return false;
     }
   };
