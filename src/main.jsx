@@ -57,6 +57,9 @@ function App() {
   const [authMessage, setAuthMessage] = useState("");
   const [viewCounts, setViewCounts] = useState({});
   const [communityFaces, setCommunityFaces] = useState(demoFaces);
+  const [artists, setArtists] = useState([]);
+  const [artistsLoading, setArtistsLoading] = useState(true);
+  const artistRailRef = useRef(null);
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -222,6 +225,22 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/artists", { signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => { if (data?.ok && Array.isArray(data.artists)) setArtists(data.artists); })
+      .catch(error => { if (error?.name !== "AbortError") console.error("Nochalant artists could not load:", error); })
+      .finally(() => { if (!controller.signal.aborted) setArtistsLoading(false); });
+    return () => controller.abort();
+  }, []);
+
+  const moveArtistRail = (direction) => {
+    const rail = artistRailRef.current;
+    if (!rail) return;
+    rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.72, 220), behavior: "smooth" });
+  };
+
+  useEffect(() => {
     fetch("/api/community/faces")
       .then(response => response.ok ? response.json() : null)
       .then(data => {
@@ -374,16 +393,21 @@ function App() {
         </article>
       </section>
 
-      <section className="container got-gist" aria-labelledby="got-gist-title">
-        <div className="got-gist-copy">
-          <span className="eyebrow">GOT SOMETHING?</span>
-          <h2 id="got-gist-title">Got gist? <em>Send it.</em></h2>
-          <p>News, music, events or fresh gist. Send it our way.</p>
-          <div className="got-gist-trust"><span><b>✓</b> Free submissions</span><span><b>✓</b> Reviewed before publishing</span></div>
+      <section className="artists-section container" id="artists" aria-labelledby="artists-title">
+        <div className="artists-heading">
+          <div><span className="eyebrow">THE SOUND OF THE CULTURE</span><h2 id="artists-title">Artists on <em>Nochalant.</em></h2><p>Meet the voices, sounds and talent moving the culture.</p></div>
+          <div className="artists-controls" aria-label="Artist carousel controls">
+            <button type="button" onClick={() => moveArtistRail(-1)} aria-label="Previous artists" disabled={artists.length === 0}><span aria-hidden="true">←</span></button>
+            <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next artists" disabled={artists.length === 0}><span aria-hidden="true">→</span></button>
+          </div>
         </div>
-        <button className="got-gist-cta" onClick={() => {setFormCategory("Afrobeats & Jamz");if (!currentUser) {setAuthMessage("Log in to submit your gist.");setModal("login");} else setModal("submit");}}>
-          <span>Submit your gist</span><svg className="got-gist-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 19 19 5M7 5h12v12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
+        <div className="artists-viewport" ref={artistRailRef} aria-label="Artists on Nochalant. Swipe or use the arrow controls to browse artists." tabIndex="0">
+          {artists.length > 0 ? <div className="artists-track">{artists.map(artist => <a className="artist-card" key={artist.id} href={artist.profile_url || "#artists"} target={artist.profile_url ? "_blank" : undefined} rel={artist.profile_url ? "noreferrer" : undefined}>
+            <span className="artist-avatar">{artist.image_url ? <img src={artist.image_url} alt={artist.name} loading="lazy" /> : <span>{artist.name?.trim().slice(0,1).toUpperCase() || "A"}</span>}</span>
+            <span className="artist-name">{artist.name}</span>
+            {artist.genre && <span className="artist-genre">{artist.genre}</span>}
+          </a>)}</div> : <div className="artists-empty">{artistsLoading ? "Loading artists…" : "The artist spotlight is getting ready. Check back soon."}</div>}
+        </div>
       </section>
 
       <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
