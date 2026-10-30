@@ -13,7 +13,7 @@ export const authClient = authUrl ? createAuthClient(authUrl) : null;
 // to /get-jwt-token (404). Neon Auth's JWT plugin exposes the token at /token.
 export async function getAuthToken() {
   if (!authUrl) throw new Error("Authentication is not configured.");
-  const base = authUrl.replace(/\/+$/, "");
+  const base = authUrl.endsWith("/") ? authUrl.slice(0, -1) : authUrl;
   const response = await fetch(`${base}/token`, {
     method: "GET",
     credentials: "include",
