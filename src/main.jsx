@@ -226,7 +226,7 @@ function App() {
         </article>
       </section>
 
-      <section className="container value-strip"><div><div><b>Free daily submissions</b><small>Share your news, music, brand or event.</small></div></div><div><span className="value-icon gold">✦</span><div><b>Carousel placement</b><small>Optional premium feature · ₦5,999.</small></div></div><div><span className="value-icon">◷</span><div><b>Editorial review</b><small>Every post is checked before publishing.</small></div></div></section>
+      <section className="container value-strip"><div><div><b>Free daily submissions</b><small>Share your news, music, brand or event.</small></div></div><div><div><b>Carousel placement</b><small>Optional premium feature · ₦5,999.</small></div></div><div><div><b>Editorial review</b><small>Every post is checked before publishing.</small></div></div></section>
 
       <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
         <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
