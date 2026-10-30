@@ -1,3 +1,5 @@
+import { requireActiveUser } from "../_lib/neon-auth.js";
+
 async function proxyNeonAuth(req, res) {
   const upstreamBase = process.env.NEON_AUTH_BASE_URL;
   if (!upstreamBase) return res.status(503).json({ message: "Neon Auth proxy is not configured." });
@@ -9,7 +11,7 @@ async function proxyNeonAuth(req, res) {
     return res.status(400).json({ message: "Invalid authentication route." });
   }
 
-  const upstream = new URL(upstreamBase.replace(/\\/$/, "") + "/" + segments.join("/"));
+  const upstream = new URL(upstreamBase.replace(/\/$/, "") + "/" + segments.join("/"));
   requestUrl.searchParams.delete("authPath");
   upstream.search = requestUrl.search;
 
@@ -40,9 +42,9 @@ async function proxyNeonAuth(req, res) {
       : (response.headers.get("set-cookie") ? [response.headers.get("set-cookie")] : []);
     for (const cookie of cookies) {
       const rewritten = cookie
-        .replace(/;\\s*Domain=[^;]+/ig, "")
-        .replace(/;\\s*Path=\\/neondb\\/auth(?:\\/[^;]*)?/ig, "; Path=/api/auth")
-        .replace(/;\\s*SameSite=None/ig, "; SameSite=Lax");
+        .replace(/;\s*Domain=[^;]+/ig, "")
+        .replace(/;\s*Path=\/neondb\/auth(?:\/[^;]*)?/ig, "; Path=/api/auth")
+        .replace(/;\s*SameSite=None/ig, "; SameSite=Lax");
       res.appendHeader("Set-Cookie", rewritten);
     }
     return res.send(Buffer.from(await response.arrayBuffer()));
@@ -52,12 +54,11 @@ async function proxyNeonAuth(req, res) {
   }
 }
 
-import { requireActiveUser } from "../_lib/neon-auth.js";
-
 const opinionStatuses = { approve: "published", reject: "removed", hide: "hidden", restore: "published" };
 const accountActions = ["suspend","unsuspend","ban","unban"];
 
 export default async function handler(req, res) {
+  if (req.query?.authPath) return proxyNeonAuth(req, res);
   const auth = await requireActiveUser(req);
   if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
   if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Only the Super Admin can moderate content." });
