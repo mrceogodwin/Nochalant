@@ -9,11 +9,13 @@ export default async function handler(req, res) {
   if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Only the Super Admin can moderate content." });
   if (req.method === "GET") {
     try {
-      const [opinions, reports] = await Promise.all([
+      const [opinions, reports, users] = await Promise.all([
         auth.sql`SELECT o.id, o.body, o.topic, o.status, o.created_at, p.display_name AS author_name FROM community_opinions o JOIN user_profiles p ON p.id = o.author_id WHERE o.status IN ('pending','hidden') ORDER BY o.created_at ASC LIMIT 100`,
         auth.sql`SELECT r.id, r.opinion_id, r.reason, r.details, r.status, r.created_at, o.body AS opinion_body, p.display_name AS reporter_name FROM opinion_reports r JOIN community_opinions o ON o.id = r.opinion_id JOIN user_profiles p ON p.id = r.reporter_id WHERE r.status IN ('open','reviewing') ORDER BY r.created_at ASC LIMIT 100`
       ]);
-      return res.status(200).json({ ok: true, opinions, reports });
+      auth.sql`SELECT id, display_name, email, role, account_status, suspended_until FROM user_profiles WHERE role <> 'super_admin' ORDER BY created_at DESC LIMIT 100`
+      ]);
+      return res.status(200).json({ ok: true, opinions, reports, users });
     } catch (error) {
       console.error("Nochalant moderation queue failed:", error?.message || error);
       return res.status(503).json({ ok: false, error: "Moderation queue is temporarily unavailable." });
