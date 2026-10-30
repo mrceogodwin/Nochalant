@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   }
 
   const fingerprint = createHash("sha256")
-    .update(`${title.toLowerCase()}\n${body.toLowerCase().replace(/\\s+/g, " ")}`)
+    .update(`${title.toLowerCase()}\n${body.toLowerCase().replace(/\s+/g, " ")}`)
     .digest("hex");
 
   try {
