@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { authClient } from "./auth.js";
+import { getAuthToken } from "./auth.js";
 
 const topics = ["Music","Entertainment","Fashion","Lifestyle","Nightlife","Sports","Culture","Other"];
 const reportReasons = ["Harassment or bullying","Hate or discrimination","Sexual content","Violence or threats","Spam or scam","False or harmful information","Other"];
 
 async function getToken() {
-  if (!authClient) throw new Error("Authentication is not configured.");
-  const token = await authClient.getJWTToken?.();
+  const token = await getAuthToken();
   if (typeof token !== "string" || !token) throw new Error("Please sign in again to continue.");
   return token;
 }
