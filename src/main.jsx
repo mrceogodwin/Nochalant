@@ -63,7 +63,7 @@ function App() {
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isControlRoom] = useState(() => window.location.pathname.replace(/\\/+$/, "") === "/control-room");
+  const [isControlRoom] = useState(() => window.location.pathname.replace(/\/+$/, "") === "/control-room");
   const [controlRoomStatus, setControlRoomStatus] = useState("checking");
   const [controlRoomError, setControlRoomError] = useState("");
   const [opinionsPanelOpen, setOpinionsPanelOpen] = useState(false);
@@ -185,8 +185,7 @@ function App() {
       if (result?.error) throw new Error(result.error.message || "Sign-in failed.");
       const session = await authClient.getSession();
       if (session?.data?.user) setCurrentUser(session.data.user);
-      const allowed = await verifyControlRoomAccess();
-      if (!allowed && controlRoomStatus === "login") setControlRoomError("Please sign in with your authorized owner account.");
+      await verifyControlRoomAccess();
     } catch (error) {
       setControlRoomStatus("login");
       setControlRoomError(error?.message || "Unable to sign in.");
