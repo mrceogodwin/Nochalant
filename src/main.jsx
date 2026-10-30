@@ -282,7 +282,17 @@ function App() {
         </article>
       </section>
 
-      <section className="container value-strip"><div><div><b>Free daily submissions</b><small>Share your news, music, brand or event.</small></div></div><div><div><b>Carousel placement</b><small>Optional premium feature · ₦5,999.</small></div></div><div><div><b>Editorial review</b><small>Every post is checked before publishing.</small></div></div></section>
+      <section className="container got-gist" aria-labelledby="got-gist-title">
+        <div className="got-gist-copy">
+          <span className="eyebrow">YOUR STORY BELONGS HERE</span>
+          <h2 id="got-gist-title">Got gist? <em>Let's hear it.</em></h2>
+          <p>Share your news, music, brand, event or something happening around you. No long talk — send it to Nochalant.</p>
+          <div className="got-gist-trust"><span><b>✓</b> Free daily submissions</span><span><b>✓</b> Editorial review</span></div>
+        </div>
+        <button className="got-gist-cta" onClick={() => {setFormCategory("Afrobeats & Jamz");setModal("submit");}}>
+          <span>Submit your gist</span><b aria-hidden="true">↗</b>
+        </button>
+      </section>
 
       <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
         <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
