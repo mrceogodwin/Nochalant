@@ -5,6 +5,18 @@ import { authClient } from "./auth.js";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
+const demoFaces = [
+  { username: "thecultureplug", display_name: "Culture Plug", initials: "CP", tone: "lime" },
+  { username: "naijavibe", display_name: "Naija Vibe", initials: "NV", tone: "orange" },
+  { username: "theplaylist", display_name: "The Playlist", initials: "TP", tone: "cream" },
+  { username: "streettalk", display_name: "Street Talk", initials: "ST", tone: "pink" },
+  { username: "lagosafterdark", display_name: "Lagos After Dark", initials: "LA", tone: "purple" },
+  { username: "benincitygist", display_name: "Benin City Gist", initials: "BG", tone: "lime" },
+  { username: "thefilmroom", display_name: "The Film Room", initials: "FR", tone: "orange" },
+  { username: "freshsounds", display_name: "Fresh Sounds", initials: "FS", tone: "cream" },
+  { username: "styleplug", display_name: "Style Plug", initials: "SP", tone: "pink" },
+  { username: "theweekendlink", display_name: "Weekend Link", initials: "WL", tone: "purple" }
+];
 const demoStories = [
   { id: "lead", category: "Afrobeats & Jamz", label: "EDITORIAL PREVIEW", title: "The sound, the scene and the next wave of Afrobeats", excerpt: "A closer look at the artists, releases and creative energy shaping the conversation.", image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=85", time: "Preview story", views: 0, read: "3 min read", author: "Nochalant Editorial Desk", body: "This is a sample editorial layout used to demonstrate how a Nochalant feature story will appear. Replace this preview with a fact-checked story, original reporting, approved images and a named editorial byline before publication." },
   { id: "nollywood", category: "Nollywood Drama", label: "EDITORIAL PREVIEW", title: "The conversations shaping Nollywood right now", excerpt: "From new productions to the people behind the camera, here is the culture worth following.", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: 0, read: "4 min read", author: "Nochalant Editorial Desk", body: "Sample article content. No real celebrity claim or breaking-news headline is being presented here." },
@@ -39,6 +51,7 @@ function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [viewCounts, setViewCounts] = useState({});
+  const [communityFaces, setCommunityFaces] = useState(demoFaces);
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const leadSlides = [
@@ -235,7 +248,15 @@ function App() {
 
       <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p><div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => setVote("hot")}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => setVote("trash")}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>YOUR VIBE CHECK</span><span>{vote ? (vote === "hot" ? "PURE FIRE" : "OFF KEY") : "NO VOTE YET"}</span></div><div className="vote-bar"><i style={{width: vote ? "100%" : "0%"}}/></div></div><small className="muted">{vote ? "Your selection is shown locally only. It has not been counted or saved." : "Cast a preview vote. Live community results will appear when voting is connected."}</small></div></section>
 
-      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div><div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
+      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
+        <div className="nochalant-faces">
+          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span><i></i></span><h3>Nochalant Faces</h3></div><span className="faces-caption">THE PEOPLE IN THE MIX</span></div>
+          <div className="faces-viewport" aria-label="Nochalant community profiles">
+            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
+          </div>
+          <span className="faces-demo-note">10 demo profiles · real community profiles will appear as people join</span>
+        </div>
+        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
 
       <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">OPTIONAL FEATURE</span></div><h3>Get on the <em>carousel.</em></h3><p>Give your promotion a premium spot in the Nochalant spotlight.</p><div className="price">₦5,999 <small>/ placement</small></div><ul><li>Premium carousel consideration</li><li>Editorial review required</li><li>Payment confirmation required</li></ul><button className="button button-dark" onClick={() => {setFormCategory("Afrobeats & Jamz");setModal("submit");}}>Request a placement </button><small className="fine-print">Payment processing is not connected yet. No payment will be collected in this preview.</small></div></section>
     </main>
