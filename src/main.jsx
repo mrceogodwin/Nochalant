@@ -341,6 +341,17 @@ function App() {
     };
   }, [modal]);
 
+  const signOutUser = async () => {
+    try {
+      await authClient?.signOut?.();
+      setCurrentUser(null);
+      setOpinionsPanelOpen(false);
+      notify("You have been signed out.");
+    } catch (error) {
+      notify(error?.message || "Unable to sign out. Please try again.");
+    }
+  };
+
   const submitAuth = async (event) => {
     event.preventDefault();
     if (!authClient) {
@@ -437,8 +448,8 @@ function App() {
     <header className="site-header"><div className="nav-wrap">
       <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
-      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button><span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span></nav>
-      <div className="nav-actions"><button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button><button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button><button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button></div>
+      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button>{currentUser ? <span className="nav-auth-menu"><span className="nav-signed-in">Signed in · {currentUser.name || currentUser.email}</span><button onClick={() => {setMobileMenu(false);signOutUser();}}>Log out</button></span> : <span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span>}</nav>
+      <div className="nav-actions">{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
     </div></header>
 
     <main id="top">
