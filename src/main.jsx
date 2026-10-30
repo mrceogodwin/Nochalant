@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { authClient, getAuthToken, rememberAuthSession, clearRememberedAuthSession } from "./auth.js";
 import OpinionsPanel from "./OpinionsPanel.jsx";
+import SocialFeed from "./SocialFeed.jsx";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
@@ -485,7 +486,7 @@ function App() {
     <nav className="feature-nav" aria-label="Explore Nochalant">
       <div className="feature-nav-inner">
         <a className="feature-nav-link active" href="#top" aria-current="page"><span className="feature-nav-icon">⌂</span><span>Home</span></a>
-        <a className="feature-nav-link" href="#hot-or-trash"><span className="feature-nav-icon">◉</span><span>Social</span></a>
+        <a className="feature-nav-link" href="#social"><span className="feature-nav-icon">◉</span><span>Social</span></a>
         <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon">✳</span><span>Discover</span></a>
         <a className="feature-nav-link" href="#podcast-show"><span className="feature-nav-icon">▶</span><span>Podcast</span></a>
         <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon">▦</span><span>Agenda</span></a>
@@ -534,6 +535,8 @@ function App() {
           </a>)}</div> : <div className="artists-empty">{artistsLoading ? "Loading artists…" : "The artist spotlight is getting ready. Check back soon."}</div>}
         </div>
       </section>
+
+      <section className="social-section container" id="social" aria-labelledby="social-title"><SocialFeed currentUser={currentUser} onJoin={() => setModal("signup")} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></section>
 
       <section className="podcast-section container" id="podcast-show" aria-labelledby="podcast-show-title">
         <div className="podcast-heading">
