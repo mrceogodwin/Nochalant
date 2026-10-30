@@ -9,12 +9,13 @@ export default async function handler(req, res) {
   if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Only the Super Admin can moderate content." });
   if (req.method === "GET") {
     try {
-      const [opinions, reports, users] = await Promise.all([
+      const [opinions, reports, users, artists] = await Promise.all([
         auth.sql`SELECT o.id, o.body, o.topic, o.status, o.created_at, p.display_name AS author_name FROM community_opinions o JOIN user_profiles p ON p.id = o.author_id WHERE o.status IN ('pending','hidden') ORDER BY o.created_at ASC LIMIT 100`,
         auth.sql`SELECT r.id, r.opinion_id, r.reason, r.details, r.status, r.created_at, o.body AS opinion_body, p.display_name AS reporter_name FROM opinion_reports r JOIN community_opinions o ON o.id = r.opinion_id JOIN user_profiles p ON p.id = r.reporter_id WHERE r.status IN ('open','reviewing') ORDER BY r.created_at ASC LIMIT 100`,
-        auth.sql`SELECT id, display_name, email, role, account_status, suspended_until FROM user_profiles WHERE role <> 'super_admin' ORDER BY created_at DESC LIMIT 100`
+        auth.sql`SELECT id, display_name, email, role, account_status, suspended_until FROM user_profiles WHERE role <> 'super_admin' ORDER BY created_at DESC LIMIT 100`,
+        auth.sql`SELECT id, name, genre, image_url, profile_url, is_active, sort_order FROM artists ORDER BY sort_order ASC, created_at DESC LIMIT 200`
       ]);
-      return res.status(200).json({ ok: true, opinions, reports, users });
+      return res.status(200).json({ ok: true, opinions, reports, users, artists });
     } catch (error) {
       console.error("Nochalant moderation queue failed:", error?.message || error);
       return res.status(503).json({ ok: false, error: "Moderation queue is temporarily unavailable." });
@@ -27,6 +28,37 @@ export default async function handler(req, res) {
   const targetUserId = String(req.body?.targetUserId || "");
   const reason = typeof req.body?.reason === "string" ? req.body.reason.trim().slice(0,500) : "";
   try {
+    if (["create_artist", "update_artist", "deactivate_artist"].includes(action)) {
+      const clean = (value, max) => typeof value === "string" ? value.trim().slice(0, max) : "";
+      const safeUrl = value => {
+        const raw = clean(value, 1000);
+        if (!raw) return null;
+        try { const url = new URL(raw); return url.protocol === "https:" ? url.toString() : null; }
+        catch { return null; }
+      };
+      const id = String(req.body?.artistId || "");
+      if (action === "deactivate_artist") {
+        if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ ok:false,error:"Invalid artist." });
+        const rows = await auth.sql`UPDATE artists SET is_active = false WHERE id = ${id} RETURNING id`;
+        if (!rows.length) return res.status(404).json({ ok:false,error:"Artist not found." });
+        return res.status(200).json({ ok:true, deactivated:true });
+      }
+      const name = clean(req.body?.name, 100);
+      const genre = clean(req.body?.genre, 80) || null;
+      const imageUrl = req.body?.image_url ? safeUrl(req.body.image_url) : null;
+      const profileUrl = req.body?.profile_url ? safeUrl(req.body.profile_url) : null;
+      const sortOrder = Number.isInteger(Number(req.body?.sort_order)) ? Math.max(0, Math.min(100000, Number(req.body.sort_order))) : 0;
+      if (!name) return res.status(400).json({ ok:false,error:"Artist name is required." });
+      if ((req.body?.image_url && !imageUrl) || (req.body?.profile_url && !profileUrl)) return res.status(400).json({ ok:false,error:"Image and profile links must be valid HTTPS URLs." });
+      if (action === "create_artist") {
+        const rows = await auth.sql`INSERT INTO artists (name, genre, image_url, profile_url, is_active, sort_order) VALUES (${name}, ${genre}, ${imageUrl}, ${profileUrl}, ${req.body?.is_active !== false}, ${sortOrder}) RETURNING id, name, genre, image_url, profile_url, is_active, sort_order`;
+        return res.status(201).json({ ok:true, artist:rows[0] });
+      }
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ ok:false,error:"Invalid artist." });
+      const rows = await auth.sql`UPDATE artists SET name = ${name}, genre = ${genre}, image_url = ${imageUrl}, profile_url = ${profileUrl}, is_active = ${req.body?.is_active !== false}, sort_order = ${sortOrder} WHERE id = ${id} RETURNING id, name, genre, image_url, profile_url, is_active, sort_order`;
+      if (!rows.length) return res.status(404).json({ ok:false,error:"Artist not found." });
+      return res.status(200).json({ ok:true, artist:rows[0] });
+    }
     if (Object.hasOwn(opinionStatuses, action)) {
       if (!/^[0-9a-f-]{36}$/i.test(opinionId)) return res.status(400).json({ ok:false,error:"Invalid opinion." });
       const status = opinionStatuses[action];
