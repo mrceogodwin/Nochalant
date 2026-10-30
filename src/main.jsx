@@ -6,10 +6,10 @@ import { authClient } from "./auth.js";
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
 const demoStories = [
-  { id: "lead", category: "Afrobeats & Jamz", label: "EDITORIAL PREVIEW", title: "The sound, the scene and the next wave of Afrobeats", excerpt: "A closer look at the artists, releases and creative energy shaping the conversation.", image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=85", time: "Preview story", views: "—", read: "3 min read", body: "This is a sample editorial layout used to demonstrate how a Nochalant feature story will appear. Replace this preview with a fact-checked story, original reporting, approved images and a named editorial byline before publication." },
-  { id: "nollywood", category: "Nollywood Drama", label: "EDITORIAL PREVIEW", title: "The conversations shaping Nollywood right now", excerpt: "From new productions to the people behind the camera, here is the culture worth following.", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "4 min read", body: "Sample article content. No real celebrity claim or breaking-news headline is being presented here." },
-  { id: "street", category: "Street Buzz", label: "EDITORIAL PREVIEW", title: "The city is outside: style, sound and street culture", excerpt: "The places, people and moments giving the city its own rhythm.", image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "2 min read", body: "Sample article content. No real event details are being advertised here." },
-  { id: "fashion", category: "Fashion & Swag", label: "EDITORIAL PREVIEW", title: "The looks bringing a fresh perspective to Naija style", excerpt: "A style desk preview for fashion, personal expression and emerging creatives.", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "3 min read", body: "Sample article content for the Nochalant fashion desk." },
+  { id: "lead", category: "Afrobeats & Jamz", label: "EDITORIAL PREVIEW", title: "The sound, the scene and the next wave of Afrobeats", excerpt: "A closer look at the artists, releases and creative energy shaping the conversation.", image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=85", time: "Preview story", views: 0, read: "3 min read", author: "Nochalant Editorial Desk", body: "This is a sample editorial layout used to demonstrate how a Nochalant feature story will appear. Replace this preview with a fact-checked story, original reporting, approved images and a named editorial byline before publication." },
+  { id: "nollywood", category: "Nollywood Drama", label: "EDITORIAL PREVIEW", title: "The conversations shaping Nollywood right now", excerpt: "From new productions to the people behind the camera, here is the culture worth following.", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: 0, read: "4 min read", author: "Nochalant Editorial Desk", body: "Sample article content. No real celebrity claim or breaking-news headline is being presented here." },
+  { id: "street", category: "Street Buzz", label: "EDITORIAL PREVIEW", title: "The city is outside: style, sound and street culture", excerpt: "The places, people and moments giving the city its own rhythm.", image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: 0, read: "2 min read", author: "Nochalant Editorial Desk", body: "Sample article content. No real event details are being advertised here." },
+  { id: "fashion", category: "Fashion & Swag", label: "EDITORIAL PREVIEW", title: "The looks bringing a fresh perspective to Naija style", excerpt: "A style desk preview for fashion, personal expression and emerging creatives.", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: 0, read: "3 min read", author: "Nochalant Editorial Desk", body: "Sample article content for the Nochalant fashion desk." },
   { id: "reality", category: "BBNaija / Reality", label: "EDITORIAL PREVIEW", title: "Reality TV, fan culture and the conversations after the show", excerpt: "A place for reality entertainment coverage, reactions and verified updates.", image: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "3 min read", body: "Sample article content for the reality desk." },
   { id: "life", category: "Lifestyle", label: "EDITORIAL PREVIEW", title: "The everyday culture shaping how we live and link up", excerpt: "Lifestyle, food, places and experiences from across the culture.", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=85", time: "Preview", views: "—", read: "2 min read", body: "Sample article content for the lifestyle desk." }
 ];
@@ -38,24 +38,21 @@ function App() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
+  const [viewCounts, setViewCounts] = useState({});
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
-  const [leadVideoPlaying, setLeadVideoPlaying] = useState(false);
-  const leadVideoRef = useRef(null);
   const leadSlides = [
     { story: demoStories[0], type: "image" },
     { story: demoStories[2], type: "image" },
     { story: demoStories[3], type: "image" },
-    { story: demoStories[4], type: "video", video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" }
+    { story: demoStories[4], type: "image" }
   ];
   useEffect(() => {
-    if (carouselPaused || leadVideoPlaying) return;
+    if (carouselPaused) return;
     const timer = window.setInterval(() => setLeadSlide(current => (current + 1) % leadSlides.length), 5500);
     return () => window.clearInterval(timer);
-  }, [carouselPaused, leadVideoPlaying, leadSlides.length]);
+  }, [carouselPaused, leadSlides.length]);
   const changeLeadSlide = (index) => {
-    if (leadVideoRef.current) { leadVideoRef.current.pause(); leadVideoRef.current.currentTime = 0; }
-    setLeadVideoPlaying(false);
     setLeadSlide((index + leadSlides.length) % leadSlides.length);
   };
 
@@ -125,7 +122,24 @@ function App() {
     setToast(message);
     window.setTimeout(() => setToast(""), 3000);
   };
-  const openStory = (item) => { setStory(item); setCommentDraft(""); setModal("story"); };
+  useEffect(() => {
+    demoStories.forEach(item => {
+      fetch(`/api/posts/${encodeURIComponent(item.id)}/views`)
+        .then(response => response.ok ? response.json() : null)
+        .then(data => { if (data?.ok) setViewCounts(current => ({ ...current, [item.id]: data.views })); })
+        .catch(() => {});
+    });
+  }, []);
+
+  const openStory = (item) => {
+    setStory(item);
+    setCommentDraft("");
+    setModal("story");
+    fetch(`/api/posts/${encodeURIComponent(item.id)}/views`, { method: "POST" })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => { if (data?.ok) setViewCounts(current => ({ ...current, [item.id]: data.views })); })
+      .catch(() => {});
+  };
   const closeModal = () => setModal("");
   useEffect(() => {
     if (!modal) return;
@@ -181,7 +195,7 @@ function App() {
   };
 
   return <div className="site-shell">
-    <div className="ticker"><span className="ticker-label">GOBE ALERT</span><div className="ticker-window"><div className="ticker-track"><span>🔥 NO DEY FORM, JUST PURE GIST</span><span>🇳🇬 YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>✳ FREE DAILY SUBMISSIONS</span><span>📍 WHAT'S HAPPENING? CHECK THE AGENDA</span><span>🔥 NO DEY FORM, JUST PURE GIST</span><span>🇳🇬 YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
+    <div className="ticker"><span className="ticker-label">NOCHALANT LIVE</span><div className="ticker-window"><div className="ticker-track"><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>FREE DAILY SUBMISSIONS</span><span>WHAT'S HAPPENING? CHECK THE AGENDA</span><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
     <header className="site-header"><div className="nav-wrap">
       <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
@@ -199,15 +213,15 @@ function App() {
         </div>
         <article className="lead-story" aria-label="Featured Nochalant carousel" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
           {leadSlides.map((slide, index) => <div className={index === leadSlide ? "lead-slide active" : "lead-slide"} key={slide.story.id} aria-hidden={index !== leadSlide}>
-            {slide.type === "video" ? <video ref={leadVideoRef} className="lead-media" src={slide.video} poster={slide.story.image} controls playsInline preload="none" onPlay={() => setLeadVideoPlaying(true)} onPause={() => setLeadVideoPlaying(false)} onEnded={() => {setLeadVideoPlaying(false); changeLeadSlide(0);}} onClick={e => e.stopPropagation()} aria-label="Video preview player"/> : <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>}
+            <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>
             <div className="lead-overlay"></div>
-            <div className="lead-story-top"><span className="pill pill-hot">{slide.type === "video" ? "▶ VIDEO PREVIEW" : "✦ HOT DROP"}</span><span className="demo-label">EDITORIAL PREVIEW</span></div>
+            <div className="lead-story-top"><span className="pill pill-hot">HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span></div>
             <div className="lead-story-bottom"><div className="story-meta"><span>{slide.story.category}</span><span>· {slide.story.read}</span></div><h2>{slide.story.title}</h2><p>{slide.story.excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); openStory(slide.story);}}>Read story</button><b>{index + 1} / {leadSlides.length}</b></div></div>
           </div>)}
           <div className="lead-carousel-controls">
-            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>Prev</button>
+            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>PREV</button>
             <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
-            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>Next</button>
+            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT</button>
           </div>
         </article>
       </section>
@@ -216,7 +230,7 @@ function App() {
 
       <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
         <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
-        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><p>{item.excerpt}</p><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
+        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><p>{item.excerpt}</p><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
       </section>
 
       <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p><div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => setVote("hot")}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => setVote("trash")}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>YOUR VIBE CHECK</span><span>{vote ? (vote === "hot" ? "PURE FIRE" : "OFF KEY") : "NO VOTE YET"}</span></div><div className="vote-bar"><i style={{width: vote ? "100%" : "0%"}}/></div></div><small className="muted">{vote ? "Your selection is shown locally only. It has not been counted or saved." : "Cast a preview vote. Live community results will appear when voting is connected."}</small></div></section>
@@ -253,7 +267,7 @@ function App() {
 
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "newsletter-success" && <div className="newsletter-success"><span className="brand-signature" aria-hidden="true">N</span><span className="eyebrow">YOU'RE IN THE LOOP</span><h2 id="modal-title">Good things are coming.</h2><p>Thanks for wanting the Nochalant update. Email signups aren't connected yet, so your address hasn't been saved.</p><button className="button button-green full-width" onClick={closeModal}>Got you</button></div>}
-      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
+      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><div className="article-byline"><span>By {story.author}</span><span>{typeof viewCounts[story.id] === "number" ? `${viewCounts[story.id].toLocaleString()} views` : "Reader count loading"}</span><span>{story.read}</span></div><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
       {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send your story for editorial review. Submissions are not published automatically.</p><form onSubmit={submitGist}><label>Your name<input required placeholder="Name or brand name"/></label><label>Email address<input required type="email" placeholder="you@example.com"/></label><label>Category<select value={submissionCategories.includes(formCategory) ? formCategory : "Entertainment"} onChange={e => setFormCategory(e.target.value)}>{submissionCategories.map(x => <option key={x} value={x}>{x}</option>)}</select></label><label>Post title<input required maxLength="120" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea required rows="5" placeholder="Add details, links and useful context..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Test submission form </button><small className="fine-print">Submission storage, duplicate checks and account login are not connected yet. This preview does not send your information to a server.</small></form></>}
       {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <label>Full name<input name="name" required placeholder="Your name"/></label>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
     </div></div>}
