@@ -155,16 +155,26 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/hot-or-trash?slug=homepage-fashion-feature", { signal: controller.signal })
-      .then(async response => {
+    (async () => {
+      try {
+        const token = await authClient?.getJWTToken?.();
+        const response = await fetch("/api/hot-or-trash?slug=homepage-fashion-feature", {
+          signal: controller.signal,
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) throw new Error(data.error || "Voting is temporarily unavailable.");
-        if (!controller.signal.aborted) { setPoll(data.poll); setPollError(""); }
-      })
-      .catch(error => {
-        if (error?.name !== "AbortError") setPollError(error?.message || "Voting is temporarily unavailable.");
-      })
-      .finally(() => { if (!controller.signal.aborted) setPollLoading(false); });
+        if (!controller.signal.aborted) {
+          setPoll(data.poll);
+          setVote(data.poll.user_vote || "");
+          setPollError("");
+        }
+      } catch (error) {
+        if (error?.name !== "AbortError" && !controller.signal.aborted) setPollError(error?.message || "Voting is temporarily unavailable.");
+      } finally {
+        if (!controller.signal.aborted) setPollLoading(false);
+      }
+    })();
     return () => controller.abort();
   }, []);
 
