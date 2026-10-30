@@ -46,7 +46,7 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
   useEffect(() => {
     if (!open) return;
     setBusy(true); setError("");
-    const loader = activeMode === "admin" ? loadAdmin : activeMode === "report" ? Promise.resolve() : loadMine();
+    const loader = activeMode === "admin" ? loadAdmin() : activeMode === "report" ? Promise.resolve() : loadMine();
     Promise.resolve(loader).catch(e => setError(e.message || "Could not load Opinions.")).finally(() => setBusy(false));
   }, [open, activeMode, opinion?.id]);
 
