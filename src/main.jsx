@@ -457,21 +457,20 @@ function App() {
     <header className="site-header"><div className="nav-wrap">
       <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
-      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button>{currentUser ? <span className="nav-auth-menu"><span className="nav-signed-in">Signed in · {currentUser.name || currentUser.email}</span><button onClick={() => {setMobileMenu(false);signOutUser();}}>Log out</button></span> : <span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span>}</nav>
+      <nav className={mobileMenu ? "main-nav open" : "main-nav"}>
+        <div className="drawer-flagship"><span className="drawer-kicker">NOCHALANT FLAGSHIP</span>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home <span>01</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>02</span></button>
+          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>04</span></button>
+          <a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda <span>05</span></a>
+          <a href="#agenda" onClick={() => setMobileMenu(false)}>Events <span>06</span></a>
+          <a href="#artists" onClick={() => setMobileMenu(false)}>Bookings <span>07</span></a>
+          <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>08</span></button>
+        </div><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button>{currentUser ? <span className="nav-auth-menu"><span className="nav-signed-in">Signed in · {currentUser.name || currentUser.email}</span><button onClick={() => {setMobileMenu(false);signOutUser();}}>Log out</button></span> : <span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span>}</nav>
       <div className="nav-actions">{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
     </div></header>
-    <nav className="feature-nav" aria-label="Explore Nochalant">
-      <div className="feature-nav-inner">
-        <button className={"feature-nav-link" + (activeScreen === "home" ? " active" : "")} type="button" onClick={() => {setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}><span className="feature-nav-icon" data-mark="01" aria-hidden="true"><b>N</b><i>.</i></span><span>Home</span></button>
-        <button className={"feature-nav-link" + (activeScreen === "social" ? " active" : "")} type="button" onClick={() => {setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}><span className="feature-nav-icon" data-mark="02" aria-hidden="true"><b>N</b><i>•</i></span><span>Social</span></button>
-        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon" data-mark="03" aria-hidden="true"><b>N</b><i>✳</i></span><span>Discover</span></a>
-        <button className={"feature-nav-link" + (activeScreen === "podcast" ? " active" : "")} type="button" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}><span className="feature-nav-icon" data-mark="04" aria-hidden="true"><b>N</b><i>▶</i></span><span>Podcast</span></button>
-        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon" data-mark="05" aria-hidden="true"><b>N</b><i>▤</i></span><span>Agenda</span></a>
-        <a className="feature-nav-link" href="#agenda"><span className="feature-nav-icon" data-mark="06" aria-hidden="true"><b>N</b><i>✦</i></span><span>Events</span></a>
-        <a className="feature-nav-link" href="#artists"><span className="feature-nav-icon" data-mark="07" aria-hidden="true"><b>N</b><i>↗</i></span><span>Bookings</span></a>
-        <button className="feature-nav-link feature-nav-submit" type="button" onClick={() => setModal("submit")}><span className="feature-nav-icon" data-mark="08" aria-hidden="true"><b>N</b><i>+</i></span><span>Submit</span></button>
-      </div>
-    </nav>
+    
 
     <main id="top">
       {activeScreen === "home" ? <>
