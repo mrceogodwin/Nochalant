@@ -40,7 +40,7 @@ export default async function handler(req, res) {
       const status = action === "resolve_report" ? "resolved" : "dismissed";
       const rows = await auth.sql`UPDATE opinion_reports SET status = ${status}, reviewed_by = ${auth.profile.id}, reviewed_at = now() WHERE id = ${reportId} AND status IN ('open','reviewing') RETURNING id,status,opinion_id`;
       if (!rows.length) return res.status(404).json({ ok:false,error:"Open report not found." });
-      await auth.sql`INSERT INTO moderation_actions (moderator_id, opinion_id, action, reason) VALUES (${auth.profile.id}, ${rows[0].opinion_id}, 'dismiss_report', ${reason || status})`;
+      await auth.sql`INSERT INTO moderation_actions (moderator_id, opinion_id, action, reason) VALUES (${auth.profile.id}, ${rows[0].opinion_id}, ${action}, ${reason || status})`;
       return res.status(200).json({ ok:true, report:rows[0] });
     }
     if (accountActions.includes(action)) {
