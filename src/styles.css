@@ -217,3 +217,28 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .vote-labels{font-size:8px;margin-bottom:16px}
  .vote-result-row{font-size:11px}
 }
+
+
+/* Artists on Nochalant — deliberate, manual-only carousel */
+.artists-section{padding-top:52px;padding-bottom:12px}
+.artists-heading{display:flex;align-items:end;justify-content:space-between;gap:22px;margin-bottom:25px}
+.artists-heading h2{margin:10px 0 7px;font:700 clamp(29px,4vw,43px)/1.05 'Space Grotesk',sans-serif;letter-spacing:-2px}
+.artists-heading h2 em{font-style:normal;color:var(--lime)}
+.artists-heading p{margin:0;color:#a9aa9e;font-size:12px;line-height:1.65}
+.artists-controls{display:flex;gap:9px;flex:none}
+.artists-controls button{width:45px;height:45px;display:grid;place-items:center;border:1px solid #596044;border-radius:50%;background:linear-gradient(145deg,#20251a,#11140f);color:var(--lime);font-size:24px;line-height:1;box-shadow:0 5px 18px #0005;transition:transform .18s,border-color .18s,background .18s}
+.artists-controls button:hover:not(:disabled){transform:translateY(-2px);border-color:var(--lime);background:#252c19}
+.artists-controls button:disabled{opacity:.35;cursor:not-allowed}
+.artists-viewport{overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;scrollbar-width:none;padding:9px 4px 16px;outline-offset:4px}
+.artists-viewport::-webkit-scrollbar{display:none}
+.artists-track{display:flex;align-items:flex-start;gap:clamp(22px,3.5vw,42px);width:max-content;min-width:100%}
+.artist-card{width:clamp(112px,13vw,148px);display:flex;flex:none;flex-direction:column;align-items:center;gap:9px;text-align:center;scroll-snap-align:start}
+.artist-avatar{width:clamp(100px,12vw,136px);height:clamp(100px,12vw,136px);display:grid;place-items:center;overflow:hidden;border-radius:50%;border:2px solid #68764a;padding:4px;background:linear-gradient(145deg,#252b1b,#10120e);box-shadow:0 0 0 5px #d5f36a0b,0 10px 28px #0007;transition:transform .22s,border-color .22s,box-shadow .22s}
+.artist-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;transition:transform .35s}
+.artist-avatar>span{width:100%;height:100%;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#d5f36a,#758b3e);color:#171a10;font:700 37px 'Space Grotesk',sans-serif}
+.artist-card:hover .artist-avatar{transform:translateY(-3px);border-color:var(--lime);box-shadow:0 0 0 6px #d5f36a16,0 14px 32px #0008}
+.artist-card:hover .artist-avatar img{transform:scale(1.06)}
+.artist-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0f1e8;font-size:12px;font-weight:800}
+.artist-genre{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9fa391;font-size:10px}
+.artists-empty{width:100%;min-height:108px;display:grid;place-items:center;border:1px dashed #3c4330;color:#999d8d;font-size:12px;text-align:center;padding:22px}
+@media(max-width:600px){.artists-section{padding-top:36px}.artists-heading{align-items:center;margin-bottom:17px}.artists-heading h2{font-size:29px;letter-spacing:-1.4px}.artists-heading p{max-width:245px;font-size:10px}.artists-controls{gap:6px}.artists-controls button{width:38px;height:38px;font-size:21px}.artists-track{gap:20px}.artist-card{width:102px}.artist-avatar{width:94px;height:94px}.artist-avatar>span{font-size:30px}.artist-name{font-size:11px}.artist-genre{font-size:9px}}
