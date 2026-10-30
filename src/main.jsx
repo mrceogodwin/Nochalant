@@ -158,7 +158,7 @@ function App() {
     try {
       const token = await authClient?.getJWTToken?.();
       if (!token) { setControlRoomStatus("login"); return false; }
-      const response = await fetch("/api/admin/access", { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch("/api/admin/opinions", { headers: { Authorization: `Bearer ${token}` } });
       const data = await response.json().catch(() => ({}));
       if (response.status === 401) { setControlRoomStatus("login"); return false; }
       if (response.status === 403) { setControlRoomStatus("denied"); setControlRoomError(data.error || "This account is not authorized for the Nochalant Control Room."); return false; }
