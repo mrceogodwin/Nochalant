@@ -154,7 +154,7 @@ function App() {
     <header className="site-header"><div className="nav-wrap">
       <a className="brand" href="#top">NOCHALANT<span>.</span><small>NO DEY FORM, JUST PURE GIST 🇳🇬</small></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
-      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a></nav>
+      <nav className={mobileMenu ? "main-nav open" : "main-nav"}><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda</a><span className="nav-auth-menu"><button onClick={() => {setModal("login");setMobileMenu(false);}}>Log in</button><button onClick={() => {setModal("signup");setMobileMenu(false);}}>Sign up</button></span></nav>
       <div className="nav-actions"><button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button><button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button><button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button></div>
     </div></header>
 
