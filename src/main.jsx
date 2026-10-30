@@ -166,8 +166,13 @@ function App() {
       setControlRoomStatus("authorized");
       return true;
     } catch (error) {
-      setControlRoomStatus("error");
-      setControlRoomError(error?.message || "Control Room access could not be verified.");
+      if (error?.code === "AUTH_SESSION_REQUIRED" || error?.status === 401) {
+        setControlRoomStatus("login");
+        setControlRoomError("Please sign in with your Nochalant owner account.");
+      } else {
+        setControlRoomStatus("error");
+        setControlRoomError(error?.message || "Control Room access could not be verified.");
+      }
       return false;
     }
   };
