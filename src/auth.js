@@ -8,25 +8,17 @@ if (!authUrl) {
 
 export const authClient = authUrl ? createAuthClient(authUrl) : null;
 
-// The public createAuthClient() API exposes the Better Auth client directly.
-// Calling an unsupported getJWTToken() method on its proxy can become a request
-// to /get-jwt-token (404). Neon Auth's JWT plugin exposes the token at /token.
+// Neon Auth returns the short-lived API JWT as part of the SDK session.
+// Read it from the supported session shape rather than manually guessing an endpoint.
 export async function getAuthToken() {
-  if (!authUrl) throw new Error("Authentication is not configured.");
-  const base = authUrl.endsWith("/") ? authUrl.slice(0, -1) : authUrl;
-  const response = await fetch(`${base}/token`, {
-    method: "GET",
-    credentials: "include",
-    headers: { Accept: "application/json" }
-  });
-  const raw = await response.text();
-  let payload = raw;
-  try { payload = raw ? JSON.parse(raw) : null; } catch { /* token may be returned as plain text */ }
-  if (!response.ok) {
-    const message = payload && typeof payload === "object" ? payload.message || payload.error : null;
-    throw new Error(message || (response.status === 401 ? "Please sign in again to continue." : "Could not obtain a secure sign-in token."));
+  if (!authClient) throw new Error("Authentication is not configured.");
+  const result = await authClient.getSession();
+  if (result?.error) throw new Error(result.error.message || "Your sign-in session could not be checked.");
+  const token = result?.data?.session?.access_token;
+  if (typeof token !== "string" || !token.trim()) {
+    const error = new Error("Please sign in to continue.");
+    error.code = "AUTH_SESSION_REQUIRED";
+    throw error;
   }
-  const token = typeof payload === "string" ? payload : payload?.token || payload?.data?.token;
-  if (typeof token !== "string" || !token.trim()) throw new Error("Your session is active, but Neon Auth did not return an API token. Please sign in again.");
   return token.trim();
 }
