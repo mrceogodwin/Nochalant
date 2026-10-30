@@ -1,3 +1,57 @@
+async function proxyNeonAuth(req, res) {
+  const upstreamBase = process.env.NEON_AUTH_BASE_URL;
+  if (!upstreamBase) return res.status(503).json({ message: "Neon Auth proxy is not configured." });
+
+  const requestUrl = new URL(req.url, "https://nochalant.vercel.app");
+  const authPath = requestUrl.searchParams.get("authPath") || "";
+  const segments = authPath.split("/").filter(Boolean);
+  if (!segments.length || segments.some(part => !/^[a-zA-Z0-9._~-]+$/.test(part))) {
+    return res.status(400).json({ message: "Invalid authentication route." });
+  }
+
+  const upstream = new URL(upstreamBase.replace(/\\/$/, "") + "/" + segments.join("/"));
+  requestUrl.searchParams.delete("authPath");
+  upstream.search = requestUrl.search;
+
+  const headers = new Headers();
+  for (const name of ["accept", "content-type", "cookie", "user-agent", "authorization"]) {
+    const value = req.headers[name];
+    if (typeof value === "string") headers.set(name, value);
+  }
+  headers.set("origin", "https://nochalant.vercel.app");
+
+  const init = { method: req.method, headers, redirect: "manual" };
+  if (!["GET", "HEAD"].includes(req.method) && req.body !== undefined) {
+    if (typeof req.body === "string") init.body = req.body;
+    else {
+      init.body = JSON.stringify(req.body);
+      if (!headers.has("content-type")) headers.set("content-type", "application/json");
+    }
+  }
+
+  try {
+    const response = await fetch(upstream, init);
+    res.status(response.status);
+    response.headers.forEach((value, name) => {
+      if (!["set-cookie", "content-encoding", "content-length", "transfer-encoding", "connection"].includes(name.toLowerCase())) res.setHeader(name, value);
+    });
+    const cookies = typeof response.headers.getSetCookie === "function"
+      ? response.headers.getSetCookie()
+      : (response.headers.get("set-cookie") ? [response.headers.get("set-cookie")] : []);
+    for (const cookie of cookies) {
+      const rewritten = cookie
+        .replace(/;\\s*Domain=[^;]+/ig, "")
+        .replace(/;\\s*Path=\\/neondb\\/auth(?:\\/[^;]*)?/ig, "; Path=/api/auth")
+        .replace(/;\\s*SameSite=None/ig, "; SameSite=Lax");
+      res.appendHeader("Set-Cookie", rewritten);
+    }
+    return res.send(Buffer.from(await response.arrayBuffer()));
+  } catch (error) {
+    console.error("Neon Auth proxy failed:", error?.message || error);
+    return res.status(502).json({ message: "Authentication service is temporarily unavailable." });
+  }
+}
+
 import { requireActiveUser } from "../_lib/neon-auth.js";
 
 const opinionStatuses = { approve: "published", reject: "removed", hide: "hidden", restore: "published" };
