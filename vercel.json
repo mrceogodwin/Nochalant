@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/auth/:path*",
+      "destination": "/api/admin/opinions?authPath=$1"
+    },
+    {
       "source": "/control-room",
       "destination": "/"
     },
