@@ -105,3 +105,20 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @keyframes faces-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.faces-track{animation:none}}
 @media(max-width:600px){.nochalant-faces{margin:20px 0 25px}.faces-track{gap:13px;animation-duration:42s}.face-item{width:57px}.face-avatar{width:48px;height:48px}.faces-title h3{font-size:15px}}
+
+
+/* Nochalant Opinions rail */
+.opinion-rail{margin:24px 0 26px;padding:15px 0;border-top:1px solid rgba(214,246,103,.28);border-bottom:1px solid rgba(214,246,103,.28);overflow:hidden}
+.opinion-rail-top{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;color:var(--lime,#d6f667);font-size:10px;font-weight:900;letter-spacing:.16em}
+.opinion-rail-window{overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.opinion-rail-track{display:flex;width:max-content;gap:12px;animation:opinion-marquee 42s linear infinite}
+.opinion-rail:hover .opinion-rail-track,.opinion-rail:focus-within .opinion-rail-track{animation-play-state:paused}
+.opinion-chip{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;width:min(330px,78vw);min-height:116px;padding:15px 17px;text-align:left;background:#171913;border:1px solid rgba(214,246,103,.28);color:#f5f4ed;cursor:pointer}
+.opinion-chip:hover,.opinion-chip:focus-visible{border-color:var(--lime,#d6f667);outline:none}
+.opinion-topic{font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--lime,#d6f667)}
+.opinion-quote{font-size:15px;line-height:1.45;font-weight:750;letter-spacing:-.025em}
+.opinion-author{font-size:11px;color:#a9aa9e}
+.opinion-detail blockquote{margin:24px 0;padding:20px;border-left:3px solid var(--lime,#d6f667);background:#171913;color:#f5f4ed;font-size:21px;line-height:1.45;font-weight:750}
+.opinion-author-detail{color:#a9aa9e;font-size:13px}
+@keyframes opinion-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.opinion-rail-track{animation:none}}
