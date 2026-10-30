@@ -170,3 +170,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:600px){.opinions-panel{padding:22px 18px;max-height:90vh}.opinion-detail-actions{flex-direction:column}.opinion-admin-actions button{flex:1}}
 
 @media(max-width:600px){.got-gist{align-items:stretch;flex-direction:column;gap:17px;margin-top:24px;padding:19px 17px}.got-gist-copy h2{font-size:25px}.got-gist-copy p{font-size:11px}.got-gist-trust{gap:12px}.got-gist-trust span{font-size:9px}.got-gist-cta{width:100%;min-height:48px}}
+
+/* Hot or Trash live community result rows */
+.vote-result-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 7px;color:#c7c9bb;font-size:10px;font-weight:800}
+.vote-result-row b{color:var(--lime);font-variant-numeric:tabular-nums}
+.vote-bar-trash{margin-top:0}
+.jury-options button:disabled{opacity:.62;cursor:not-allowed;transform:none}
