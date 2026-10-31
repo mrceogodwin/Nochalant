@@ -42,7 +42,7 @@ Do not skip a failed migration or run a later migration first. If a script error
 
 ## 4. Verify the schema
 
-After all eight migrations complete, open:
+After all nine migrations complete, open:
 
 `https://nochalant.vercel.app/api/health/database`
 
@@ -50,7 +50,7 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 33`
+- `present_tables: 37`
 - `missing_tables: []`
 
 If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, apply or repair the listed migrations in order.
@@ -103,4 +103,4 @@ Migration 009 creates the editorial podcast catalogue:
 - `podcast_episodes`: full episodes, optional season membership, playback URL/object key, visibility and review/publishing state.
 - `podcast_clips`: short-form clips linked to full episodes, including optional clip in/out points.
 
-The schema stores media references only. It does not create a media bucket, upload workflow, transcoding pipeline or public playback API. Those must be implemented and tested separately before real episodes can be published.
+The schema stores media references only. A public catalogue API and Super Admin management API have been added in code, but they are not live until the pending Vercel deployment succeeds. A media bucket, secure upload workflow, transcoding pipeline and actual playback delivery still need to be implemented and tested before real episodes can be published.
