@@ -383,3 +383,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .drawer-flagship>a:active,.drawer-flagship>button:active{border-color:var(--lime);color:var(--lime)}
  .drawer-flagship>a span,.drawer-flagship>button span{color:#7e856d;font:700 9px 'Space Grotesk',sans-serif;letter-spacing:.08em}
 }
+
+
+/* Artist portrait rail: autoplay, touch-friendly circular portraits and download totals */
+.artists-viewport{scroll-behavior:smooth;}
+.artists-track{padding:5px 2px 12px;}
+.artist-card{min-width:clamp(108px,13vw,148px);text-decoration:none;}
+.artist-avatar{width:clamp(104px,12vw,138px);height:clamp(104px,12vw,138px);border:2px solid var(--lime,#d6f667);padding:3px;box-shadow:0 0 0 4px #d6f66712,0 12px 30px #0008;}
+.artist-avatar img{display:block;}
+.artist-downloads{display:inline-flex;align-items:center;justify-content:center;gap:5px;color:#b7c78b;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;}
+.artist-downloads svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.artists-viewport:focus-visible{outline:1px solid var(--lime,#d6f667);outline-offset:5px;}
+@media(max-width:600px){.artist-card{width:104px;min-width:104px}.artist-avatar{width:96px;height:96px}.artist-downloads{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.artists-viewport{scroll-behavior:auto}.artist-avatar,.artist-avatar img{transition:none}}
