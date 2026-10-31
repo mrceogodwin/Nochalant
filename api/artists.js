@@ -120,6 +120,7 @@ export default async function handler(req, res) {
       const artistTracks = tracks.filter(track => track.artist_id === artist.id);
       return {
         id: artist.id, name: artist.name, slug: artist.slug, bio: artist.bio,
+        is_verified: artist.verification_status === "verified",
         image_url: await resolveMusicAssetUrl(artist.image_url), banner_url: await resolveMusicAssetUrl(artist.banner_url),
         city: artist.city, country_code: artist.country_code,
         genre: artistTracks[0]?.genre || null,
