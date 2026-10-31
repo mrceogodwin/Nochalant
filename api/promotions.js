@@ -83,15 +83,19 @@ export default async function handler(req, res) {
     }
     if (action === "admin_queue") {
       if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Administrator access required." });
-      const rows = await auth.sql\`SELECT id, buyer_user_id, title, package_code, media_kind, currency, budget_minor, status, payment_status, media_object_key, created_at FROM promotion_campaigns WHERE status IN ('pending_payment','pending_review') ORDER BY created_at ASC LIMIT 100\`;
-      return res.status(200).json({ ok: true, campaigns: rows });
+      const rows = await auth.sql`SELECT id, buyer_user_id, title, package_code, media_kind, currency, budget_minor, status, payment_status, media_object_key, created_at FROM promotion_campaigns WHERE status IN ('pending_payment','pending_review') ORDER BY created_at ASC LIMIT 100`;
+      const campaigns = await Promise.all(rows.map(async item => ({ ...item, media_url: item.media_object_key ? await createMusicDownloadUrl(item.media_object_key, 1800) : null })));
+      return res.status(200).json({ ok: true, campaigns });
     }
     if (action === "moderate") {
-      if (!["admin","super_admin","editor"].includes(auth.profile.role)) return res.status(403).json({ ok: false, error: "Administrator access required." });
+      if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Administrator access required." });
       const id = clean(req.body?.campaignId, 50);
       const decision = clean(req.body?.decision, 20);
       if (!/^[0-9a-f-]{36}$/i.test(id) || !["approve","reject"].includes(decision)) return res.status(400).json({ ok: false, error: "Choose a valid campaign and decision." });
-      const rows = await auth.sql\`UPDATE promotion_campaigns SET status = CASE WHEN \${decision} = 'approve' THEN 'approved' ELSE 'rejected' END, reviewed_by = \${auth.profile.id}, reviewed_at = now() WHERE id = \${id} AND payment_status = 'paid' AND status = 'pending_review' RETURNING id, status\`;
+      const packageRows = await auth.sql`SELECT package_code FROM promotion_campaigns WHERE id = ${id} LIMIT 1`;
+      const durationDays = packages[packageRows[0]?.package_code]?.days;
+      if (!durationDays) return res.status(404).json({ ok: false, error: "Campaign package was not found." });
+      const rows = await auth.sql`UPDATE promotion_campaigns SET status = CASE WHEN ${decision} = 'approve' THEN 'approved' ELSE 'rejected' END, starts_at = CASE WHEN ${decision} = 'approve' THEN now() ELSE starts_at END, ends_at = CASE WHEN ${decision} = 'approve' THEN now() + (${durationDays} * interval '1 day') ELSE ends_at END, reviewed_by = ${auth.profile.id}, reviewed_at = now() WHERE id = ${id} AND payment_status = 'paid' AND status = 'pending_review' RETURNING id, status, starts_at, ends_at`;
       if (!rows.length) return res.status(409).json({ ok: false, error: "Campaign must have confirmed payment and be awaiting review." });
       return res.status(200).json({ ok: true, campaign: rows[0] });
     }
