@@ -1,0 +1,105 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { neon } from "@neondatabase/serverless";
+
+export const config = { api: { bodyParser: false } };
+
+async function readRawBody(req) {
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += buffer.length;
+    if (total > 1024 * 1024) throw new Error("Webhook payload is too large.");
+    chunks.push(buffer);
+  }
+  return Buffer.concat(chunks);
+}
+
+function verifySignature(rawBody, headers, secret) {
+  const v2 = headers["x-bachs-signature-v2"];
+  const timestampHeader = headers["x-bachs-timestamp"];
+  const legacySignature = headers["x-bachs-signature"];
+  let timestamp = timestampHeader;
+  let signatures = legacySignature ? [legacySignature] : [];
+  if (typeof v2 === "string") {
+    const parts = v2.split(",").map(part => part.trim());
+    timestamp = parts.find(part => part.startsWith("t="))?.slice(2) || timestamp;
+    signatures = parts.filter(part => part.startsWith("v1=")).map(part => part.slice(3));
+  }
+  if (!timestamp || !/^\d+$/.test(timestamp) || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300 || !signatures.length) return false;
+  const expected = createHmac("sha256", secret).update(timestamp + "." ).update(rawBody).digest("hex");
+  return signatures.some(signature => {
+    if (!/^[a-f0-9]{64}$/i.test(signature)) return false;
+    const a = Buffer.from(expected, "hex");
+    const b = Buffer.from(signature, "hex");
+    return a.length === b.length && timingSafeEqual(a, b);
+  });
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).send("Method not allowed");
+  }
+  const secret = process.env.BACHS_WEBHOOK_SECRET;
+  const databaseUrl = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
+  if (!secret || !databaseUrl) return res.status(503).send("Webhook is not configured");
+  try {
+    const rawBody = await readRawBody(req);
+    if (!verifySignature(rawBody, req.headers, secret)) return res.status(400).send("Invalid webhook signature");
+    const event = JSON.parse(rawBody.toString("utf8"));
+    if (!event?.id || !event?.type || !event?.data) return res.status(400).send("Invalid event envelope");
+    const sql = neon(databaseUrl);
+    const inserted = await sql`
+      INSERT INTO payment_webhook_events (provider, provider_event_id, event_type, signature_verified, payload, processing_status)
+      VALUES ('bachs', ${String(event.id)}, ${String(event.type)}, true, ${JSON.stringify(event)}::jsonb, 'received')
+      ON CONFLICT (provider, provider_event_id) DO NOTHING
+      RETURNING id
+    `;
+    if (!inserted.length) {
+      const existing = await sql`SELECT processing_status FROM payment_webhook_events WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} LIMIT 1`;
+      if (existing[0]?.processing_status === "processed" || existing[0]?.processing_status === "ignored") return res.status(200).json({ received: true, duplicate: true });
+    }
+
+    if (event.type === "collection.succeeded") {
+      const checkoutId = String(event.data.checkout_id || "");
+      if (!checkoutId) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', error_message = 'Missing checkout_id' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(400).send("Missing checkout ID");
+      }
+      const orders = await sql`SELECT id, campaign_id, amount_minor, currency, metadata FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
+      const order = orders[0];
+      if (!order) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'ignored', processed_at = now(), error_message = 'No matching promotion order' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(200).json({ received: true, matched: false });
+      }
+      const receivedAmount = Number(event.data.amount);
+      const expectedAmount = Number(order.amount_minor) / 100;
+      const receivedCurrency = String(event.data.currency || "").toUpperCase();
+      if (!Number.isFinite(receivedAmount) || Math.round(receivedAmount * 100) !== Number(order.amount_minor) || receivedCurrency !== String(order.currency).trim().toUpperCase() || String(event.data.status || "").toUpperCase() !== "SUCCEEDED") {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Payment amount, currency or status mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(400).send("Payment details did not match the order");
+      }
+      await sql`UPDATE payment_orders SET status = 'successful', paid_at = now(), metadata = metadata || ${JSON.stringify({ bachs_event_id: event.id, charge_id: event.data.charge_id || null })}::jsonb WHERE id = ${order.id} AND status IN ('created','pending')`;
+      await sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status IN ('unpaid','pending')`;
+      await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now() WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+      return res.status(200).json({ received: true, paid: true });
+    }
+
+    if (event.type === "collection.failed" || event.type === "collection.underpaid" || event.type === "checkout.expired") {
+      const checkoutId = String(event.data.checkout_id || "");
+      if (checkoutId) {
+        const orders = await sql`SELECT id, campaign_id FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
+        if (orders.length) {
+          await sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ last_bachs_event: event.type })}::jsonb WHERE id = ${orders[0].id} AND status IN ('created','pending')`;
+          await sql`UPDATE promotion_campaigns SET payment_status = 'failed', status = 'pending_payment' WHERE id = ${orders[0].campaign_id} AND payment_status = 'pending'`;
+        }
+      }
+    }
+    await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now() WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error("Bachs promotion webhook failed:", error?.message || error);
+    return res.status(500).send("Webhook processing failed");
+  }
+}
