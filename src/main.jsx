@@ -84,6 +84,8 @@ function App() {
   const [promotionBusy, setPromotionBusy] = useState(false);
   const [promotionMessage, setPromotionMessage] = useState("");
   const [promotionCampaigns, setPromotionCampaigns] = useState([]);
+  const [promotionAdminQueue, setPromotionAdminQueue] = useState([]);
+  const [promotionAdminBusy, setPromotionAdminBusy] = useState(false);
   const [isControlRoom] = useState(() => window.location.pathname.replace(/\/+$/, "") === "/control-room");
   const [controlRoomStatus, setControlRoomStatus] = useState("checking");
   const [controlRoomError, setControlRoomError] = useState("");
@@ -221,6 +223,32 @@ function App() {
     setToast(message);
     window.setTimeout(() => setToast(""), 3000);
   };
+  const loadPromotionAdminQueue = async () => {
+    const token = await getAuthToken();
+    if (!token) throw new Error("Administrator session expired. Sign in again.");
+    const response = await fetch("/api/promotions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ action: "admin_queue" }), cache: "no-store" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || "Promotion queue could not load.");
+    setPromotionAdminQueue(data.campaigns || []);
+  };
+  const moderatePromotion = async (campaignId, decision) => {
+    setPromotionAdminBusy(true);
+    try {
+      const token = await getAuthToken();
+      if (!token) throw new Error("Administrator session expired. Sign in again.");
+      const response = await fetch("/api/promotions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ action: "moderate", campaignId, decision }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || "Moderation action failed.");
+      await loadPromotionAdminQueue();
+      notify(decision === "approve" ? "Promotion approved." : "Promotion rejected.");
+    } catch (error) { notify(error.message || "Promotion moderation failed."); }
+    finally { setPromotionAdminBusy(false); }
+  };
+  useEffect(() => {
+    if (controlRoomStatus !== "authorized") return;
+    loadPromotionAdminQueue().catch(error => notify(error.message || "Promotion queue could not load."));
+  }, [controlRoomStatus]);
+
   const verifyControlRoomAccess = async () => {
     setControlRoomStatus("checking");
     setControlRoomError("");
@@ -471,6 +499,15 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
+    fetch("/api/promotions", { signal: controller.signal, cache: "no-store" })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => { if (data?.ok && Array.isArray(data.campaigns) && !controller.signal.aborted) setPromotionCampaigns(data.campaigns); })
+      .catch(error => { if (error?.name !== "AbortError") console.warn("Nochalant promotions unavailable:", error); });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
     fetch("/api/opinions", { signal: controller.signal })
       .then(response => response.ok ? response.json() : null)
       .then(data => {
@@ -713,7 +750,9 @@ function App() {
       {controlRoomStatus === "login" && <section className="control-room-gate"><span className="eyebrow">PRIVATE ADMINISTRATION</span><h1>Nochalant Control Room.</h1><p>Sign in with the authorized owner account. This entrance is not available to public members.</p><form className="control-room-login" onSubmit={submitControlRoomLogin}><label>Email address<input name="email" type="email" autoComplete="username" required placeholder="Owner email"/></label><label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Your password"/></label><button className="button button-green full-width" type="submit">Sign in securely</button></form>{controlRoomError && <p className="control-room-error" role="alert">{controlRoomError}</p>}</section>}
       {controlRoomStatus === "denied" && <section className="control-room-gate"><span className="eyebrow">ACCESS RESTRICTED</span><h1>Administrator access required.</h1><p>{controlRoomError || "This account does not have permission to enter the Control Room."}</p><a className="button button-outline" href="/">Return to Nochalant</a></section>}
       {controlRoomStatus === "error" && <section className="control-room-gate"><span className="eyebrow">SECURE ACCESS UNAVAILABLE</span><h1>We couldn't verify access.</h1><p>{controlRoomError}</p><button className="button button-green" onClick={verifyControlRoomAccess}>Try again</button></section>}
-      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /><PodcastAdmin /></>}
+      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /><PodcastAdmin /><section className="promotion-admin-panel"><div className="artists-heading"><div><span className="eyebrow">ADVERTISING REVIEW</span><h2>Promotion <em>queue.</em></h2><p>Only confirmed, paid campaigns can be approved.</p></div><button className="button button-outline" onClick={() => loadPromotionAdminQueue().catch(error => notify(error.message))}>Refresh queue</button></div>
+        {promotionAdminQueue.length ? <div className="promotion-admin-list">{promotionAdminQueue.map(campaign => <article className="promotion-admin-row" key={campaign.id}><div><strong>{campaign.title}</strong><p>{campaign.package_code} · {campaign.media_kind} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p><span className="dashboard-status">{campaign.status.replaceAll("_"," ")} · {campaign.payment_status}</span></div><div className="promotion-admin-actions"><button className="button button-green button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"approve")}>Approve</button><button className="button button-outline button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"reject")}>Reject</button></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns awaiting review.</strong><p>Paid campaigns will appear here after payment confirmation.</p></div>}
+      </section></>}
     </main>
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
@@ -848,6 +887,12 @@ function App() {
           <button className="button button-green" type="submit" disabled={promotionBusy}>{promotionBusy?"Submitting…":"Submit promotion"}</button>
           <small className="fine-print">Your campaign is saved as pending payment. It will not appear publicly until payment is confirmed and Nochalant approves it.</small>
         </form>
+        <section className="promotion-live-list"><div className="artists-heading"><div><span className="eyebrow">BRANDS · EVENTS · CREATORS</span><h2>In the <em>spotlight.</em></h2><p>Approved promotions from the Nochalant community.</p></div></div>
+          {promotionCampaigns.length ? <div className="promotion-live-grid">{promotionCampaigns.map(campaign => <article className="promotion-live-card" key={campaign.id}>
+            {campaign.media_kind === "video" ? <video src={campaign.media_url} controls playsInline preload="metadata" /> : <img src={campaign.media_url} alt={campaign.title}/>}
+            <div><span className="pill pill-gold">SPONSORED</span><h3>{campaign.title}</h3><p>{campaign.description}</p>{campaign.destination_url && <a href={campaign.destination_url} target="_blank" rel="noreferrer">Learn more ↗</a>}</div>
+          </article>)}</div> : <div className="social-feed-state"><strong>Be the first in the spotlight.</strong><p>Approved campaigns will appear here.</p></div>}
+        </section>
       </section> : activeScreen === "social" ? <section className="social-section container screen-page" id="social" aria-labelledby="social-title"><SocialFeed currentUser={currentUser} onJoin={() => setModal("signup")} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></section> : activeScreen === "podcast" ? <section className="podcast-section container screen-page" id="podcast-show" aria-labelledby="podcast-show-title">
         <div className="podcast-heading"><div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h1 id="podcast-show-title">Nochalant <em>Podcast.</em></h1><p>Watch the conversations, performances and stories moving Nigerian culture.</p></div><span className="podcast-mark" aria-hidden="true">N<span>.</span></span></div>
         <div className="podcast-library-feature">
