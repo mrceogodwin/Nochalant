@@ -68,6 +68,7 @@ function App() {
   const [audioQueue, setAudioQueue] = useState([]);
   const [audioQueueIndex, setAudioQueueIndex] = useState(0);
   const [activeAudioTrack, setActiveAudioTrack] = useState(null);
+  const trackedPlaysRef = useRef(new Set());
   const artistRailRef = useRef(null);
   const [artistRailPaused, setArtistRailPaused] = useState(false);
   const [opinions, setOpinions] = useState([]);
@@ -179,6 +180,32 @@ function App() {
       audio.removeEventListener("error", onError);
     };
   }, [audioVolume]);
+
+  useEffect(() => {
+    if (!activeAudioTrack?.id) return;
+    const duration = Number(activeAudioTrack.duration_seconds || audioDuration || 0);
+    const threshold = duration > 0 && duration < 30 ? Math.ceil(duration * 0.8) : 30;
+    if (audioCurrent < threshold || trackedPlaysRef.current.has(activeAudioTrack.id)) return;
+    trackedPlaysRef.current.add(activeAudioTrack.id);
+    try {
+      let sessionId = window.sessionStorage.getItem("nochalant-audio-session");
+      if (!sessionId) {
+        sessionId = window.crypto.randomUUID();
+        window.sessionStorage.setItem("nochalant-audio-session", sessionId);
+      }
+      fetch("/api/music/plays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackId: activeAudioTrack.id, sessionId, listenedSeconds: Math.floor(audioCurrent) })
+      }).then(response => response.json()).then(data => {
+        if (!data?.ok || !data.counted) return;
+        setArtists(current => current.map(artist => ({
+          ...artist,
+          tracks: (artist.tracks || []).map(track => track.id === activeAudioTrack.id ? { ...track, plays_count: data.plays_count } : track)
+        })));
+      }).catch(() => {});
+    } catch {}
+  }, [audioCurrent, audioDuration, activeAudioTrack]);
 
   const filtered = useMemo(() => demoStories.slice(1).filter(item =>
     (category === "All Gist" || item.category === category) &&
@@ -752,7 +779,7 @@ function App() {
     {activeScreen === "home" && (
       <section className="home-podcast-section container" aria-labelledby="home-podcast-title">
               <div className="home-podcast-head"><div><span className="eyebrow">NOCHALANT PODCAST</span><h2 id="home-podcast-title">Watch the <em>latest episode.</em></h2><p>Unfiltered conversations. Culture. Music. People. Only on Nochalant Podcast.</p></div><button className="podcast-see-more" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>See more <span>→</span></button></div>
-              <div className="podcast-feature-player"><div className="podcast-screen"><div className="podcast-screen-brand"><span className="podcast-screen-mark">N.</span><strong>NOCHALANT<br/>PODCAST</strong></div><span className="podcast-screen-status">NOCHALANT ORIGINALS · EPISODES COMING SOON</span></div><div className="podcast-player-meta"><div><span className="podcast-status">FEATURED SHOW</span><h3>Nochalant Podcast</h3><p>Original conversations from the culture desk</p></div><span className="podcast-brand-emblem" aria-label="Nochalant original podcast"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="5" width="54" height="54" rx="14"/><path d="M19 46V18h8l14 18V18h8v28h-8L27 28v18z"/></svg></span></div></div>
+              <div className="podcast-feature-player"><div className="podcast-screen"><div className="podcast-screen-brand"><span className="podcast-screen-mark">N.</span><strong>NOCHALANT<br/>PODCAST</strong></div><span className="podcast-screen-status">NOCHALANT ORIGINALS · EPISODES COMING SOON</span></div><div className="podcast-player-meta"><div><span className="podcast-status">FEATURED SHOW</span><h3>Nochalant Podcast</h3><p>Original conversations from the culture desk</p></div><button type="button" className="podcast-brand-emblem" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}} aria-label="Open Nochalant Podcast"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30"/><path d="M18 17v30h7V28l17 19h5V17h-7v19L23 17z"/><path d="m30 26 13 7-13 7z" className="podcast-brand-play-cut"/></svg></button></div></div>
       </section>
     )}
 
@@ -791,7 +818,7 @@ function App() {
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "artist-profile" && <div className="artist-profile-modal">
         {artistProfileLoading ? <p className="artist-profile-loading">Loading artist profile…</p> : artistProfileError ? <p className="artist-profile-loading" role="alert">{artistProfileError}</p> : selectedArtist && <>
-          <div className="artist-profile-hero" style={selectedArtist.banner_url ? {backgroundImage: 'linear-gradient(0deg,#0b0d09 0%,#0b0d0988 100%),url("' + selectedArtist.banner_url + ')'} : undefined}>
+          <div className="artist-profile-hero" style={selectedArtist.banner_url ? {backgroundImage: 'linear-gradient(0deg,#0b0d09 0%,#0b0d0988 100%),url("' + selectedArtist.banner_url + '")'} : undefined}>
             {selectedArtist.image_url && <img src={selectedArtist.image_url} alt={selectedArtist.name + " artist portrait"} />}
             <div><span className="eyebrow">NOCHALANT VERIFIED ARTIST</span><h2 id="modal-title">{selectedArtist.name}</h2><p>{[selectedArtist.city, selectedArtist.country_code].filter(Boolean).join(" · ")}</p></div>
           </div>
