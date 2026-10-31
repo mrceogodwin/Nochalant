@@ -8,6 +8,7 @@ const REQUIRED_TABLES = [
   "agenda_events",
   "editorial_audit_log",
   "artist_profiles",
+  "artists",
   "music_releases",
   "music_tracks",
   "music_rights_records",
