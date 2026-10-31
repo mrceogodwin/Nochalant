@@ -89,6 +89,34 @@ export async function handleArtistStudio(req, res) {
       return res.status(201).json({ ok: true, release: rows[0] });
     }
 
+    if (action === "add_track") {
+      const releaseId = clean(req.body?.releaseId, 50);
+      const title = clean(req.body?.title, 180);
+      const audioUrl = safeHttps(req.body?.audioUrl);
+      const durationSeconds = Number(req.body?.durationSeconds) || null;
+      const isrc = clean(req.body?.isrc, 20) || null;
+      if (!/^[0-9a-f-]{36}$/i.test(releaseId) || !title || !audioUrl) {
+        return res.status(400).json({ ok: false, error: "Choose a draft release, enter a track title and provide a valid HTTPS audio URL." });
+      }
+      if (durationSeconds !== null && (!Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 86400)) {
+        return res.status(400).json({ ok: false, error: "Track duration must be a positive number of seconds." });
+      }
+      const release = await auth.sql`
+        SELECT id FROM music_releases
+        WHERE id = ${releaseId} AND artist_id = ${artist.id} AND status = 'draft'
+        LIMIT 1
+      `;
+      if (!release.length) return res.status(409).json({ ok: false, error: "Tracks can only be added to your own draft releases." });
+      const rows = await auth.sql`
+        INSERT INTO music_tracks
+          (release_id, artist_id, title, audio_object_key, duration_seconds, isrc, status)
+        VALUES
+          (${releaseId}, ${artist.id}, ${title}, ${audioUrl}, ${durationSeconds}, ${isrc}, 'pending')
+        RETURNING id, release_id, title, duration_seconds, status, created_at
+      `;
+      return res.status(201).json({ ok: true, track: rows[0] });
+    }
+
     if (action === "submit_release") {
       const releaseId = clean(req.body?.releaseId, 50);
       if (!/^[0-9a-f-]{36}$/i.test(releaseId)) return res.status(400).json({ ok: false, error: "Select a valid release." });
