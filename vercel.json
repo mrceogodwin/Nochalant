@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/podcast",
+      "destination": "/api/admin/opinions?podcastRoute=1"
+    },
+    {
       "source": "/api/account/type",
       "destination": "/api/admin/opinions?accountTypeRoute=1"
     },
