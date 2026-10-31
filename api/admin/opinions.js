@@ -72,12 +72,12 @@ async function handleTrackDownload(req, res) {
   if (!connectionString) return res.status(503).json({ ok: false, error: "Downloads are temporarily unavailable." });
   try {
     const sql = neon(connectionString);
-    const rows = await sql\`
+    const rows = await sql`
       SELECT mt.audio_object_key
       FROM music_tracks mt
       JOIN music_releases mr ON mr.id = mt.release_id AND mr.status = 'published'
       JOIN artist_profiles ap ON ap.id = mt.artist_id AND ap.verification_status = 'verified'
-      WHERE mt.id = \${trackId} AND mt.status = 'published'
+      WHERE mt.id = ${trackId} AND mt.status = 'published'
       LIMIT 1
     \`;
     if (!rows.length) return res.status(404).json({ ok: false, error: "This track is not available for download." });
@@ -87,7 +87,7 @@ async function handleTrackDownload(req, res) {
       audioUrl = parsed.protocol === "https:" ? parsed.toString() : null;
     } catch { audioUrl = null; }
     if (!audioUrl) return res.status(404).json({ ok: false, error: "The audio file has not been connected yet." });
-    await sql\`UPDATE music_tracks SET download_count = download_count + 1 WHERE id = \${trackId}\`;
+    await sql`UPDATE music_tracks SET download_count = download_count + 1 WHERE id = ${trackId}\`;
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Referrer-Policy", "no-referrer");
     return res.redirect(302, audioUrl);
