@@ -80,7 +80,7 @@ export async function handleArtistStudio(req, res) {
         return res.status(400).json({ ok: false, error: "Enter a release title, genre and valid release type." });
       }
       if (req.body?.coverArtUrl && !coverArtUrl) return res.status(400).json({ ok: false, error: "Cover artwork must use a valid HTTPS URL." });
-      if (releaseDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(releaseDate)) return res.status(400).json({ ok: false, error: "Release date must use YYYY-MM-DD." });
+      if (releaseDate && !/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) return res.status(400).json({ ok: false, error: "Release date must use YYYY-MM-DD." });
       const rows = await auth.sql`
         INSERT INTO music_releases (artist_id, title, release_type, cover_art_url, release_date, genre, status)
         VALUES (${artist.id}, ${title}, ${releaseType}, ${coverArtUrl}, ${releaseDate}, ${genre}, 'draft')
