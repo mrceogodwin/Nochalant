@@ -1,1 +1,0 @@
-import { handlePodcast } from "./_lib/podcast.js";\n\nexport default async function handler(req, res) {\n  return handlePodcast(req, res);\n}\n
