@@ -35,7 +35,7 @@ export async function handlePodcast(req, res) {
     try {
       const sql = neon(connectionString);
       const [shows, seasons, episodes, clips] = await Promise.all([
-        sql`SELECT id, slug, title, description, host_name, cover_image_url, trailer_video_url, is_featured, published_at
+        sql`SELECT id, slug, title, description, host_name, host_role, host_bio, host_image_url, cover_image_url, trailer_video_url, is_featured, published_at
             FROM podcast_shows WHERE status='published' ORDER BY is_featured DESC, sort_order ASC, published_at DESC LIMIT 50`,
         sql`SELECT s.id, s.show_id, s.season_number, s.title, s.description, s.published_at
             FROM podcast_seasons s JOIN podcast_shows sh ON sh.id=s.show_id
@@ -82,6 +82,18 @@ export async function handlePodcast(req, res) {
         VALUES (${slug},${title},${clean(req.body?.description,4000)},${clean(req.body?.hostName,120)||null},${cover},${trailer})
         RETURNING id,slug,title,status`;
       return res.status(201).json({ok:true,show:rows[0]});
+    }
+    if (action === "update_show_host") {
+      const showId = clean(req.body?.showId,36);
+      const hostName = clean(req.body?.hostName,120);
+      const hostRole = clean(req.body?.hostRole,100);
+      const hostBio = clean(req.body?.hostBio,700);
+      const hostImage = req.body?.hostImageUrl ? safeHttps(req.body.hostImageUrl) : null;
+      if (!/^[0-9a-f-]{36}$/i.test(showId)) return res.status(400).json({ok:false,error:"Choose a valid podcast series."});
+      if (req.body?.hostImageUrl && !hostImage) return res.status(400).json({ok:false,error:"Host photo URL must use HTTPS."});
+      const rows = await auth.sql`UPDATE podcast_shows SET host_name=${hostName||null}, host_role=${hostRole||null}, host_bio=${hostBio}, host_image_url=${hostImage} WHERE id=${showId} RETURNING id,title,host_name,host_role,host_bio,host_image_url`;
+      if (!rows.length) return res.status(404).json({ok:false,error:"Podcast series not found."});
+      return res.status(200).json({ok:true,show:rows[0]});
     }
     if (action === "create_season") {
       const showId = clean(req.body?.showId,36);
