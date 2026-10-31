@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       return res.status(201).json({ ok: true, campaign: rows[0], message: "Campaign saved. Payment and admin review are required before it can go live." });
     }
     if (action === "admin_queue") {
-      if (!["admin","super_admin","editor"].includes(auth.profile.role)) return res.status(403).json({ ok: false, error: "Administrator access required." });
+      if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Administrator access required." });
       const rows = await auth.sql\`SELECT id, buyer_user_id, title, package_code, media_kind, currency, budget_minor, status, payment_status, media_object_key, created_at FROM promotion_campaigns WHERE status IN ('pending_payment','pending_review') ORDER BY created_at ASC LIMIT 100\`;
       return res.status(200).json({ ok: true, campaigns: rows });
     }
