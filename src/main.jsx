@@ -408,6 +408,7 @@ function App() {
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
+    const accountType = modal === "signup" ? String(formData.get("accountType") || "fan") : "";
     setAuthBusy(true);
     setAuthMessage("");
     try {
@@ -417,7 +418,28 @@ function App() {
       if (result?.error) throw new Error(result.error.message || "Authentication failed.");
       const sessionResult = await authClient.getSession();
       if (sessionResult?.data?.user) setCurrentUser(sessionResult.data.user);
-      setAuthMessage(modal === "signup" ? "Account created. Check your email if verification is required." : "You are signed in.");
+      if (modal === "signup") {
+        window.localStorage.setItem("nochalant_pending_account_type", accountType);
+      }
+      const pendingAccountType = modal === "signup" ? accountType : window.localStorage.getItem("nochalant_pending_account_type");
+      if (pendingAccountType && sessionResult?.data?.user) {
+        try {
+          const token = await getAuthToken();
+          if (token) {
+            const profileResponse = await fetch("/api/account/type", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ accountType: pendingAccountType })
+            });
+            const profileData = await profileResponse.json().catch(() => ({}));
+            if (!profileResponse.ok || !profileData.ok) throw new Error(profileData.error || "Account type could not be saved.");
+            window.localStorage.removeItem("nochalant_pending_account_type");
+          }
+        } catch (profileError) {
+          console.warn("Account type will be retried after sign-in:", profileError?.message || profileError);
+        }
+      }
+      setAuthMessage(modal === "signup" ? "Account created. Your selected account type will be activated when your profile is ready." : "You are signed in.");
       notify(modal === "signup" ? "Your Nochalant account was created." : "Welcome back to Nochalant.");
       closeModal();
     } catch (error) {
@@ -576,7 +598,7 @@ function App() {
       {modal === "newsletter-success" && <div className="newsletter-success"><span className="brand-signature" aria-hidden="true">N</span><span className="eyebrow">YOU'RE IN THE LOOP</span><h2 id="modal-title">Good things are coming.</h2><p>Thanks for wanting the Nochalant update. Email signups aren't connected yet, so your address hasn't been saved.</p><button className="button button-green full-width" onClick={closeModal}>Got you</button></div>}
       {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><div className="article-byline"><span>By {story.author}</span><span>{typeof viewCounts[story.id] === "number" ? `${viewCounts[story.id].toLocaleString()} views` : "Reader count loading"}</span><span>{story.read}</span></div><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
       {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send a tip or story anonymously. No account, sign-in or registration is required. Every anonymous gist is archived privately for editorial review, with a target review window of up to 7 days.</p><form onSubmit={submitGist}><label>Category<select name="category" value={submissionCategories.includes(formCategory) ? formCategory : "Entertainment"} onChange={e => setFormCategory(e.target.value)}>{submissionCategories.map(x => <option key={x} value={x}>{x}</option>)}</select></label><label>Post title<input name="title" required minLength="8" maxLength="180" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea name="body" required minLength="20" maxLength="12000" rows="5" placeholder="Add details, links and useful context..."/></label><label>Source link (optional)<input name="sourceUrl" type="url" placeholder="https://..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Send anonymous gist</button><small className="fine-print">Your identity is not requested. Your submission remains private and pending until an editor reviews it.</small></form></>}
-      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <label>Full name<input name="name" required placeholder="Your name"/></label>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
+      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <><label>Full name<input name="name" required placeholder="Your name"/></label><label>Choose your account type<select name="accountType" defaultValue="fan"><option value="fan">Fan / Listener</option><option value="artist">Artist / Musician</option><option value="creator">Creator / Influencer</option><option value="event_organizer">Event Organizer</option><option value="business">Business / Brand</option><option value="media">Media / Publisher</option></select></label><small className="fine-print">Your account type personalizes your dashboard and tools. Artist verification and publishing approval are separate steps.</small></>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
     </div></div>}
     {selectedOpinion && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && setSelectedOpinion(null)}><div className="modal-card opinion-detail" role="dialog" aria-modal="true" aria-labelledby="opinion-detail-title"><button className="modal-close" onClick={() => setSelectedOpinion(null)} aria-label="Close opinion">×</button><span className="eyebrow">{selectedOpinion.topic} · NOCHALANT OPINION</span><h2 id="opinion-detail-title">The people have a say.</h2><blockquote>“{selectedOpinion.body}”</blockquote><p className="opinion-author-detail">Shared by {selectedOpinion.author_name}</p><div className="opinion-detail-actions"><button className="button button-outline full-width" onClick={() => {if (!currentUser) {setSelectedOpinion(null);setModal("login");setAuthMessage("Log in to report content.");} else {setReportOpinion(selectedOpinion);setSelectedOpinion(null);setOpinionsPanelMode("report");setOpinionsPanelOpen(true);}}}>Report this opinion</button><button className="button button-green full-width" onClick={() => {setSelectedOpinion(null);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>Share your take</button></div></div></div>}
     <OpinionsPanel open={opinionsPanelOpen} mode={opinionsPanelMode} opinion={reportOpinion} onClose={() => setOpinionsPanelOpen(false)} onNotice={notify} />
