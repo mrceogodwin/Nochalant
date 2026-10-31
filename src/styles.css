@@ -396,3 +396,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .artists-viewport:focus-visible{outline:1px solid var(--lime,#d6f667);outline-offset:5px;}
 @media(max-width:600px){.artist-card{width:104px;min-width:104px}.artist-avatar{width:96px;height:96px}.artist-downloads{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.artists-viewport{scroll-behavior:auto}.artist-avatar,.artist-avatar img{transition:none}}
+
+
+/* Account-type aware member dashboard */
+.account-dashboard{padding-top:clamp(34px,6vw,76px);padding-bottom:80px;min-height:58vh}
+.account-dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding-bottom:28px;border-bottom:1px solid #34392c}
+.account-dashboard-head h1{margin:10px 0 8px;font:750 clamp(34px,6vw,58px)/1 'Space Grotesk',sans-serif;letter-spacing:-2px}
+.account-dashboard-head h1 span{color:var(--lime,#d6f667)}
+.account-dashboard-head p{margin:0;color:#a7aa9b;font-size:14px}
+.account-type-chip{padding:9px 13px;border:1px solid #596044;border-radius:999px;color:var(--lime,#d6f667);font-size:11px;font-weight:800;text-transform:capitalize;white-space:nowrap}
+.account-dashboard-loading{padding:50px 0;color:#a7aa9b}
+.account-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding-top:22px}
+.account-dashboard-card{min-height:180px;padding:22px;border:1px solid #33392b;border-radius:12px;background:linear-gradient(145deg,#171a13,#0d0f0c);display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.account-dashboard-card .eyebrow{font-size:9px}
+.account-dashboard-card h2,.account-dashboard-card h3{margin:0;color:#f2f3e9;font:700 clamp(19px,3vw,25px)/1.15 'Space Grotesk',sans-serif;letter-spacing:-.5px}
+.account-dashboard-card p{margin:0;color:#a9ad9e;font-size:13px;line-height:1.65;max-width:560px}
+.account-dashboard-primary{background:linear-gradient(145deg,#202719,#11140e);border-color:#657445}
+.dashboard-status{margin-top:auto;padding-top:10px;color:var(--lime,#d6f667);font-size:9px;font-weight:900;letter-spacing:.1em}
+.account-dashboard-footer{display:flex;justify-content:flex-start;padding-top:24px}
+@media(max-width:620px){.account-dashboard{padding-top:30px;padding-bottom:55px}.account-dashboard-head{align-items:flex-start;flex-direction:column}.account-dashboard-head h1{font-size:38px}.account-dashboard-grid{grid-template-columns:1fr;gap:11px}.account-dashboard-card{min-height:150px;padding:19px}}
