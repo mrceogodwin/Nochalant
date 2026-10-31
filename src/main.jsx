@@ -77,7 +77,8 @@ function App() {
   const [opinionsPanelOpen, setOpinionsPanelOpen] = useState(false);
   const [opinionsPanelMode, setOpinionsPanelMode] = useState("dashboard");
   const [reportOpinion, setReportOpinion] = useState(null);
-  const [podcastSelection, setPodcastSelection] = useState(0);\n  const [activePodcastEpisode, setActivePodcastEpisode] = useState(null);
+  const [podcastSelection, setPodcastSelection] = useState(0);
+  const [activePodcastEpisode, setActivePodcastEpisode] = useState(null);
   const [podcastCatalogue, setPodcastCatalogue] = useState({ shows: [], seasons: [], episodes: [], clips: [] });
   const [podcastCatalogueLoading, setPodcastCatalogueLoading] = useState(false);
   const [leadSlide, setLeadSlide] = useState(0);
