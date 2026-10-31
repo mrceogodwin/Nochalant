@@ -17,6 +17,8 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
   const [reports, setReports] = useState([]);
   const [users, setUsers] = useState([]);
   const [artists, setArtists] = useState([]);
+  const [artistApplications, setArtistApplications] = useState([]);
+  const [artistApplicationsAvailable, setArtistApplicationsAvailable] = useState(true);
   const [musicReleases, setMusicReleases] = useState([]);
   const [musicAvailable, setMusicAvailable] = useState(true);
   const [artistsAvailable, setArtistsAvailable] = useState(true);
@@ -48,6 +50,8 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
     setUsers(data.users || []);
     setArtists(data.artists || []);
     setArtistsAvailable(data.artistsAvailable !== false);
+    setArtistApplications(data.artistApplications || []);
+    setArtistApplicationsAvailable(data.artistApplicationsAvailable !== false);
     setMusicReleases(data.musicReleases || []);
     setMusicAvailable(data.musicAvailable !== false);
   };
@@ -121,6 +125,18 @@ export default function OpinionsPanel({ open, onClose, mode = "dashboard", opini
           <div className="opinion-admin-actions"><button type="button" disabled={busy} onClick={() => setArtistDraft({ id: artist.id, name: artist.name, genre: artist.genre || "", image_url: artist.image_url || "", profile_url: artist.profile_url || "", sort_order: artist.sort_order, is_active: artist.is_active })}>Edit</button>{artist.is_active && <button type="button" disabled={busy} onClick={() => moderate("deactivate_artist", { artistId: artist.id })}>Hide</button>}</div>
         </article>)}
         {!artists.length && <p className="fine-print">No artists added yet. Add your first artist above.</p>}
+      </div>
+      <div className="opinion-dashboard-list">
+        <div className="opinion-list-heading"><h3>Artist account verification ({artistApplications.length})</h3><button className="button button-outline" type="button" disabled={busy} onClick={() => {setBusy(true);loadAdmin().catch(e => setError(e.message)).finally(() => setBusy(false));}}>Refresh</button></div>
+        {!artistApplicationsAvailable && <p className="fine-print">Artist verification data is not available yet.</p>}
+        {artistApplications.map(application => <article className="opinion-status-item" key={application.id}>
+          <span className="opinion-topic">{application.stage_name} · {application.verification_status.toUpperCase()}</span>
+          <p>{application.display_name} · {application.email || "No email"} </p>
+          <small>{[application.city, application.country_code].filter(Boolean).join(" · ")} · Joined {new Date(application.created_at).toLocaleDateString()}</small>
+          {application.bio && <p>{application.bio}</p>}
+          <div className="opinion-admin-actions"><button disabled={busy} onClick={() => moderate("verify_artist_profile", { artistProfileId: application.id })}>Verify artist</button><button disabled={busy} onClick={() => moderate("reject_artist_profile", { artistProfileId: application.id })}>Reject application</button></div>
+        </article>)}
+        {artistApplicationsAvailable && !artistApplications.length && <p className="fine-print">No artist applications are waiting for verification.</p>}
       </div>
       <div className="opinion-dashboard-list">
         <div className="opinion-list-heading"><h3>Artist music review ({musicReleases.length})</h3><button className="button button-outline" type="button" disabled={busy} onClick={() => {setBusy(true);loadAdmin().catch(e => setError(e.message)).finally(() => setBusy(false));}}>Refresh</button></div>
