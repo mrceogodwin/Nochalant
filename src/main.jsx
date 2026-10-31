@@ -224,6 +224,19 @@ function App() {
     setToast(message);
     window.setTimeout(() => setToast(""), 3000);
   };
+  const startPromotionCheckout = async (campaignId) => {
+    setPromotionBusy(true);
+    setPromotionMessage("");
+    try {
+      const token = await getAuthToken();
+      if (!token) throw new Error("Please sign in again.");
+      const response = await fetch("/api/promotions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ action: "create_checkout", campaignId }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok || !data.checkoutUrl) throw new Error(data.error || "Checkout could not start.");
+      window.location.href = data.checkoutUrl;
+    } catch (error) { setPromotionMessage(error.message || "Checkout could not start."); }
+    finally { setPromotionBusy(false); }
+  };
   const loadPromotionAdminQueue = async () => {
     const token = await getAuthToken();
     if (!token) throw new Error("Administrator session expired. Sign in again.");
@@ -886,7 +899,9 @@ function App() {
             if (!upload.ok) throw new Error("Media upload failed.");
             const createResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_campaign",title:data.get("title"),description:data.get("description"),packageCode:promotionPackage,kind:promotionKind,mediaObjectKey:signed.objectKey,destinationUrl:data.get("destinationUrl"),contactText:data.get("contactText"),currency:data.get("currency")})});
             const created = await createResponse.json(); if (!createResponse.ok || !created.ok) throw new Error(created.error || "Campaign could not be saved.");
-            setPromotionMessage(created.message || "Campaign saved. Payment and review are still required."); form.reset();
+            form.reset();
+            if (created.campaign?.id) await startPromotionCheckout(created.campaign.id);
+            else setPromotionMessage(created.message || "Campaign saved. Payment and review are still required.");
           } catch(error) { setPromotionMessage(error.message || "Campaign could not be submitted."); }
           finally { setPromotionBusy(false); }
         }}>
@@ -904,7 +919,7 @@ function App() {
           <small className="fine-print">Your campaign is saved as pending payment. It will not appear publicly until payment is confirmed and Nochalant approves it.</small>
         </form>
         {currentUser && <section className="my-promotion-campaigns"><div className="artists-heading"><div><span className="eyebrow">ADVERTISER DASHBOARD</span><h2>Your <em>campaigns.</em></h2><p>Check payment, moderation and campaign performance.</p></div></div>
-          {myPromotionCampaigns.length ? <div className="my-promotion-list">{myPromotionCampaigns.map(campaign => <article className="my-promotion-row" key={campaign.id}><div><strong>{campaign.title}</strong><p>{campaign.package_code?.replaceAll("_"," ")} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p></div><div className="my-promotion-status"><span>{campaign.payment_status}</span><span>{campaign.status.replaceAll("_"," ")}</span></div><div className="my-promotion-metrics"><span>{Number(campaign.impressions_count||0).toLocaleString()} impressions</span><span>{Number(campaign.clicks_count||0).toLocaleString()} clicks</span></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns yet.</strong><p>Your submitted campaigns will appear here.</p></div>}
+          {myPromotionCampaigns.length ? <div className="my-promotion-list">{myPromotionCampaigns.map(campaign => <article className="my-promotion-row" key={campaign.id}><div><strong>{campaign.title}</strong><p>{campaign.package_code?.replaceAll("_"," ")} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p></div><div className="my-promotion-status"><span>{campaign.payment_status}</span><span>{campaign.status.replaceAll("_"," ")}</span>{["unpaid","failed"].includes(campaign.payment_status) && campaign.status==="pending_payment" && <button className="button button-outline button-small" disabled={promotionBusy} onClick={() => startPromotionCheckout(campaign.id)}>Pay now</button>}</div><div className="my-promotion-metrics"><span>{Number(campaign.impressions_count||0).toLocaleString()} impressions</span><span>{Number(campaign.clicks_count||0).toLocaleString()} clicks</span></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns yet.</strong><p>Your submitted campaigns will appear here.</p></div>}
         </section>}
         <section className="promotion-live-list"><div className="artists-heading"><div><span className="eyebrow">BRANDS · EVENTS · CREATORS</span><h2>In the <em>spotlight.</em></h2><p>Approved promotions from the Nochalant community.</p></div></div>
           {promotionCampaigns.length ? <div className="promotion-live-grid">{promotionCampaigns.map(campaign => <article className="promotion-live-card" key={campaign.id}>
