@@ -38,3 +38,26 @@ export async function verifyMusicUpload(objectKey) {
   if (!size || size > 100 * 1024 * 1024) throw new Error("Uploaded audio file is empty or exceeds 100 MB.");
   return { size, contentType: result.ContentType || null };
 }
+
+export async function resolveMusicAssetUrl(value, expiresIn = 3600) {
+  if (typeof value === "string" && value.startsWith("neon-storage:")) {
+    return createMusicDownloadUrl(value.slice("neon-storage:".length), expiresIn);
+  }
+  if (typeof value === "string") {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" ? url.toString() : null;
+    } catch { return null; }
+  }
+  return null;
+}
+
+export async function verifyArtworkUpload(objectKey) {
+  const { client, bucket } = getMusicStorage();
+  const result = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: objectKey }));
+  const size = Number(result.ContentLength || 0);
+  const type = String(result.ContentType || "").toLowerCase();
+  if (!size || size > 15 * 1024 * 1024) throw new Error("Artwork must be a non-empty image under 15 MB.");
+  if (!["image/jpeg", "image/png", "image/webp", "image/avif"].includes(type)) throw new Error("Artwork must be JPEG, PNG, WebP or AVIF.");
+  return { size, contentType: type };
+}
