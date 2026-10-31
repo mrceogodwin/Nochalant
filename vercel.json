@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/promotions",
+      "destination": "/api/admin/opinions?promotionsRoute=1"
+    },
+    {
       "source": "/api/podcast",
       "destination": "/api/admin/opinions?podcastRoute=1"
     },
