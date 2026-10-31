@@ -771,3 +771,31 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 /* Subtle silver artist verification mark */
 .artist-silver-tick{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;border-radius:50%;background:linear-gradient(145deg,#f4f6f8 0%,#aeb7c2 48%,#697481 100%);color:#111820;font-size:10px;font-weight:900;line-height:1;vertical-align:middle;box-shadow:0 0 0 1px #d9e0e8aa;}
+
+
+/* Dedicated promotions marketplace */
+.promotions-page{padding-top:62px;padding-bottom:80px}
+.promotions-hero{max-width:720px;margin:0 auto 34px;text-align:center}
+.promotions-hero h1{margin:13px 0;font-size:clamp(42px,7vw,70px);letter-spacing:-3px;line-height:1}
+.promotions-hero h1 em{font-style:normal;color:var(--lime)}
+.promotions-hero p{color:var(--muted);font-size:14px;line-height:1.8}
+.promotion-package-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:34px}
+.promotion-package{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:21px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(155deg,#171a14,#10120f)}
+.promotion-package-featured{border-color:#77864b;background:linear-gradient(155deg,#202817,#11140e)}
+.promotion-package h2{margin:0;font:700 25px 'Space Grotesk',sans-serif;letter-spacing:-1px}
+.promotion-package h2 small{font:600 11px 'DM Sans',sans-serif;color:var(--muted);letter-spacing:0}
+.promotion-package p{flex:1;margin:0;color:var(--muted);font-size:11px;line-height:1.75}
+.promotion-package .button{width:100%}
+.promotion-submit-form{max-width:850px;margin:0 auto;padding:26px;border:1px solid var(--line);border-radius:15px;background:#10120f}
+.promotion-submit-form h2{margin:8px 0 22px;font-size:clamp(25px,4vw,36px);letter-spacing:-1.3px}
+.promotion-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.promotion-form-grid label{display:flex;flex-direction:column;gap:7px;color:#d9dacd;font-size:11px;font-weight:700}
+.promotion-form-grid input,.promotion-form-grid select,.promotion-form-grid textarea{width:100%;min-height:43px;padding:11px 12px;border:1px solid #34392d;border-radius:7px;background:#171a14;color:var(--ink);font-size:12px}
+.promotion-form-grid textarea{resize:vertical}
+.promotion-form-grid label small{color:var(--muted);font-size:10px;font-weight:400}
+.promotion-description-label{grid-column:1/-1}
+.promotion-submit-form>.button{margin-top:18px}
+.promotion-submit-form .fine-print{display:block;margin-top:12px;color:var(--muted);font-size:10px;line-height:1.6}
+.promotion-message{padding:11px 13px;border:1px solid #596344;border-radius:7px;color:var(--lime);font-size:12px;line-height:1.6}
+@media(max-width:900px){.promotion-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.promotions-page{padding-top:42px}.promotion-package-grid{grid-template-columns:1fr}.promotion-submit-form{padding:18px}.promotion-form-grid{grid-template-columns:1fr}.promotion-description-label{grid-column:auto}}
