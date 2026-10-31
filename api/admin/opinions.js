@@ -4,6 +4,7 @@ import { createMusicDownloadUrl } from "../_lib/music-storage.js";
 import { handleAccountType } from "../_lib/account-type.js";
 import { handleArtistStudio } from "../_lib/artist-studio.js";
 import { handlePodcast } from "../_lib/podcast.js";
+import { handlePromotions } from "../_lib/promotions.js";
 
 async function proxyNeonAuth(req, res) {
   const upstreamBase = process.env.NEON_AUTH_BASE_URL;
@@ -112,6 +113,7 @@ export default async function handler(req, res) {
   if (req.query?.accountTypeRoute) return handleAccountType(req, res);
   if (req.query?.artistStudioRoute) return handleArtistStudio(req, res);
   if (req.query?.podcastRoute) return handlePodcast(req, res);
+  if (req.query?.promotionsRoute) return handlePromotions(req, res);
   const auth = await requireActiveUser(req);
   if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
   if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Only the Super Admin can moderate content." });
