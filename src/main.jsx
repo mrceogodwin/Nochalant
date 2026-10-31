@@ -62,6 +62,7 @@ function App() {
   const [artists, setArtists] = useState([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const artistRailRef = useRef(null);
+  const [artistRailPaused, setArtistRailPaused] = useState(false);
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -325,8 +326,19 @@ function App() {
   const moveArtistRail = (direction) => {
     const rail = artistRailRef.current;
     if (!rail) return;
-    rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.72, 220), behavior: "smooth" });
+    const firstCard = rail.querySelector(".artist-card");
+    const distance = firstCard ? firstCard.getBoundingClientRect().width + 20 : Math.max(rail.clientWidth * 0.72, 220);
+    const maxScroll = rail.scrollWidth - rail.clientWidth;
+    if (direction > 0 && rail.scrollLeft >= maxScroll - 8) rail.scrollTo({ left: 0, behavior: "smooth" });
+    else if (direction < 0 && rail.scrollLeft <= 8) rail.scrollTo({ left: maxScroll, behavior: "smooth" });
+    else rail.scrollBy({ left: direction * distance, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (artistRailPaused || artists.length < 2 || activeScreen !== "home") return;
+    const timer = window.setInterval(() => moveArtistRail(1), 3200);
+    return () => window.clearInterval(timer);
+  }, [artistRailPaused, artists.length, activeScreen]);
 
   useEffect(() => {
     fetch("/api/community/faces")
@@ -504,11 +516,12 @@ function App() {
             <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next artists" disabled={artists.length === 0}><span aria-hidden="true">→</span></button>
           </div>
         </div>
-        <div className="artists-viewport" ref={artistRailRef} aria-label="Artists on Nochalant. Swipe or use the arrow controls to browse artists." tabIndex="0">
+        <div className="artists-viewport" ref={artistRailRef} aria-label="Artists on Nochalant. Swipe or use the arrow controls to browse artists." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
           {artists.length > 0 ? <div className="artists-track">{artists.map(artist => <a className="artist-card" key={artist.id} href={artist.profile_url || "#artists"} target={artist.profile_url ? "_blank" : undefined} rel={artist.profile_url ? "noreferrer" : undefined}>
-            <span className="artist-avatar">{artist.image_url ? <img src={artist.image_url} alt={artist.name} loading="lazy" /> : <span>{artist.name?.trim().slice(0,1).toUpperCase() || "A"}</span>}</span>
+            <span className="artist-avatar">{artist.image_url ? <img src={artist.image_url} alt={`${artist.name} artist portrait`} loading="lazy" /> : <span>{artist.name?.trim().slice(0,1).toUpperCase() || "A"}</span>}</span>
             <span className="artist-name">{artist.name}</span>
             {artist.genre && <span className="artist-genre">{artist.genre}</span>}
+            {Number.isFinite(Number(artist.download_count)) && <span className="artist-downloads" aria-label={`${Number(artist.download_count).toLocaleString()} downloads`}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(artist.download_count).toLocaleString()}</span>}
           </a>)}</div> : <div className="artists-empty">{artistsLoading ? "Loading artists…" : "The artist spotlight is getting ready. Check back soon."}</div>}
         </div>
       </section>
