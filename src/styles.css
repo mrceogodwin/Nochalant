@@ -707,3 +707,63 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .podcast-brand-emblem rect{fill:var(--lime);stroke:none}
 .podcast-brand-emblem path{fill:#10120b}
 .podcast-play-mark{display:none!important}
+
+
+/* Nochalant released-track spotlight */
+.artist-track-card{gap:7px}
+.artist-track-card .artist-track-art{position:relative;cursor:pointer;padding:4px}
+.artist-track-art .artist-track-play{position:absolute;right:3px;bottom:5px;width:29px;height:29px;display:grid;place-items:center;border:2px solid #0c0e0a;border-radius:50%;background:var(--lime);color:#11140d;font-size:10px;padding-left:2px;box-shadow:0 3px 12px #0009}
+.artist-track-title{display:block;width:100%;padding:0;border:0;background:transparent;color:#f0f1e8;font:800 12px/1.25 'Space Grotesk',sans-serif;cursor:pointer;text-align:center;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:30px}
+.artist-track-artist{padding:0;border:0;background:transparent;color:#aeb29f;font:500 10px 'DM Sans',sans-serif;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.artist-track-stats{width:100%;display:flex;justify-content:center;align-items:center;gap:12px;color:#d6f667;font:700 9px 'DM Sans',sans-serif;font-variant-numeric:tabular-nums}
+.artist-track-stats span,.artist-track-stats a{display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:none}
+.artist-track-stats svg{width:12px;height:12px;fill:currentColor;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.artist-track-stats a:hover{color:#fff}
+.artist-track-listen{border:1px solid #414a31;border-radius:3px;background:#11150e;color:#d6f667;padding:5px 8px;font:800 8px 'Space Grotesk',sans-serif;letter-spacing:.08em;cursor:pointer}
+.artist-track-listen:disabled{opacity:.45;cursor:not-allowed}
+.artist-track-listen:not(:disabled):hover{background:#d6f667;color:#10120b}
+@media(max-width:600px){
+ .artist-track-card{width:112px}
+ .artist-track-card .artist-track-art{width:104px;height:104px}
+ .artist-track-title{font-size:11px}
+ .artist-track-stats{gap:8px;font-size:8px}
+}
+
+/* Artist profile: flagship editorial bio and discography */
+.artist-profile-modal{clear:both}
+.modal-card:has(.artist-profile-modal){width:min(760px,100%);padding:22px}
+.artist-profile-hero{min-height:180px;display:flex;align-items:flex-end;gap:17px;padding:22px;background:linear-gradient(135deg,#252d19,#0b0d09);background-size:cover;background-position:center;border:1px solid #424b34}
+.artist-profile-hero>img{width:92px;height:92px;flex:none;object-fit:cover;border:3px solid var(--lime);border-radius:50%}
+.artist-profile-hero h2{margin:8px 0 4px!important;font:800 clamp(25px,5vw,38px)/1 'Space Grotesk',sans-serif;letter-spacing:-1.4px}
+.artist-profile-hero p{margin:0;color:#b5bba6;font-size:11px}
+.artist-profile-bio{padding:20px 2px;border-bottom:1px solid #333b2b}
+.artist-profile-bio p{margin:9px 0 12px;color:#c1c5b7;font-size:12px;line-height:1.8;white-space:pre-wrap}
+.artist-profile-genre{display:inline-flex;padding:6px 10px;border:1px solid #4b5736;border-radius:20px;color:var(--lime);font-size:9px;font-weight:800;letter-spacing:.08em}
+.artist-profile-discography{padding-top:19px}
+.artist-profile-discography h3{margin:7px 0 14px;font:800 21px 'Space Grotesk',sans-serif}
+.artist-profile-track{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #303629}
+.artist-profile-track>img{width:58px;height:58px;object-fit:cover;border-radius:6px;border:1px solid #4a5438}
+.artist-profile-track>div{flex:1;min-width:0;display:grid;gap:4px}
+.artist-profile-track strong{color:#f1f2e9;font:750 13px 'Space Grotesk',sans-serif}
+.artist-profile-track small{color:#9ca38c;font-size:9px}
+.artist-profile-track>div>span{display:flex;gap:12px;color:var(--lime);font-size:9px}
+.artist-profile-track>button{width:35px;height:35px;border:0;border-radius:50%;background:var(--lime);color:#10120b;font-size:12px}
+.artist-profile-track>button:disabled{opacity:.35}
+.artist-profile-loading{padding:20px;color:#b2b7a5;font-size:12px}
+
+/* Player frame and queue navigation */
+.mini-player-dock{position:fixed;z-index:48;right:22px;bottom:18px;width:min(430px,calc(100% - 32px));display:grid;gap:0;filter:drop-shadow(0 12px 28px #0009)}
+.mini-player-dock .mini-player{position:static;width:100%;border:2px solid #68764a;border-bottom:1px solid #68764a;border-radius:3px 3px 0 0;box-shadow:none;backdrop-filter:blur(16px)}
+.player-queue-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 12px;border:2px solid #68764a;border-top:0;border-radius:0 0 3px 3px;background:#11140ff5;color:#a8ad98;font:800 8px 'Space Grotesk',sans-serif;letter-spacing:.12em}
+.player-queue-controls button{display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid #424b34;border-radius:3px;background:#171b12;color:var(--lime);font:800 8px 'Space Grotesk',sans-serif;letter-spacing:.08em}
+.player-queue-controls button:disabled{opacity:.3;cursor:not-allowed}
+.player-queue-controls button:not(:disabled):hover{background:var(--lime);color:#10120b}
+@media(max-width:600px){.mini-player-dock{right:8px;bottom:12px;width:calc(100% - 16px)}.mini-player-dock .mini-player{padding:9px 10px;gap:8px}.mini-player-dock .player-artwork{width:38px;height:38px}.player-queue-controls{padding:5px 9px}}
+
+/* Branded podcast play control replaces the decorative lime square */
+.podcast-brand-emblem{width:58px;height:58px;flex:none;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:var(--lime);color:#10120b;cursor:pointer;box-shadow:0 0 0 5px #d6f66716}
+.podcast-brand-emblem svg{width:100%;height:100%;overflow:visible}
+.podcast-brand-emblem circle{fill:var(--lime);stroke:#10120b;stroke-width:2}
+.podcast-brand-emblem>svg>path:first-of-type{fill:#10120b}
+.podcast-brand-emblem .podcast-brand-play-cut{fill:var(--lime);stroke:#10120b;stroke-width:1.2}
+.podcast-brand-emblem:hover{transform:scale(1.05)}
