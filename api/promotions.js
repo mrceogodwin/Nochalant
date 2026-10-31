@@ -81,6 +81,41 @@ export default async function handler(req, res) {
       `;
       return res.status(201).json({ ok: true, campaign: rows[0], message: "Campaign saved. Payment and admin review are required before it can go live." });
     }
+    if (action === "create_checkout") {
+      const campaignId = clean(req.body?.campaignId, 50);
+      if (!/^[0-9a-f-]{36}$/i.test(campaignId)) return res.status(400).json({ ok: false, error: "Choose a valid campaign." });
+      const apiKey = process.env.BACHS_API_KEY || process.env.BACHS_SECRET_KEY;
+      if (!apiKey) return res.status(503).json({ ok: false, error: "Bachs checkout is not configured yet. Your campaign is saved and no payment has been taken." });
+      const campaignRows = await auth.sql`SELECT id, title, budget_minor, currency, payment_status, status FROM promotion_campaigns WHERE id = ${campaignId} AND buyer_user_id = ${auth.profile.id} LIMIT 1`;
+      const campaign = campaignRows[0];
+      if (!campaign) return res.status(404).json({ ok: false, error: "Campaign not found." });
+      if (campaign.payment_status === "paid") return res.status(409).json({ ok: false, error: "This campaign has already been paid." });
+      if (campaign.status !== "pending_payment") return res.status(409).json({ ok: false, error: "This campaign is not awaiting payment." });
+      const reference = "NCH-PROMO-" + randomUUID().replaceAll("-", "").toUpperCase();
+      const amount = (Number(campaign.budget_minor) / 100).toFixed(2);
+      const baseUrl = apiKey.startsWith("sk_sandbox_") ? "https://sandbox-api.bachs.io" : "https://api.bachs.io";
+      const orderRows = await auth.sql`INSERT INTO payment_orders (user_id, campaign_id, order_type, provider, provider_reference, idempotency_key, amount_minor, currency, status, metadata) VALUES (${auth.profile.id}, ${campaign.id}, 'promotion', 'bachs', ${reference}, ${reference}, ${campaign.budget_minor}, ${campaign.currency}, 'created', ${JSON.stringify({ campaign_id: campaign.id, package_title: campaign.title })}::jsonb) RETURNING id`;
+      const orderId = orderRows[0].id;
+      const checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pricing: { currency: campaign.currency, amount },
+          customer: { email: auth.profile.email || undefined, name: auth.profile.display_name || undefined },
+          reference,
+          metadata: { campaign_id: campaign.id, payment_order_id: orderId, order_type: "promotion" },
+          expires_in_minutes: 60
+        })
+      });
+      const checkout = await checkoutResponse.json().catch(() => ({}));
+      if (!checkoutResponse.ok || !checkout.checkout_url || !checkout.checkout_id) {
+        await auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error || checkout.message || "Checkout creation failed" })}::jsonb WHERE id = ${orderId}`;
+        return res.status(502).json({ ok: false, error: "Bachs could not create checkout. Please try again." });
+      }
+      await auth.sql`UPDATE payment_orders SET status = 'pending', checkout_url = ${checkout.checkout_url}, metadata = metadata || ${JSON.stringify({ checkout_id: checkout.checkout_id })}::jsonb WHERE id = ${orderId}`;
+      await auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference} WHERE id = ${campaign.id} AND payment_status = 'unpaid'`;
+      return res.status(200).json({ ok: true, checkoutUrl: checkout.checkout_url, checkoutId: checkout.checkout_id });
+    }
     if (action === "admin_queue") {
       if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Administrator access required." });
       const rows = await auth.sql`SELECT id, buyer_user_id, title, package_code, media_kind, currency, budget_minor, status, payment_status, media_object_key, created_at FROM promotion_campaigns WHERE status IN ('pending_payment','pending_review') ORDER BY created_at ASC LIMIT 100`;
