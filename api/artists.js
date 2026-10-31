@@ -18,6 +18,7 @@ const mapTrack = async (track) => ({
   cover_art_url: await resolveMusicAssetUrl(track.cover_art_url) || await resolveMusicAssetUrl(track.artist_image_url),
   artist_id: track.artist_id,
   artist_name: track.artist_name,
+  is_verified: track.artist_verification_status === "verified",
   artist_slug: track.artist_slug,
   artist_image_url: await resolveMusicAssetUrl(track.artist_image_url),
   duration_seconds: track.duration_seconds ? Number(track.duration_seconds) : null,
@@ -103,6 +104,7 @@ export default async function handler(req, res) {
       SELECT mt.id, mt.title, mt.audio_object_key, mt.duration_seconds, mt.download_count,
              mt.artist_id, mr.title AS release_title, mr.release_type, mr.cover_art_url,
              mr.genre, mr.release_date, ap.stage_name AS artist_name, ap.slug AS artist_slug,
+             ap.verification_status AS artist_verification_status,
              ap.avatar_url AS artist_image_url,
              COUNT(mpe.id) FILTER (WHERE mpe.eligible = true)::bigint AS plays_count
       FROM music_tracks mt
