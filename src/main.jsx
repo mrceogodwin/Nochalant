@@ -775,7 +775,7 @@ function App() {
                 <span className="artist-track-play" aria-hidden="true">▶</span>
               </button>
               <button type="button" className="artist-name artist-track-title" onClick={() => openArtistProfile(track.artist_slug)}>{track.title}</button>
-              <button type="button" className="artist-track-artist" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}</button>
+              <button type="button" className="artist-track-artist" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified && <span className="artist-silver-tick" title="Nochalant verified artist" aria-label="Nochalant verified artist">✓</span>}</button>
               <div className="artist-track-stats">
                 <span title="Eligible plays"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>{Number(track.plays_count || 0).toLocaleString()}</span>
                 {track.audio_url ? <a href={"/api/music/download?trackId=" + encodeURIComponent(track.id)} title="Download track" aria-label={"Download " + track.title}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</a> : <span title="Downloads"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</span>}
