@@ -7,9 +7,9 @@ This repository contains ordered SQL migrations. They are committed to GitHub; t
 A database password was previously shared in chat. Rotate it in Neon before using the connection string again. Do not paste the new password into GitHub, source code, chat, or a `VITE_*` variable.
 
 Use the Nochalant Neon project only:
-- Project ID: `wandering-shadow-81898225`
+- Project ID: `fancy-hall-40653071`
 - Branch: `production`
-- Region: `us-east-2`
+- Region: `eu-central-1`
 
 Do not use a different Neon project just because it appears under another connected account.
 
