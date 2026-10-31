@@ -70,6 +70,15 @@ export default async function handler(req, res) {
 
   try {
     const sql = neon(connectionString);
+    if (typeof req.query?.download === "string") {
+      const trackId = req.query.download.trim();
+      if (!/^[0-9a-f-]{36}$/i.test(trackId)) return res.status(400).json({ ok: false, error: "Invalid track." });
+      const rows = await sql`SELECT audio_object_key FROM music_tracks WHERE id = ${trackId} AND status = 'published' LIMIT 1`;
+      const downloadUrl = safeHttpsUrl(rows[0]?.audio_object_key);
+      if (!downloadUrl) return res.status(404).json({ ok: false, error: "This track does not have a downloadable audio file yet." });
+      await sql`UPDATE music_tracks SET download_count = download_count + 1 WHERE id = ${trackId} AND status = 'published'`;
+      return res.redirect(302, downloadUrl);
+    }
     const slug = typeof req.query?.slug === "string" ? req.query.slug.trim().slice(0, 100) : "";
     const artistRows = await sql`
       SELECT ap.id, ap.stage_name AS name, ap.slug, ap.bio, ap.avatar_url AS image_url,
