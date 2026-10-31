@@ -799,3 +799,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .promotion-message{padding:11px 13px;border:1px solid #596344;border-radius:7px;color:var(--lime);font-size:12px;line-height:1.6}
 @media(max-width:900px){.promotion-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.promotions-page{padding-top:42px}.promotion-package-grid{grid-template-columns:1fr}.promotion-submit-form{padding:18px}.promotion-form-grid{grid-template-columns:1fr}.promotion-description-label{grid-column:auto}}
+
+
+.promotion-live-list,.my-promotion-campaigns{margin-top:54px}
+.promotion-live-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.promotion-live-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#11130f}
+.promotion-live-card>img,.promotion-live-card>video{width:100%;aspect-ratio:16/10;object-fit:cover;background:#090a08}
+.promotion-live-card>div{padding:16px}
+.promotion-live-card h3{margin:10px 0 6px;font-size:17px}
+.promotion-live-card p{color:var(--muted);font-size:11px;line-height:1.7}
+.promotion-live-card a{display:inline-flex;margin-top:5px;color:var(--lime);font-size:11px;font-weight:800}
+.my-promotion-list,.promotion-admin-list{display:grid;gap:10px}
+.my-promotion-row,.promotion-admin-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:15px 17px;border:1px solid var(--line);border-radius:10px;background:#11130f}
+.my-promotion-row strong,.promotion-admin-row strong{font-size:12px}
+.my-promotion-row p,.promotion-admin-row p{margin:5px 0;color:var(--muted);font-size:10px}
+.my-promotion-status,.my-promotion-metrics{display:flex;gap:8px;flex-wrap:wrap}
+.my-promotion-status span,.my-promotion-metrics span{padding:6px 8px;border-radius:5px;background:#1a1e15;color:#c9cfb5;font-size:9px;text-transform:capitalize}
+.my-promotion-metrics span{background:#171a14;color:var(--muted);text-transform:none}
+.promotion-admin-panel{margin:28px 0 50px;padding:22px;border:1px solid var(--line);border-radius:14px;background:#10120f}
+.promotion-admin-actions{display:flex;gap:8px}
+@media(max-width:760px){.promotion-live-grid{grid-template-columns:1fr 1fr}.my-promotion-row,.promotion-admin-row{grid-template-columns:1fr;gap:10px}.my-promotion-metrics{grid-column:1}.promotion-admin-actions{justify-content:flex-start}}
+@media(max-width:460px){.promotion-live-grid{grid-template-columns:1fr}.my-promotion-row,.promotion-admin-row{padding:13px}}
