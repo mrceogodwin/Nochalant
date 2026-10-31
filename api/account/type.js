@@ -37,13 +37,14 @@ export default async function handler(req, res) {
 
     let artistProfile = null;
     if (accountType === "artist") {
-      const existing = await auth.sql`
-        SELECT id, stage_name, slug, verification_status
-        FROM artist_profiles
-        WHERE owner_user_id = ${auth.profile.id}
-        LIMIT 1
-      `;
+      const existing = await auth.sql`SELECT id, stage_name, slug, verification_status FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`;
       artistProfile = existing[0] || null;
+      if (!artistProfile) {
+        const baseSlug = String(rows[0].display_name || "artist").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
+        const slug = baseSlug + "-" + crypto.randomUUID().slice(0, 8);
+        const created = await auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status) VALUES (${auth.profile.id}, ${rows[0].display_name}, ${slug}, 'unverified') RETURNING id, stage_name, slug, verification_status`;
+        artistProfile = created[0] || null;
+      }
     }
 
     return res.status(200).json({ ok: true, profile: rows[0], artistProfile });
