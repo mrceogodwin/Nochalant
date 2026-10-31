@@ -15,9 +15,7 @@
     "react-dom": "latest",
     "@neondatabase/auth": "0.7.0-beta",
     "@neondatabase/serverless": "latest",
-    "jose": "^6.1.0",
-    "@aws-sdk/client-s3": "^3.922.0",
-    "@aws-sdk/s3-request-presigner": "^3.922.0"
+    "jose": "^6.1.0"
   },
   "devDependencies": {}
 }
