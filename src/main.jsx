@@ -85,6 +85,7 @@ function App() {
   const [promotionMessage, setPromotionMessage] = useState("");
   const [promotionCampaigns, setPromotionCampaigns] = useState([]);
   const [promotionAdminQueue, setPromotionAdminQueue] = useState([]);
+  const [myPromotionCampaigns, setMyPromotionCampaigns] = useState([]);
   const [promotionAdminBusy, setPromotionAdminBusy] = useState(false);
   const [isControlRoom] = useState(() => window.location.pathname.replace(/\/+$/, "") === "/control-room");
   const [controlRoomStatus, setControlRoomStatus] = useState("checking");
@@ -507,6 +508,21 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!currentUser?.id) { setMyPromotionCampaigns([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getAuthToken();
+        if (!token) return;
+        const response = await fetch("/api/promotions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ action: "my_campaigns" }), cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.ok && !cancelled) setMyPromotionCampaigns(data.campaigns || []);
+      } catch (error) { if (!cancelled) console.warn("Your campaigns could not load:", error); }
+    })();
+    return () => { cancelled = true; };
+  }, [currentUser?.id]);
+
+  useEffect(() => {
     const controller = new AbortController();
     fetch("/api/opinions", { signal: controller.signal })
       .then(response => response.ok ? response.json() : null)
@@ -887,6 +903,9 @@ function App() {
           <button className="button button-green" type="submit" disabled={promotionBusy}>{promotionBusy?"Submitting…":"Submit promotion"}</button>
           <small className="fine-print">Your campaign is saved as pending payment. It will not appear publicly until payment is confirmed and Nochalant approves it.</small>
         </form>
+        {currentUser && <section className="my-promotion-campaigns"><div className="artists-heading"><div><span className="eyebrow">ADVERTISER DASHBOARD</span><h2>Your <em>campaigns.</em></h2><p>Check payment, moderation and campaign performance.</p></div></div>
+          {myPromotionCampaigns.length ? <div className="my-promotion-list">{myPromotionCampaigns.map(campaign => <article className="my-promotion-row" key={campaign.id}><div><strong>{campaign.title}</strong><p>{campaign.package_code?.replaceAll("_"," ")} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p></div><div className="my-promotion-status"><span>{campaign.payment_status}</span><span>{campaign.status.replaceAll("_"," ")}</span></div><div className="my-promotion-metrics"><span>{Number(campaign.impressions_count||0).toLocaleString()} impressions</span><span>{Number(campaign.clicks_count||0).toLocaleString()} clicks</span></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns yet.</strong><p>Your submitted campaigns will appear here.</p></div>}
+        </section>}
         <section className="promotion-live-list"><div className="artists-heading"><div><span className="eyebrow">BRANDS · EVENTS · CREATORS</span><h2>In the <em>spotlight.</em></h2><p>Approved promotions from the Nochalant community.</p></div></div>
           {promotionCampaigns.length ? <div className="promotion-live-grid">{promotionCampaigns.map(campaign => <article className="promotion-live-card" key={campaign.id}>
             {campaign.media_kind === "video" ? <video src={campaign.media_url} controls playsInline preload="metadata" /> : <img src={campaign.media_url} alt={campaign.title}/>}
