@@ -27,15 +27,21 @@ export default async function handler(req, res) {
       if (!rows.length) return res.status(404).json({ ok: false, error: "This poll is not available." });
       const poll = rows[0];
       let userVote = null;
+      // Results are public: an expired optional session must not block them.
       if ((req.headers.authorization || "").toLowerCase().startsWith("bearer ")) {
-        const auth = await requireActiveUser(req);
-        if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
-        const mine = await auth.sql`
-          SELECT v.choice FROM hot_trash_votes v
-          WHERE v.poll_id = ${poll.id} AND v.voter_id = ${auth.profile.id}
-          LIMIT 1
-        `;
-        userVote = mine[0]?.choice || null;
+        try {
+          const auth = await requireActiveUser(req);
+          if (!auth.error) {
+            const mine = await auth.sql`
+              SELECT v.choice FROM hot_trash_votes v
+              WHERE v.poll_id = ${poll.id} AND v.voter_id = ${auth.profile.id}
+              LIMIT 1
+            `;
+            userVote = mine[0]?.choice || null;
+          }
+        } catch (sessionError) {
+          console.warn("Hot or Trash optional session ignored on public results:", sessionError?.message || sessionError);
+        }
       }
       const total = Number(poll.total_votes) || 0;
       const hot = Number(poll.hot_votes) || 0;
