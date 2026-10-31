@@ -79,6 +79,11 @@ function App() {
   const [artistStudio, setArtistStudio] = useState(null);
   const [artistStudioError, setArtistStudioError] = useState("");
   const [artistStudioBusy, setArtistStudioBusy] = useState(false);
+  const [promotionPackage, setPromotionPackage] = useState("image_7d");
+  const [promotionKind, setPromotionKind] = useState("image");
+  const [promotionBusy, setPromotionBusy] = useState(false);
+  const [promotionMessage, setPromotionMessage] = useState("");
+  const [promotionCampaigns, setPromotionCampaigns] = useState([]);
   const [isControlRoom] = useState(() => window.location.pathname.replace(/\/+$/, "") === "/control-room");
   const [controlRoomStatus, setControlRoomStatus] = useState("checking");
   const [controlRoomError, setControlRoomError] = useState("");
@@ -722,7 +727,7 @@ function App() {
         <div className="drawer-flagship"><span className="drawer-kicker">NOCHALANT FLAGSHIP</span>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home <span>01</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>02</span></button>
-          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>
+          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>\n          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>04</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>04</span></button>
           {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>05</span></button> : <a href="#artists" onClick={() => setMobileMenu(false)}>Artists <span>05</span></a>}
           <a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda <span>06</span></a>
@@ -803,8 +808,47 @@ function App() {
         </div>
         <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
 
-      <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">OPTIONAL FEATURE</span></div><h3>Get on the <em>carousel.</em></h3><p>Give your promotion a premium spot in the Nochalant spotlight.</p><div className="price">₦5,999 <small>/ placement</small></div><ul><li>Premium carousel consideration</li><li>Editorial review required</li><li>Payment confirmation required</li></ul><button className="button button-dark" onClick={() => {setFormCategory("Afrobeats & Jamz");setModal("submit");}}>Request a placement </button><small className="fine-print">Payment processing is not connected yet. No payment will be collected in this preview.</small></div></section>
-      </> : activeScreen === "social" ? <section className="social-section container screen-page" id="social" aria-labelledby="social-title"><SocialFeed currentUser={currentUser} onJoin={() => setModal("signup")} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></section> : activeScreen === "podcast" ? <section className="podcast-section container screen-page" id="podcast-show" aria-labelledby="podcast-show-title">
+      <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
+      </> : activeScreen === "promotions" ? <section className="promotions-page container screen-page">
+        <div className="promotions-hero"><span className="eyebrow">NOCHALANT FOR BRANDS</span><h1>Make some <em>noise.</em></h1><p>Promote your brand, event, product, video or creative work to the Nochalant audience.</p></div>
+        <div className="promotion-package-grid">
+          <article className="promotion-package"><span className="eyebrow">IMAGE · 7 DAYS</span><h2>₦2,000 <small>/ $1.99</small></h2><p>One promotional image or flyer with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("image_7d");setPromotionKind("image");document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose image</button></article>
+          <article className="promotion-package"><span className="eyebrow">VIDEO · 7 DAYS</span><h2>₦4,000 <small>/ $3.99</small></h2><p>One promotional video with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("video_7d");setPromotionKind("video");document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose video</button></article>
+          <article className="promotion-package promotion-package-featured"><span className="eyebrow">PREMIUM · 14 DAYS</span><h2>₦8,000 <small>/ $7.99</small></h2><p>Premium image or video placement with a clickable call-to-action.</p><button className="button button-green" onClick={() => {setPromotionPackage("premium_14d");document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose premium</button></article>
+          <article className="promotion-package"><span className="eyebrow">EXTENDED · 30 DAYS</span><h2>₦15,000 <small>/ $14.99</small></h2><p>Longer premium campaign for brands, launches and events.</p><button className="button button-outline" onClick={() => {setPromotionPackage("extended_30d");document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose extended</button></article>
+        </div>
+        <form id="promotion-submit" className="promotion-submit-form" onSubmit={async event => {
+          event.preventDefault(); if (!currentUser) { setModal("login"); return; }
+          const form = event.currentTarget; const data = new FormData(form); const file = data.get("mediaFile");
+          if (!(file instanceof File) || !file.size) { setPromotionMessage("Please select an image or video."); return; }
+          setPromotionBusy(true); setPromotionMessage("");
+          try {
+            const token = await getAuthToken(); if (!token) throw new Error("Please sign in again.");
+            const headers = {"Content-Type":"application/json",Authorization:"Bearer "+token};
+            const signedResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_upload_url",kind:promotionKind,contentType:file.type,size:file.size})});
+            const signed = await signedResponse.json(); if (!signedResponse.ok || !signed.ok) throw new Error(signed.error || "Could not prepare upload.");
+            const upload = await fetch(signed.url,{method:signed.method || "PUT",headers:signed.headers || {"Content-Type":file.type},body:file});
+            if (!upload.ok) throw new Error("Media upload failed.");
+            const createResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_campaign",title:data.get("title"),description:data.get("description"),packageCode:promotionPackage,kind:promotionKind,mediaObjectKey:signed.objectKey,destinationUrl:data.get("destinationUrl"),contactText:data.get("contactText"),currency:data.get("currency")})});
+            const created = await createResponse.json(); if (!createResponse.ok || !created.ok) throw new Error(created.error || "Campaign could not be saved.");
+            setPromotionMessage(created.message || "Campaign saved. Payment and review are still required."); form.reset();
+          } catch(error) { setPromotionMessage(error.message || "Campaign could not be submitted."); }
+          finally { setPromotionBusy(false); }
+        }}>
+          <span className="eyebrow">START A CAMPAIGN</span><h2 id="promotion-submit">Submit your promotion.</h2>
+          <div className="promotion-form-grid"><label>Campaign title<input name="title" required maxLength="120" placeholder="Your brand, event or product"/></label>
+          <label>Package<select value={promotionPackage} onChange={event => setPromotionPackage(event.target.value)}><option value="image_7d">Image · 7 days</option><option value="video_7d">Video · 7 days</option><option value="premium_14d">Premium · 14 days</option><option value="extended_30d">Extended · 30 days</option></select></label>
+          <label>Media type<select value={promotionKind} onChange={event => setPromotionKind(event.target.value)}><option value="image">Image</option><option value="video">Video</option></select></label>
+          <label>Currency<select name="currency"><option value="NGN">NGN · Nigeria</option><option value="USD">USD · International</option></select></label>
+          <label className="promotion-file-label">Upload image or video<input name="mediaFile" type="file" required accept={promotionKind==="image"?"image/jpeg,image/png,image/webp,image/avif":"video/mp4,video/webm,video/quicktime"}/><small>Images up to 15 MB · Videos up to 200 MB</small></label>
+          <label>Destination link<input name="destinationUrl" type="url" placeholder="https://..."/></label>
+          <label className="promotion-description-label">Description<textarea name="description" rows="3" maxLength="1200" placeholder="Tell people what you're promoting"/></label>
+          <label>Contact details<input name="contactText" maxLength="120" placeholder="Optional phone or social handle"/></label></div>
+          {promotionMessage && <p className="promotion-message" role="status">{promotionMessage}</p>}
+          <button className="button button-green" type="submit" disabled={promotionBusy}>{promotionBusy?"Submitting…":"Submit promotion"}</button>
+          <small className="fine-print">Your campaign is saved as pending payment. It will not appear publicly until payment is confirmed and Nochalant approves it.</small>
+        </form>
+      </section> : activeScreen === "social" ? <section className="social-section container screen-page" id="social" aria-labelledby="social-title"><SocialFeed currentUser={currentUser} onJoin={() => setModal("signup")} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></section> : activeScreen === "podcast" ? <section className="podcast-section container screen-page" id="podcast-show" aria-labelledby="podcast-show-title">
         <div className="podcast-heading"><div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h1 id="podcast-show-title">Nochalant <em>Podcast.</em></h1><p>Watch the conversations, performances and stories moving Nigerian culture.</p></div><span className="podcast-mark" aria-hidden="true">N<span>.</span></span></div>
         <div className="podcast-library-feature">
           <div className="podcast-library-screen podcast-player-stage">
