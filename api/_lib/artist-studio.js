@@ -1,6 +1,6 @@
 import { requireActiveUser } from "./neon-auth.js";
 import { randomUUID } from "node:crypto";
-import { createMusicUploadUrl, verifyMusicUpload } from "./music-storage.js";
+import { createMusicUploadUrl, verifyMusicUpload, verifyArtworkUpload, resolveMusicAssetUrl } from "./music-storage.js";
 
 const clean = (value, max = 180) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeHttps = (value) => {
@@ -48,19 +48,27 @@ export async function handleArtistStudio(req, res) {
           FROM music_tracks WHERE artist_id = ${artist.id}
         `
       ]);
-      return res.status(200).json({ ok: true, artist, releases, stats: stats[0] || { published_tracks: 0, downloads: 0 } });
+      const [avatarUrl, bannerUrl, signedReleases] = await Promise.all([
+        resolveMusicAssetUrl(artist.avatar_url),
+        resolveMusicAssetUrl(artist.banner_url),
+        Promise.all(releases.map(async release => ({ ...release, cover_art_url: await resolveMusicAssetUrl(release.cover_art_url) })))
+      ]);
+      return res.status(200).json({ ok: true, artist: { ...artist, avatar_url: avatarUrl, banner_url: bannerUrl }, releases: signedReleases, stats: stats[0] || { published_tracks: 0, downloads: 0 } });
     }
 
     const action = clean(req.body?.action, 40);
 
-    if (action === "create_upload_url") {
       const contentType = clean(req.body?.contentType, 100).toLowerCase();
-      const allowedTypes = new Set(["audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/x-wav", "audio/flac", "audio/ogg", "audio/webm"]);
+      const assetType = clean(req.body?.assetType, 20) || "audio";
+      const audioTypes = { "audio/mpeg":"mp3", "audio/mp4":"m4a", "audio/aac":"aac", "audio/wav":"wav", "audio/x-wav":"wav", "audio/flac":"flac", "audio/ogg":"ogg", "audio/webm":"webm" };
+      const imageTypes = { "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "image/avif":"avif" };
+      const extension = assetType === "audio" ? audioTypes[contentType] : imageTypes[contentType];
       const size = Number(req.body?.size);
-      if (!allowedTypes.has(contentType)) return res.status(400).json({ ok: false, error: "Upload an MP3, M4A, AAC, WAV, FLAC, OGG or WebM audio file." });
-      if (!Number.isSafeInteger(size) || size < 1 || size > 100 * 1024 * 1024) return res.status(400).json({ ok: false, error: "Audio files must be 100 MB or smaller." });
-      const extension = ({ "audio/mpeg":"mp3", "audio/mp4":"m4a", "audio/aac":"aac", "audio/wav":"wav", "audio/x-wav":"wav", "audio/flac":"flac", "audio/ogg":"ogg", "audio/webm":"webm" })[contentType];
-      const objectKey = "artists/" + artist.id + "/tracks/" + randomUUID() + "." + extension;
+      const maxSize = assetType === "audio" ? 100 * 1024 * 1024 : 15 * 1024 * 1024;
+      if (!["audio", "artwork", "avatar", "banner"].includes(assetType) || !extension) return res.status(400).json({ ok: false, error: "Unsupported file format." });
+      if (!Number.isSafeInteger(size) || size < 1 || size > maxSize) return res.status(400).json({ ok: false, error: assetType === "audio" ? "Audio files must be 100 MB or smaller." : "Artwork files must be 15 MB or smaller." });
+      const folder = assetType === "audio" ? "tracks" : assetType === "artwork" ? "artwork" : "profile";
+      const objectKey = "artists/" + artist.id + "/" + folder + "/" + assetType + "-" + randomUUID() + "." + extension;
       const signed = await createMusicUploadUrl(objectKey, contentType);
       return res.status(200).json({ ok: true, objectKey, ...signed });
     }
@@ -68,12 +76,15 @@ export async function handleArtistStudio(req, res) {
       const stageName = clean(req.body?.stageName, 100);
       const bio = clean(req.body?.bio, 3000);
       const city = clean(req.body?.city, 100);
-      const avatarUrl = req.body?.avatarUrl ? safeHttps(req.body.avatarUrl) : null;
-      const bannerUrl = req.body?.bannerUrl ? safeHttps(req.body.bannerUrl) : null;
+      const avatarObjectKey = clean(req.body?.avatarObjectKey, 1024);
+      const bannerObjectKey = clean(req.body?.bannerObjectKey, 1024);
+      const validAssetKey = (key, slot) => !key || (key.startsWith("artists/" + artist.id + "/profile/" + slot + "-") && !key.includes(".."));
       if (!stageName) return res.status(400).json({ ok: false, error: "Artist or stage name is required." });
-      if ((req.body?.avatarUrl && !avatarUrl) || (req.body?.bannerUrl && !bannerUrl)) {
-        return res.status(400).json({ ok: false, error: "Profile image links must be valid HTTPS URLs." });
-      }
+      if (!validAssetKey(avatarObjectKey, "avatar") || !validAssetKey(bannerObjectKey, "banner")) return res.status(400).json({ ok: false, error: "Invalid profile image reference." });
+      if (avatarObjectKey) await verifyArtworkUpload(avatarObjectKey);
+      if (bannerObjectKey) await verifyArtworkUpload(bannerObjectKey);
+      const avatarUrl = avatarObjectKey ? "neon-storage:" + avatarObjectKey : (req.body?.avatarUrl ? safeHttps(req.body.avatarUrl) : null);
+      const bannerUrl = bannerObjectKey ? "neon-storage:" + bannerObjectKey : (req.body?.bannerUrl ? safeHttps(req.body.bannerUrl) : null);
       const rows = await auth.sql`
         UPDATE artist_profiles
         SET stage_name = ${stageName}, bio = ${bio}, city = ${city || null},
@@ -89,10 +100,14 @@ export async function handleArtistStudio(req, res) {
       const genre = clean(req.body?.genre, 80);
       const releaseType = clean(req.body?.releaseType, 20);
       const releaseDate = clean(req.body?.releaseDate, 10) || null;
-      const coverArtUrl = req.body?.coverArtUrl ? safeHttps(req.body.coverArtUrl) : null;
+      const coverArtObjectKey = clean(req.body?.coverArtObjectKey, 1024);
+      const validCoverKey = !coverArtObjectKey || (coverArtObjectKey.startsWith("artists/" + artist.id + "/artwork/artwork-") && !coverArtObjectKey.includes(".."));
       if (!title || !genre || !["single", "ep", "album", "mixtape"].includes(releaseType)) {
         return res.status(400).json({ ok: false, error: "Enter a release title, genre and valid release type." });
       }
+      if (!validCoverKey) return res.status(400).json({ ok: false, error: "Invalid release artwork reference." });
+      if (coverArtObjectKey) await verifyArtworkUpload(coverArtObjectKey);
+      const coverArtUrl = coverArtObjectKey ? "neon-storage:" + coverArtObjectKey : (req.body?.coverArtUrl ? safeHttps(req.body.coverArtUrl) : null);
       if (req.body?.coverArtUrl && !coverArtUrl) return res.status(400).json({ ok: false, error: "Cover artwork must use a valid HTTPS URL." });
       if (releaseDate && !/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) return res.status(400).json({ ok: false, error: "Release date must use YYYY-MM-DD." });
       const rows = await auth.sql`
