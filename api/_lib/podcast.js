@@ -35,7 +35,7 @@ export async function handlePodcast(req, res) {
     try {
       const sql = neon(connectionString);
       const [shows, seasons, episodes, clips] = await Promise.all([
-        sql`SELECT id, slug, title, description, host_name, host_role, host_bio, host_image_url, cover_image_url, trailer_video_url, is_featured, published_at
+        sql`SELECT id, slug, title, description, host_name, host_role, host_bio, host_image_url, host_instagram_url, host_tiktok_url, cover_image_url, trailer_video_url, is_featured, published_at
             FROM podcast_shows WHERE status='published' ORDER BY is_featured DESC, sort_order ASC, published_at DESC LIMIT 50`,
         sql`SELECT s.id, s.show_id, s.season_number, s.title, s.description, s.published_at
             FROM podcast_seasons s JOIN podcast_shows sh ON sh.id=s.show_id
@@ -87,11 +87,13 @@ export async function handlePodcast(req, res) {
       const showId = clean(req.body?.showId,36);
       const hostName = clean(req.body?.hostName,120);
       const hostRole = clean(req.body?.hostRole,100);
-      const hostBio = clean(req.body?.hostBio,700);
+      const hostBio = clean(req.body?.hostBio,1200);
+      const hostInstagram = req.body?.hostInstagramUrl ? safeHttps(req.body.hostInstagramUrl) : null;
+      const hostTiktok = req.body?.hostTiktokUrl ? safeHttps(req.body.hostTiktokUrl) : null;
       const hostImage = req.body?.hostImageUrl ? safeHttps(req.body.hostImageUrl) : null;
       if (!/^[0-9a-f-]{36}$/i.test(showId)) return res.status(400).json({ok:false,error:"Choose a valid podcast series."});
-      if (req.body?.hostImageUrl && !hostImage) return res.status(400).json({ok:false,error:"Host photo URL must use HTTPS."});
-      const rows = await auth.sql`UPDATE podcast_shows SET host_name=${hostName||null}, host_role=${hostRole||null}, host_bio=${hostBio}, host_image_url=${hostImage} WHERE id=${showId} RETURNING id,title,host_name,host_role,host_bio,host_image_url`;
+      if ((req.body?.hostImageUrl && !hostImage) || (req.body?.hostInstagramUrl && !hostInstagram) || (req.body?.hostTiktokUrl && !hostTiktok)) return res.status(400).json({ok:false,error:"Host photo and social links must use HTTPS."});
+      const rows = await auth.sql`UPDATE podcast_shows SET host_name=${hostName||null}, host_role=${hostRole||null}, host_bio=${hostBio}, host_image_url=${hostImage}, host_instagram_url=${hostInstagram}, host_tiktok_url=${hostTiktok} WHERE id=${showId} RETURNING id,title,host_name,host_role,host_bio,host_image_url,host_instagram_url,host_tiktok_url`;
       if (!rows.length) return res.status(404).json({ok:false,error:"Podcast series not found."});
       return res.status(200).json({ok:true,show:rows[0]});
     }
