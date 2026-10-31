@@ -12,6 +12,10 @@
       "source": "/api/artist/studio",
       "destination": "/api/admin/opinions?artistStudioRoute=1"
     },
+    ,{
+      "source": "/api/music/download",
+      "destination": "/api/admin/opinions?downloadRoute=1"
+    }
     {
       "source": "/api/auth/:path*",
       "destination": "/api/admin/opinions?authPath=$1"
