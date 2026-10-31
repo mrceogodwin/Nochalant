@@ -4,6 +4,7 @@ import "./styles.css";
 import { authClient, getAuthToken, rememberAuthSession, clearRememberedAuthSession } from "./auth.js";
 import OpinionsPanel from "./OpinionsPanel.jsx";
 import SocialFeed from "./SocialFeed.jsx";
+import PodcastAdmin from "./PodcastAdmin.jsx";
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
@@ -568,7 +569,7 @@ function App() {
       {controlRoomStatus === "login" && <section className="control-room-gate"><span className="eyebrow">PRIVATE ADMINISTRATION</span><h1>Nochalant Control Room.</h1><p>Sign in with the authorized owner account. This entrance is not available to public members.</p><form className="control-room-login" onSubmit={submitControlRoomLogin}><label>Email address<input name="email" type="email" autoComplete="username" required placeholder="Owner email"/></label><label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Your password"/></label><button className="button button-green full-width" type="submit">Sign in securely</button></form>{controlRoomError && <p className="control-room-error" role="alert">{controlRoomError}</p>}</section>}
       {controlRoomStatus === "denied" && <section className="control-room-gate"><span className="eyebrow">ACCESS RESTRICTED</span><h1>Administrator access required.</h1><p>{controlRoomError || "This account does not have permission to enter the Control Room."}</p><a className="button button-outline" href="/">Return to Nochalant</a></section>}
       {controlRoomStatus === "error" && <section className="control-room-gate"><span className="eyebrow">SECURE ACCESS UNAVAILABLE</span><h1>We couldn't verify access.</h1><p>{controlRoomError}</p><button className="button button-green" onClick={verifyControlRoomAccess}>Try again</button></section>}
-      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /></>}
+      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /><PodcastAdmin /></>}
     </main>
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
