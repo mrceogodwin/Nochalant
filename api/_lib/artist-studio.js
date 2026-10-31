@@ -52,6 +52,18 @@ export async function handleArtistStudio(req, res) {
     }
 
     const action = clean(req.body?.action, 40);
+
+    if (action === "create_upload_url") {
+      const contentType = clean(req.body?.contentType, 100).toLowerCase();
+      const allowedTypes = new Set(["audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/x-wav", "audio/flac", "audio/ogg", "audio/webm"]);
+      const size = Number(req.body?.size);
+      if (!allowedTypes.has(contentType)) return res.status(400).json({ ok: false, error: "Upload an MP3, M4A, AAC, WAV, FLAC, OGG or WebM audio file." });
+      if (!Number.isSafeInteger(size) || size < 1 || size > 100 * 1024 * 1024) return res.status(400).json({ ok: false, error: "Audio files must be 100 MB or smaller." });
+      const extension = ({ "audio/mpeg":"mp3", "audio/mp4":"m4a", "audio/aac":"aac", "audio/wav":"wav", "audio/x-wav":"wav", "audio/flac":"flac", "audio/ogg":"ogg", "audio/webm":"webm" })[contentType];
+      const objectKey = "artists/" + artist.id + "/tracks/" + randomUUID() + "." + extension;
+      const signed = await createMusicUploadUrl(objectKey, contentType);
+      return res.status(200).json({ ok: true, objectKey, ...signed });
+    }
     if (action === "update_profile") {
       const stageName = clean(req.body?.stageName, 100);
       const bio = clean(req.body?.bio, 3000);
@@ -95,11 +107,15 @@ export async function handleArtistStudio(req, res) {
       const releaseId = clean(req.body?.releaseId, 50);
       const title = clean(req.body?.title, 180);
       const audioUrl = safeHttps(req.body?.audioUrl);
+      const audioObjectKey = clean(req.body?.audioObjectKey, 1024);
+      const ownedStorageKey = audioObjectKey.startsWith("artists/" + artist.id + "/tracks/") && !audioObjectKey.includes("..");
+      const storedAudio = ownedStorageKey ? "neon-storage:" + audioObjectKey : audioUrl;
       const durationSeconds = Number(req.body?.durationSeconds) || null;
       const isrc = clean(req.body?.isrc, 20) || null;
-      if (!/^[0-9a-f-]{36}$/i.test(releaseId) || !title || !audioUrl) {
-        return res.status(400).json({ ok: false, error: "Choose a draft release, enter a track title and provide a valid HTTPS audio URL." });
+      if (!/^[0-9a-f-]{36}$/i.test(releaseId) || !title || !storedAudio) {
+        return res.status(400).json({ ok: false, error: "Choose a draft release, enter a track title and upload an audio file." });
       }
+      if (audioObjectKey && !ownedStorageKey) return res.status(400).json({ ok: false, error: "Invalid uploaded audio file reference." });
       if (durationSeconds !== null && (!Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 86400)) {
         return res.status(400).json({ ok: false, error: "Track duration must be a positive number of seconds." });
       }
@@ -113,7 +129,7 @@ export async function handleArtistStudio(req, res) {
         INSERT INTO music_tracks
           (release_id, artist_id, title, audio_object_key, duration_seconds, isrc, status)
         VALUES
-          (${releaseId}, ${artist.id}, ${title}, ${audioUrl}, ${durationSeconds}, ${isrc}, 'pending')
+          (${releaseId}, ${artist.id}, ${title}, ${storedAudio}, ${durationSeconds}, ${isrc}, 'pending')
         RETURNING id, release_id, title, duration_seconds, status, created_at
       `;
       return res.status(201).json({ ok: true, track: rows[0] });
