@@ -438,3 +438,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .artist-release-row small{color:#9fa494;font-size:10px}
 .artist-release-row .button{font-size:10px;padding:9px 12px}
 @media(max-width:680px){.artist-studio-forms{grid-template-columns:1fr}.artist-studio-form{padding:16px}.artist-release-row{align-items:flex-start;flex-wrap:wrap}.artist-release-row>div{flex-basis:100%}.artist-release-row .dashboard-status{margin-top:0}}
+
+
+/* Footer uses the outlined custom N mark only. The global .brand:before
+   filled lime badge remains in the header but is suppressed in the footer. */
+.footer-about .footer-brand:before{display:none!important;content:none!important}
