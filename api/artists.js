@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
-import { createMusicDownloadUrl } from "./_lib/music-storage.js";
+import { createMusicDownloadUrl, resolveMusicAssetUrl } from "./_lib/music-storage.js";
 
 const safeHttpsUrl = (value) => {
   if (!value) return null;
@@ -15,11 +15,11 @@ const mapTrack = async (track) => ({
   title: track.title,
   release_title: track.release_title,
   release_type: track.release_type,
-  cover_art_url: safeHttpsUrl(track.cover_art_url) || safeHttpsUrl(track.artist_image_url),
+  cover_art_url: await resolveMusicAssetUrl(track.cover_art_url) || await resolveMusicAssetUrl(track.artist_image_url),
   artist_id: track.artist_id,
   artist_name: track.artist_name,
   artist_slug: track.artist_slug,
-  artist_image_url: safeHttpsUrl(track.artist_image_url),
+  artist_image_url: await resolveMusicAssetUrl(track.artist_image_url),
   duration_seconds: track.duration_seconds ? Number(track.duration_seconds) : null,
   genre: track.genre,
   release_date: track.release_date,
@@ -113,11 +113,11 @@ export default async function handler(req, res) {
       LIMIT 120
     `;
     const tracks = await Promise.all(trackRows.map(mapTrack));
-    const artists = artistRows.map(artist => {
+    const artists = await Promise.all(artistRows.map(async artist => {
       const artistTracks = tracks.filter(track => track.artist_id === artist.id);
       return {
         id: artist.id, name: artist.name, slug: artist.slug, bio: artist.bio,
-        image_url: safeHttpsUrl(artist.image_url), banner_url: safeHttpsUrl(artist.banner_url),
+        image_url: await resolveMusicAssetUrl(artist.image_url), banner_url: await resolveMusicAssetUrl(artist.banner_url),
         city: artist.city, country_code: artist.country_code,
         genre: artistTracks[0]?.genre || null,
         track_count: artistTracks.length,
@@ -125,7 +125,7 @@ export default async function handler(req, res) {
         download_count: artistTracks.reduce((sum, track) => sum + track.download_count, 0),
         tracks: artistTracks
       };
-    });
+    }));
     if (slug) return res.status(200).json({ ok: true, artist: artists[0], tracks: artists[0].tracks });
     return res.status(200).json({ ok: true, artists, tracks });
   } catch (error) {
