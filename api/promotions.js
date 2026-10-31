@@ -1,6 +1,6 @@
 import { requireActiveUser } from "./_lib/neon-auth.js";
 import { randomUUID } from "node:crypto";
-import { createMusicUploadUrl, createMusicDownloadUrl, verifyArtworkUpload } from "./_lib/music-storage.js";
+import { createMusicUploadUrl, createMusicDownloadUrl, verifyArtworkUpload, verifyPromotionVideoUpload } from "./_lib/music-storage.js";
 
 const packages = {
   image_7d: { kind: "image", days: 7, NGN: 200000, USD: 199 },
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       const currency = clean(req.body?.currency, 3).toUpperCase() === "USD" ? "USD" : "NGN";
       if (!pkg || !title || !kind || (pkg.kind && pkg.kind !== kind) || !objectKey.startsWith("promotions/" + auth.profile.id + "/") || objectKey.includes("..")) return res.status(400).json({ ok: false, error: "Complete the campaign details and choose a matching package." });
       if (req.body?.destinationUrl && !destination) return res.status(400).json({ ok: false, error: "Destination links must use HTTPS." });
-      if (kind === "image") await verifyArtworkUpload(objectKey);
+      if (kind === "image") await verifyArtworkUpload(objectKey);\n      else await verifyPromotionVideoUpload(objectKey);
       // Campaigns remain pending payment and are never published by this endpoint.
       const amount = pkg[currency];
       const rows = await auth.sql`
