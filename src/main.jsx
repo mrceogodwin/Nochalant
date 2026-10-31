@@ -326,22 +326,40 @@ function App() {
 
   const submitArtistStudio = async (event, action) => {
     event.preventDefault();
+    const form = event.currentTarget;
     setArtistStudioBusy(true);
     setArtistStudioError("");
     try {
-      const formData = new FormData(event.currentTarget);
+      const formData = new FormData(form);
       const payload = { action };
-      for (const [key, value] of formData.entries()) payload[key] = String(value).trim();
+      for (const [key, value] of formData.entries()) {
+        if (key !== "audioFile" && typeof value === "string") payload[key] = value.trim();
+      }
       const token = await getAuthToken();
       if (!token) throw new Error("Your session has expired. Please log in again.");
-      const response = await fetch("/api/artist/studio", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.ok) throw new Error(data.error || "Your changes could not be saved.");
+      const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      if (action === "add_track") {
+        const file = formData.get("audioFile");
+        if (!(file instanceof File) || !file.size) throw new Error("Choose an audio file to upload.");
+        const signResponse = await fetch("/api/artist/studio", { method: "POST", headers, body: JSON.stringify({ action: "create_upload_url", contentType: file.type, size: file.size }) });
+        const signed = await signResponse.json().catch(() => ({}));
+        if (!signResponse.ok || !signed.ok) throw new Error(signed.error || "Could not prepare your secure audio upload.");
+        const uploadResponse = await fetch(signed.url, { method: signed.method || "PUT", headers: signed.headers || { "Content-Type": file.type }, body: file });
+        if (!uploadResponse.ok) throw new Error("Audio upload failed. Please try again.");
+        const trackPayload = { action: "add_track", releaseId: payload.releaseId, title: payload.title, durationSeconds: payload.durationSeconds, isrc: payload.isrc, audioObjectKey: signed.objectKey };
+        const response = await fetch("/api/artist/studio", { method: "POST", headers, body: JSON.stringify(trackPayload) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error || "Your track could not be saved.");
+      } else {
+        const response = await fetch("/api/artist/studio", { method: "POST", headers, body: JSON.stringify(payload) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error || "Your changes could not be saved.");
+      }
       const refreshed = await fetch("/api/artist/studio", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
       const latest = await refreshed.json().catch(() => ({}));
       if (refreshed.ok && latest.ok) setArtistStudio(latest);
-      notify(action === "create_release" ? "Release draft created." : action === "add_track" ? "Track added to your release draft." : "Artist profile updated.");
-      if (action !== "update_profile") event.currentTarget.reset();
+      notify(action === "create_release" ? "Release draft created." : action === "add_track" ? "Audio uploaded and track added to your release draft." : "Artist profile updated.");
+      if (action !== "update_profile") form.reset();
     } catch (error) { setArtistStudioError(error?.message || "Artist studio action failed."); }
     finally { setArtistStudioBusy(false); }
   };
