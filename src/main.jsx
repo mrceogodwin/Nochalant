@@ -908,7 +908,7 @@ function App() {
             }
             const createResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_campaign",title:data.get("title"),description:data.get("description"),packageCode:promotionPackage,kind:promotionKind,mediaObjectKey:objectKey,textBody:textPromotionBody,designConfig:textPromotionDesign,destinationUrl:data.get("destinationUrl"),contactText:data.get("contactText"),currency:data.get("currency")})});
             const created = await createResponse.json(); if (!createResponse.ok || !created.ok) throw new Error(created.error || "Campaign could not be saved.");
-            form.reset();
+            form.reset(); setTextPromotionBody(""); setTextPromotionDesign({theme:"midnight",layout:"editorial",alignment:"left",icon:"spark",font:"modern"});
             if (created.campaign?.id) {
               setMyPromotionCampaigns(current => [created.campaign, ...current.filter(item => item.id !== created.campaign.id)]);
               await startPromotionCheckout(created.campaign.id);
