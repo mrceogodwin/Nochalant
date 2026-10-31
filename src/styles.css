@@ -640,3 +640,70 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .podcast-admin-error{border:1px solid #8b5146;background:#261613;color:#ffb7a8}
 .podcast-admin-notice{border:1px solid #52623c;background:#171e12;color:var(--lime,#d6f667)}
 @media(max-width:680px){.podcast-admin-heading{align-items:flex-start;flex-direction:column}.podcast-admin-forms{grid-template-columns:1fr}.podcast-admin-form-wide{grid-column:auto}.podcast-admin-form-grid{grid-template-columns:1fr}.podcast-admin-span{grid-column:auto}.podcast-admin-row{align-items:flex-start;flex-wrap:wrap}.podcast-admin-row>div{flex-basis:100%}}
+
+
+/* Restore the original Nochalant header/footer lockup from the approved reference:
+   lime N tile + white wordmark + lime full stop. */
+.site-header .header-brand,
+.footer .footer-brand{
+  display:inline-flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:auto!important;
+  max-width:100%;
+  color:#f4f4ec!important;
+  font:800 clamp(22px,2.6vw,30px)/1 'Space Grotesk',sans-serif!important;
+  letter-spacing:-1.2px!important;
+  white-space:nowrap;
+  text-decoration:none;
+}
+.site-header .header-brand:before,
+.footer .footer-brand:before{
+  content:'N'!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:none!important;
+  width:42px!important;
+  height:42px!important;
+  border:0!important;
+  border-radius:11px 11px 11px 3px!important;
+  background:var(--lime)!important;
+  color:#10120b!important;
+  font:800 27px/1 'Space Grotesk',sans-serif!important;
+  letter-spacing:-2px!important;
+  transform:rotate(-3deg)!important;
+}
+.site-header .header-brand>span,
+.footer .footer-brand>span{
+  color:var(--lime)!important;
+}
+.site-header .header-brand small,
+.footer .footer-brand small{display:none!important}
+@media(max-width:640px){
+  .site-header .header-brand,.footer .footer-brand{gap:10px!important;font-size:clamp(21px,5.5vw,27px)!important}
+  .site-header .header-brand:before,.footer .footer-brand:before{width:39px!important;height:39px!important;font-size:25px!important}
+}
+
+/* Podcast brand marks are logos, never play controls. */
+.podcast-mark,.podcast-screen-mark,.podcast-episode-monogram,.podcast-empty-mark{
+  display:grid;
+  place-items:center;
+  border:0!important;
+  border-radius:11px 11px 11px 3px!important;
+  background:var(--lime)!important;
+  color:#10120b!important;
+  font:800 27px/1 'Space Grotesk',sans-serif!important;
+  letter-spacing:-2px;
+  transform:rotate(-3deg)!important;
+  box-shadow:none!important;
+}
+.podcast-mark{width:54px;height:54px}
+.podcast-screen-mark{width:58px;height:58px}
+.podcast-episode-monogram{width:54px;height:54px}
+.podcast-empty-mark{width:44px;height:44px;font-size:22px!important}
+.podcast-brand-emblem{width:58px;height:58px;display:grid;place-items:center;border:0;background:transparent;box-shadow:none}
+.podcast-brand-emblem svg{width:100%;height:100%;overflow:visible}
+.podcast-brand-emblem rect{fill:var(--lime);stroke:none}
+.podcast-brand-emblem path{fill:#10120b}
+.podcast-play-mark{display:none!important}
