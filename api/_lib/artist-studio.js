@@ -58,6 +58,7 @@ export async function handleArtistStudio(req, res) {
 
     const action = clean(req.body?.action, 40);
 
+    if (action === "create_upload_url") {
       const contentType = clean(req.body?.contentType, 100).toLowerCase();
       const assetType = clean(req.body?.assetType, 20) || "audio";
       const audioTypes = { "audio/mpeg":"mp3", "audio/mp4":"m4a", "audio/aac":"aac", "audio/wav":"wav", "audio/x-wav":"wav", "audio/flac":"flac", "audio/ogg":"ogg", "audio/webm":"webm" };
