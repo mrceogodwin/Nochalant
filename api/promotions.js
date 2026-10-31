@@ -74,11 +74,25 @@ export default async function handler(req, res) {
           (buyer_user_id, campaign_type, title, budget_minor, currency, status, sponsored_label_required,
            media_kind, package_code, description, media_object_key, destination_url, contact_text, payment_status)
         VALUES
-          (${auth.profile.id}, 'sponsored_story', ${title}, ${amount}, ${currency}, 'pending_payment', true,
+          (${auth.profile.id}, 'featured_carousel', ${title}, ${amount}, ${currency}, 'pending_payment', true,
            ${kind}, ${packageCode}, ${description}, ${objectKey}, ${destination}, ${contact || null}, 'unpaid')
         RETURNING id, title, package_code, currency, budget_minor, status, payment_status, created_at
       `;
       return res.status(201).json({ ok: true, campaign: rows[0], message: "Campaign saved. Payment and admin review are required before it can go live." });
+    }
+    if (action === "admin_queue") {
+      if (!["admin","super_admin","editor"].includes(auth.profile.role)) return res.status(403).json({ ok: false, error: "Administrator access required." });
+      const rows = await auth.sql\`SELECT id, buyer_user_id, title, package_code, media_kind, currency, budget_minor, status, payment_status, media_object_key, created_at FROM promotion_campaigns WHERE status IN ('pending_payment','pending_review') ORDER BY created_at ASC LIMIT 100\`;
+      return res.status(200).json({ ok: true, campaigns: rows });
+    }
+    if (action === "moderate") {
+      if (!["admin","super_admin","editor"].includes(auth.profile.role)) return res.status(403).json({ ok: false, error: "Administrator access required." });
+      const id = clean(req.body?.campaignId, 50);
+      const decision = clean(req.body?.decision, 20);
+      if (!/^[0-9a-f-]{36}$/i.test(id) || !["approve","reject"].includes(decision)) return res.status(400).json({ ok: false, error: "Choose a valid campaign and decision." });
+      const rows = await auth.sql\`UPDATE promotion_campaigns SET status = CASE WHEN \${decision} = 'approve' THEN 'approved' ELSE 'rejected' END, reviewed_by = \${auth.profile.id}, reviewed_at = now() WHERE id = \${id} AND payment_status = 'paid' AND status = 'pending_review' RETURNING id, status\`;
+      if (!rows.length) return res.status(409).json({ ok: false, error: "Campaign must have confirmed payment and be awaiting review." });
+      return res.status(200).json({ ok: true, campaign: rows[0] });
     }
     if (action === "my_campaigns") {
       const rows = await auth.sql`
