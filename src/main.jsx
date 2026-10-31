@@ -314,10 +314,10 @@ function App() {
     const controller = new AbortController();
     (async () => {
       try {
-        const token = await getAuthToken();
+        // Poll totals are public; do not attach a possibly stale login token.
         const response = await fetch("/api/hot-or-trash?slug=homepage-fashion-feature", {
           signal: controller.signal,
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          cache: "no-store"
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) throw new Error(data.error || "Voting is temporarily unavailable.");
