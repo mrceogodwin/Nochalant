@@ -575,3 +575,37 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .podcast-brand-emblem{width:58px;height:58px;flex:none;display:grid;place-items:center;border:1px solid #d6f66766;border-radius:16px;background:linear-gradient(145deg,#d6f66718,#11150d);box-shadow:0 0 0 5px #d6f6670b}
 .podcast-brand-emblem svg{width:38px;height:38px;fill:none;stroke:#d6f667;stroke-width:2.6;stroke-linejoin:round}
 .podcast-brand-emblem svg path{fill:none;stroke:#d6f667;stroke-width:3.4;stroke-linejoin:round}
+
+
+/* Nochalant identity lockup: use the same outlined N monogram everywhere. */
+.header-brand{display:grid!important;grid-template-columns:42px auto;grid-template-rows:auto auto;align-items:center;column-gap:10px;row-gap:3px;text-decoration:none}
+.header-brand:before{display:none!important;content:none!important}
+.header-brand .nochalant-logo-symbol{grid-column:1;grid-row:1;width:42px;height:42px;fill:none;stroke:var(--lime,#d6f667);stroke-width:2.4;stroke-linejoin:round}
+.header-brand .nochalant-logo-symbol path{fill:none;stroke:var(--lime,#d6f667);stroke-width:3.2;stroke-linejoin:round}
+.header-brand .nochalant-wordmark{grid-column:2;grid-row:1;color:#20b88d;font:800 clamp(19px,2.2vw,25px)/1 'Space Grotesk',sans-serif;letter-spacing:.015em;white-space:nowrap}
+.header-brand .nochalant-wordmark span{color:var(--lime,#d6f667)}
+.header-brand small{grid-column:1/-1;grid-row:2;margin:0;color:#9da58a;font:700 8px/1.4 'Space Grotesk',sans-serif;letter-spacing:.12em}
+@media(max-width:640px){.header-brand{grid-template-columns:34px auto;column-gap:8px}.header-brand .nochalant-logo-symbol{width:34px;height:34px}.header-brand .nochalant-wordmark{font-size:19px}.header-brand small{font-size:7px}}
+.podcast-player-stage{overflow:hidden;padding:12px}
+.podcast-video{display:block;width:100%;height:100%;min-height:260px;max-height:440px;object-fit:contain;background:#050605;border:1px solid #d6f66738;border-radius:5px}
+.podcast-episodes-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:30px 0 14px}
+.podcast-episodes-heading h2{margin:7px 0 0;font:750 clamp(23px,4vw,34px)/1.05 'Space Grotesk',sans-serif;letter-spacing:-.8px}
+.podcast-episodes-heading h2 em{color:var(--lime,#d6f667);font-style:normal}
+.podcast-episodes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.podcast-episode-card{display:grid;grid-template-columns:42% 1fr;min-width:0;overflow:hidden;border:1px solid #33392c;border-radius:8px;background:#11140f}
+.podcast-episode-card.is-playing{border-color:var(--lime,#d6f667);box-shadow:0 0 0 1px #d6f66733}
+.podcast-episode-art{position:relative;min-height:170px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#3b4930,#10150e 72%)}
+.podcast-episode-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.podcast-episode-monogram,.podcast-empty-mark{display:grid;place-items:center;width:54px;height:54px;border:2px solid var(--lime,#d6f667);border-radius:14px;color:var(--lime,#d6f667);font:800 23px 'Space Grotesk',sans-serif;transform:rotate(-6deg)}
+.podcast-episode-number{position:absolute;left:10px;bottom:10px;padding:6px 8px;background:#080a08dd;color:var(--lime,#d6f667);font:800 9px 'Space Grotesk',sans-serif;letter-spacing:.1em}
+.podcast-episode-copy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:15px;min-width:0}
+.podcast-episode-copy>strong{color:#f2f3e9;font:700 16px/1.2 'Space Grotesk',sans-serif}
+.podcast-episode-copy p{margin:0;color:#9da391;font-size:11px;line-height:1.55}
+.podcast-branded-play{display:inline-flex;align-items:center;gap:9px;margin-top:auto;padding:8px 10px;border:1px solid #657445;border-radius:4px;background:#171d12;color:var(--lime,#d6f667);font:850 9px 'Space Grotesk',sans-serif;letter-spacing:.1em;cursor:pointer}
+.podcast-play-mark{display:grid;place-items:center;width:23px;height:23px;border:1px solid var(--lime,#d6f667);border-radius:7px;font-size:10px;transform:rotate(-6deg)}
+.podcast-clear-selection{margin-top:16px;padding:9px 12px;border:1px solid #465039;border-radius:4px;background:#151a11;color:var(--lime,#d6f667);font:800 10px 'Space Grotesk',sans-serif}
+.podcast-empty-state{display:flex;flex-direction:column;align-items:center;gap:10px;padding:38px 20px;border:1px dashed #414936;border-radius:8px;background:#10130e;text-align:center}
+.podcast-empty-state strong{font:750 19px 'Space Grotesk',sans-serif;color:#f0f2e8}
+.podcast-empty-state p{max-width:460px;margin:0;color:#9da391;font-size:12px;line-height:1.7}
+.podcast-empty-mark{width:44px;height:44px;font-size:18px}
+@media(max-width:680px){.podcast-episodes-grid{grid-template-columns:1fr}.podcast-episode-card{grid-template-columns:38% 1fr}.podcast-episode-art{min-height:145px}.podcast-episode-copy{padding:12px}.podcast-episode-copy>strong{font-size:14px}.podcast-episodes-heading{align-items:flex-start;flex-direction:column}}
