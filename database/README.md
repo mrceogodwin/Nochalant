@@ -33,12 +33,13 @@ Open the SQL Editor for the Nochalant Neon project and select the `production` b
 3. `database/migrations/003_article_views.sql`
 4. `database/migrations/004_nochalant_faces.sql`
 5. `database/migrations/005_nochalant_opinions_moderation.sql`
+6. `database/migrations/006_editorial_artists.sql`
 
 Do not skip a failed migration or run a later migration first. If a script errors, stop and inspect the error before retrying. These files are intended to be re-runnable in most respects, but do not assume a partially failed script completed.
 
 ## 4. Verify the schema
 
-After all five migrations complete, open:
+After all six migrations complete, open:
 
 `https://nochalant.vercel.app/api/health/database`
 
@@ -46,7 +47,7 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 32`
+- `present_tables: 33`
 - `missing_tables: []`
 
 If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, apply or repair the listed migrations in order.
@@ -74,3 +75,8 @@ Migration 005 creates the user-generated Opinions feed and reporting queue, plus
 - Users can report an opinion once; reports enter the admin review queue.
 - Admin moderation records approve, reject, hide, restore, suspend, unsuspend, ban and unban actions.
 - Account states are active, suspended or banned. The application API must enforce these states on every write request; hiding a button in the browser is not security.
+
+
+## 7. Editorial artist spotlight catalog
+
+Migration 006 creates the editorial `artists` catalog used by the homepage spotlight and Super Admin artist manager. This is intentionally separate from `artist_profiles`, which represents creator-owned profiles. The database health endpoint checks both tables.
