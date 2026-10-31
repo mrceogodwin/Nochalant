@@ -120,6 +120,13 @@ export async function handleArtistStudio(req, res) {
     if (action === "submit_release") {
       const releaseId = clean(req.body?.releaseId, 50);
       if (!/^[0-9a-f-]{36}$/i.test(releaseId)) return res.status(400).json({ ok: false, error: "Select a valid release." });
+      const trackCounts = await auth.sql`
+        SELECT COUNT(*)::int AS track_count
+        FROM music_tracks WHERE release_id = ${releaseId} AND artist_id = ${artist.id}
+      `;
+      if (Number(trackCounts[0]?.track_count || 0) < 1) {
+        return res.status(409).json({ ok: false, error: "Add at least one track before submitting this release." });
+      }
       const rows = await auth.sql`
         UPDATE music_releases
         SET status = 'submitted'
