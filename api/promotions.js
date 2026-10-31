@@ -85,7 +85,9 @@ export default async function handler(req, res) {
       const campaignId = clean(req.body?.campaignId, 50);
       if (!/^[0-9a-f-]{36}$/i.test(campaignId)) return res.status(400).json({ ok: false, error: "Choose a valid campaign." });
       const apiKey = process.env.BACHS_API_KEY || process.env.BACHS_SECRET_KEY;
-      if (!apiKey) return res.status(503).json({ ok: false, error: "Bachs checkout is not configured yet. Your campaign is saved and no payment has been taken." });
+      if (!apiKey || (!apiKey.startsWith("sk_sandbox_") && !apiKey.startsWith("sk_live_")) || !process.env.BACHS_WEBHOOK_SECRET) {
+        return res.status(503).json({ ok: false, error: "Bachs API and webhook credentials must both be configured before checkout can accept payment." });
+      }
       const campaignRows = await auth.sql`SELECT id, title, budget_minor, currency, payment_status, status FROM promotion_campaigns WHERE id = ${campaignId} AND buyer_user_id = ${auth.profile.id} LIMIT 1`;
       const campaign = campaignRows[0];
       if (!campaign) return res.status(404).json({ ok: false, error: "Campaign not found." });
