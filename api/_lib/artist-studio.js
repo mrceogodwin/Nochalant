@@ -1,4 +1,6 @@
 import { requireActiveUser } from "./neon-auth.js";
+import { randomUUID } from "node:crypto";
+import { createMusicUploadUrl } from "./music-storage.js";
 
 const clean = (value, max = 180) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeHttps = (value) => {
