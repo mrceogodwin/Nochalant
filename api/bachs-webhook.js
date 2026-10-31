@@ -81,7 +81,7 @@ export default async function handler(req, res) {
         return res.status(400).send("Payment details did not match the order");
       }
       await sql`UPDATE payment_orders SET status = 'successful', paid_at = now(), metadata = metadata || ${JSON.stringify({ bachs_event_id: event.id, charge_id: event.data.charge_id || null })}::jsonb WHERE id = ${order.id} AND status IN ('created','pending')`;
-      await sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status IN ('unpaid','pending')`;
+      await sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status = 'pending'`;
       await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now() WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
       return res.status(200).json({ received: true, paid: true });
     }
