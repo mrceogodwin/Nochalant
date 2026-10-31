@@ -237,6 +237,7 @@ export default async function handler(req, res) {
             verified_at = CASE WHEN ${status} = 'verified' THEN now() ELSE verified_at END,
             verified_by = CASE WHEN ${status} = 'verified' THEN ${auth.profile.id} ELSE verified_by END
         WHERE id = ${artistProfileId} AND verification_status IN ('unverified','pending')
+          AND (${status} <> 'verified' OR verification_payment_status = 'paid')
         RETURNING id, stage_name, verification_status
       `;
       if (!rows.length) return res.status(404).json({ ok: false, error: "Artist application not found." });
