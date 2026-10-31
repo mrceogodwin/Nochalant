@@ -820,3 +820,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .promotion-admin-actions{display:flex;gap:8px}
 @media(max-width:760px){.promotion-live-grid{grid-template-columns:1fr 1fr}.my-promotion-row,.promotion-admin-row{grid-template-columns:1fr;gap:10px}.my-promotion-metrics{grid-column:1}.promotion-admin-actions{justify-content:flex-start}}
 @media(max-width:460px){.promotion-live-grid{grid-template-columns:1fr}.my-promotion-row,.promotion-admin-row{padding:13px}}
+
+.promotion-admin-preview{width:112px;aspect-ratio:16/10;object-fit:cover;border-radius:7px;background:#090a08;border:1px solid var(--line)}
+@media(max-width:760px){.promotion-admin-preview{width:100%;max-width:240px}}
