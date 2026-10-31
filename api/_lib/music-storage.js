@@ -23,7 +23,7 @@ function createPresignedUrl(method, objectKey, expiresIn = 3600) {
   const scope = dateStamp + "/" + region + "/s3/aws4_request";
   const params = { "X-Amz-Algorithm": "AWS4-HMAC-SHA256", "X-Amz-Credential": accessKey + "/" + scope, "X-Amz-Date": amzDate, "X-Amz-Expires": String(expiresIn), "X-Amz-SignedHeaders": "host" };
   const canonicalQuery = Object.entries(params).map(([key, value]) => [awsEncode(key), awsEncode(value)]).sort((a, b) => a[0].localeCompare(b[0])).map(([key, value]) => key + "=" + value).join("&");
-  const canonicalRequest = [method, canonicalUri, canonicalQuery, "host:" + host + "\n", "host", "UNSIGNED-PAYLOAD"].join("\n");
+  const canonicalRequest = [method, canonicalUri, canonicalQuery, "host:" + host, "host", "UNSIGNED-PAYLOAD"].join("\n");
   const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
   const dateKey = hmac("AWS4" + secretKey, dateStamp);
   const regionKey = hmac(dateKey, region);
