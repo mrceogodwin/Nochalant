@@ -126,7 +126,26 @@ export default async function handler(req, res) {
         artistsAvailable = false;
         console.error("Nochalant artist table is not ready:", artistError?.message || artistError);
       }
-      return res.status(200).json({ ok: true, opinions, reports, users, artists, artistsAvailable });
+      let musicReleases = [];
+      let musicAvailable = true;
+      try {
+        musicReleases = await auth.sql`
+          SELECT mr.id, mr.title, mr.release_type, mr.cover_art_url, mr.release_date, mr.genre, mr.status,
+                 mr.created_at, ap.stage_name AS artist_name, ap.verification_status,
+                 COUNT(mt.id)::int AS track_count,
+                 COUNT(mt.id) FILTER (WHERE mt.status = 'pending')::int AS pending_tracks
+          FROM music_releases mr
+          JOIN artist_profiles ap ON ap.id = mr.artist_id
+          LEFT JOIN music_tracks mt ON mt.release_id = mr.id
+          WHERE mr.status IN ('submitted','under_review')
+          GROUP BY mr.id, ap.id
+          ORDER BY mr.created_at ASC LIMIT 100
+        `;
+      } catch (musicError) {
+        musicAvailable = false;
+        console.error("Nochalant music review queue is not ready:", musicError?.message || musicError);
+      }
+      return res.status(200).json({ ok: true, opinions, reports, users, artists, artistsAvailable, musicReleases, musicAvailable });
     } catch (error) {
       console.error("Nochalant moderation queue failed:", error?.message || error);
       return res.status(503).json({ ok: false, error: "Moderation queue is temporarily unavailable." });
@@ -186,6 +205,30 @@ export default async function handler(req, res) {
       const rows = await auth.sql`UPDATE artists SET name = ${name}, genre = ${genre}, image_url = ${imageUrl}, profile_url = ${profileUrl}, is_active = ${req.body?.is_active !== false}, sort_order = ${sortOrder} WHERE id = ${id} RETURNING id, name, genre, image_url, profile_url, is_active, sort_order`;
       if (!rows.length) return res.status(404).json({ ok:false,error:"Artist not found." });
       return res.status(200).json({ ok:true, artist:rows[0] });
+    }
+    if (action === "publish_music_release" || action === "reject_music_release") {
+      const releaseId = String(req.body?.releaseId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(releaseId)) return res.status(400).json({ ok: false, error: "Invalid music release." });
+      const nextStatus = action === "publish_music_release" ? "published" : "rejected";
+      const rows = await auth.sql`
+        WITH changed AS (
+          UPDATE music_releases
+          SET status = ${nextStatus}
+          WHERE id = ${releaseId} AND status IN ('submitted','under_review')
+          RETURNING id, status
+        ), changed_tracks AS (
+          UPDATE music_tracks
+          SET status = CASE WHEN ${nextStatus} = 'published' THEN 'published' ELSE 'rejected' END,
+              published_at = CASE WHEN ${nextStatus} = 'published' THEN now() ELSE published_at END
+          WHERE release_id IN (SELECT id FROM changed)
+            AND status IN ('pending','approved')
+          RETURNING id
+        )
+        SELECT changed.id, changed.status, (SELECT COUNT(*)::int FROM changed_tracks) AS tracks_updated
+        FROM changed
+      `;
+      if (!rows.length) return res.status(404).json({ ok: false, error: "Submitted music release not found." });
+      return res.status(200).json({ ok: true, release: rows[0] });
     }
     if (Object.hasOwn(opinionStatuses, action)) {
       if (!/^[0-9a-f-]{36}$/i.test(opinionId)) return res.status(400).json({ ok:false,error:"Invalid opinion." });
