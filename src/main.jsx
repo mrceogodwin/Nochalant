@@ -82,6 +82,8 @@ function App() {
   const [promotionPackage, setPromotionPackage] = useState("image_7d");
   const [promotionPackageChosen, setPromotionPackageChosen] = useState(false);
   const [promotionKind, setPromotionKind] = useState("image");
+  const [textPromotionBody, setTextPromotionBody] = useState("");
+  const [textPromotionDesign, setTextPromotionDesign] = useState({theme:"midnight",layout:"editorial",alignment:"left",icon:"spark",font:"modern"});
   const [promotionBusy, setPromotionBusy] = useState(false);
   const [promotionMessage, setPromotionMessage] = useState("");
   const [promotionCampaigns, setPromotionCampaigns] = useState([]);
@@ -883,22 +885,28 @@ function App() {
         {!promotionPackageChosen && <div className="promotion-package-grid">
           <article className="promotion-package"><span className="eyebrow">IMAGE · 7 DAYS</span><h2>₦2,000 <small>/ $1.99</small></h2><p>One promotional image or flyer with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("image_7d");setPromotionKind("image");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose image</button></article>
           <article className="promotion-package"><span className="eyebrow">VIDEO · 7 DAYS</span><h2>₦4,000 <small>/ $3.99</small></h2><p>One promotional video with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("video_7d");setPromotionKind("video");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose video</button></article>
-          <article className="promotion-package promotion-package-featured"><span className="eyebrow">PREMIUM · 14 DAYS</span><h2>₦8,000 <small>/ $7.99</small></h2><p>Premium image or video placement with a clickable call-to-action.</p><button className="button button-green" onClick={() => {setPromotionPackage("premium_14d");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose premium</button></article>
+          <article className="promotion-package promotion-package-featured"><span className="eyebrow">PREMIUM · 14 DAYS</span><h2>₦8,000 <small>/ $7.99</small></h2><p>Premium image, video or designed text placement with a clickable call-to-action.</p><button className="button button-green" onClick={() => {setPromotionPackage("premium_14d");setPromotionKind("text");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Create text promotion</button></article>
           <article className="promotion-package"><span className="eyebrow">EXTENDED · 30 DAYS</span><h2>₦15,000 <small>/ $14.99</small></h2><p>Longer premium campaign for brands, launches and events.</p><button className="button button-outline" onClick={() => {setPromotionPackage("extended_30d");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose extended</button></article>
         </div>}
         <form id="promotion-submit" className="promotion-submit-form" onSubmit={async event => {
           event.preventDefault(); if (!currentUser) { setModal("login"); return; }
           const form = event.currentTarget; const data = new FormData(form); const file = data.get("mediaFile");
-          if (!(file instanceof File) || !file.size) { setPromotionMessage("Please select an image or video."); return; }
+          const isText = promotionKind === "text";
+          if (isText && textPromotionBody.trim().length < 12) { setPromotionMessage("Write at least 12 characters for your text promotion."); return; }
+          if (!isText && (!(file instanceof File) || !file.size)) { setPromotionMessage("Please select an image or video."); return; }
           setPromotionBusy(true); setPromotionMessage("");
           try {
             const token = await getAuthToken(); if (!token) throw new Error("Please sign in again.");
             const headers = {"Content-Type":"application/json",Authorization:"Bearer "+token};
-            const signedResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_upload_url",kind:promotionKind,contentType:file.type,size:file.size})});
-            const signed = await signedResponse.json(); if (!signedResponse.ok || !signed.ok) throw new Error(signed.error || "Could not prepare upload.");
-            const upload = await fetch(signed.url,{method:signed.method || "PUT",headers:signed.headers || {"Content-Type":file.type},body:file});
-            if (!upload.ok) throw new Error("Media upload failed.");
-            const createResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_campaign",title:data.get("title"),description:data.get("description"),packageCode:promotionPackage,kind:promotionKind,mediaObjectKey:signed.objectKey,destinationUrl:data.get("destinationUrl"),contactText:data.get("contactText"),currency:data.get("currency")})});
+            let objectKey = null;
+            if (!isText) {
+              const signedResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_upload_url",kind:promotionKind,contentType:file.type,size:file.size})});
+              const signed = await signedResponse.json(); if (!signedResponse.ok || !signed.ok) throw new Error(signed.error || "Could not prepare upload.");
+              const upload = await fetch(signed.url,{method:signed.method || "PUT",headers:signed.headers || {"Content-Type":file.type},body:file});
+              if (!upload.ok) throw new Error("Media upload failed.");
+              objectKey = signed.objectKey;
+            }
+            const createResponse = await fetch("/api/promotions",{method:"POST",headers,body:JSON.stringify({action:"create_campaign",title:data.get("title"),description:data.get("description"),packageCode:promotionPackage,kind:promotionKind,mediaObjectKey:objectKey,textBody:textPromotionBody,designConfig:textPromotionDesign,destinationUrl:data.get("destinationUrl"),contactText:data.get("contactText"),currency:data.get("currency")})});
             const created = await createResponse.json(); if (!createResponse.ok || !created.ok) throw new Error(created.error || "Campaign could not be saved.");
             form.reset();
             if (created.campaign?.id) {
@@ -910,10 +918,27 @@ function App() {
         }}>
           <span className="eyebrow">START A CAMPAIGN</span><h2 id="promotion-submit">Submit your promotion.</h2>{promotionPackageChosen && <p className="fine-print">Package selected. Pricing is hidden while you complete your promotion. <button type="button" className="text-button" onClick={()=>setPromotionPackageChosen(false)}>Change package</button></p>}
           <div className="promotion-form-grid"><label>Campaign title<input name="title" required maxLength="120" placeholder="Your brand, event or product"/></label>
-          <label>Package<select value={promotionPackage} onChange={event => {setPromotionPackage(event.target.value);if(event.target.value==="image_7d")setPromotionKind("image");if(event.target.value==="video_7d")setPromotionKind("video");}}><option value="image_7d">Image · 7 days</option><option value="video_7d">Video · 7 days</option><option value="premium_14d">Premium · 14 days</option><option value="extended_30d">Extended · 30 days</option></select></label>
-          <label>Media type<select value={promotionKind} onChange={event => setPromotionKind(event.target.value)}><option value="image">Image</option><option value="video">Video</option></select></label>
+          <label>Package<select value={promotionPackage} onChange={event => setPromotionPackage(event.target.value)}><option value="image_7d">Image · 7 days</option><option value="video_7d">Video · 7 days</option><option value="premium_14d">Premium · 14 days</option><option value="extended_30d">Extended · 30 days</option></select></label>
+          <label>Promotion format<select value={promotionKind} onChange={event => setPromotionKind(event.target.value)}><option value="image">Image</option><option value="video">Video</option><option value="text">Designed text</option></select></label>
           <label>Currency<select name="currency"><option value="NGN">NGN · Nigeria</option><option value="USD">USD · International</option></select></label>
-          <label className="promotion-file-label">Upload image or video<input name="mediaFile" type="file" required accept={promotionKind==="image"?"image/jpeg,image/png,image/webp,image/avif":"video/mp4,video/webm,video/quicktime"}/><small>Images up to 15 MB · Videos up to 200 MB</small></label>
+          {promotionKind === "text" ? <div className="text-promo-studio">
+            <div className="text-promo-studio-heading"><span className="eyebrow">NOCHALANT TEXT STUDIO</span><h3>Design your message.</h3><p>Choose a restrained style. Your preview updates as you customise it.</p></div>
+            <label className="text-promo-copy-label">Promotion message<textarea value={textPromotionBody} onChange={event=>setTextPromotionBody(event.target.value.slice(0,700))} rows="4" maxLength="700" placeholder="Write a clear, memorable message for the Nochalant audience."/></label>
+            <div className="text-promo-controls">
+              <label>Layout<select value={textPromotionDesign.layout} onChange={event=>setTextPromotionDesign(d=>({...d,layout:event.target.value}))}><option value="editorial">Editorial</option><option value="poster">Poster</option><option value="minimal">Minimal</option></select></label>
+              <label>Theme<select value={textPromotionDesign.theme} onChange={event=>setTextPromotionDesign(d=>({...d,theme:event.target.value}))}><option value="midnight">Midnight</option><option value="lime">Nochalant lime</option><option value="cream">Warm cream</option><option value="ember">Ember</option></select></label>
+              <label>Typography<select value={textPromotionDesign.font} onChange={event=>setTextPromotionDesign(d=>({...d,font:event.target.value}))}><option value="modern">Modern</option><option value="serif">Editorial serif</option><option value="mono">Mono</option></select></label>
+              <label>Alignment<select value={textPromotionDesign.alignment} onChange={event=>setTextPromotionDesign(d=>({...d,alignment:event.target.value}))}><option value="left">Left</option><option value="center">Centered</option></select></label>
+              <label>Accent icon<select value={textPromotionDesign.icon} onChange={event=>setTextPromotionDesign(d=>({...d,icon:event.target.value}))}><option value="none">No icon</option><option value="spark">✦ Spark</option><option value="star">★ Star</option><option value="bolt">↯ Bolt</option><option value="heart">♥ Heart</option><option value="music">♫ Music</option><option value="megaphone">◉ Spotlight</option></select></label>
+            </div>
+            <div className={"text-promo-preview theme-"+textPromotionDesign.theme+" layout-"+textPromotionDesign.layout+" align-"+textPromotionDesign.alignment+" font-"+textPromotionDesign.font}>
+              <span className="text-promo-preview-brand">NOCHALANT <i>FOR BRANDS</i></span>
+              {textPromotionDesign.icon!=="none"&&<span className="text-promo-preview-icon">{({spark:"✦",star:"★",bolt:"↯",heart:"♥",music:"♫",megaphone:"◉"})[textPromotionDesign.icon]}</span>}
+              <strong>{textPromotionBody.trim()||"Your message, styled to stand out."}</strong>
+              <span className="text-promo-preview-footer">FEATURED MESSAGE · NOCHALANT</span>
+            </div>
+            <small className="fine-print">Preview only. Text is reviewed before publishing. Keep copy clear and avoid excessive symbols.</small>
+          </div> : <label className="promotion-file-label">Upload {promotionKind}<input name="mediaFile" type="file" required accept={promotionKind==="image"?"image/jpeg,image/png,image/webp,image/avif":"video/mp4,video/webm,video/quicktime"}/><small>Images up to 15 MB · Videos up to 200 MB</small></label>}
           <label>Destination link<input name="destinationUrl" type="url" placeholder="https://..."/></label>
           <label className="promotion-description-label">Description<textarea name="description" rows="3" maxLength="1200" placeholder="Tell people what you're promoting"/></label>
           <label>Contact details<input name="contactText" maxLength="120" placeholder="Optional phone or social handle"/></label></div>
