@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     if (!connectionString) return res.status(503).json({ ok: false, error: "Play tracking is temporarily unavailable." });
     try {
       const sql = neon(connectionString);
-      const rows = await sql\`SELECT id, duration_seconds FROM music_tracks WHERE id = \${trackId} AND status = 'published' LIMIT 1\`;
+      const rows = await sql`SELECT id, duration_seconds FROM music_tracks WHERE id = ${trackId} AND status = 'published' LIMIT 1`;
       if (!rows.length) return res.status(404).json({ ok: false, error: "Published track not found." });
       const duration = Number(rows[0].duration_seconds || 0);
       const eligibleSeconds = duration > 0 && duration < 30 ? Math.ceil(duration * 0.8) : 30;
@@ -47,14 +47,14 @@ export default async function handler(req, res) {
       const hash = value => createHash("sha256").update(String(value)).digest("hex");
       const sessionHash = hash(sessionId);
       const eventId = hash("nochalant:" + trackId + ":" + sessionHash + ":" + new Date().toISOString().slice(0, 10));
-      await sql\`
+      await sql`
         INSERT INTO music_play_events
           (track_id, anonymous_listener_hash, session_hash, provider_event_id, listened_seconds, duration_seconds, eligible, source)
         VALUES
-          (\${trackId}, \${sessionHash}, \${sessionHash}, \${eventId}, \${Math.floor(listenedSeconds)}, \${duration || null}, true, 'nochalant')
+          (${trackId}, ${sessionHash}, ${sessionHash}, ${eventId}, ${Math.floor(listenedSeconds)}, ${duration || null}, true, 'nochalant')
         ON CONFLICT (provider_event_id) DO NOTHING
-      \`;
-      const counts = await sql\`SELECT COUNT(*)::bigint AS plays_count FROM music_play_events WHERE track_id = \${trackId} AND eligible = true\`;
+      `;
+      const counts = await sql`SELECT COUNT(*)::bigint AS plays_count FROM music_play_events WHERE track_id = ${trackId} AND eligible = true`;
       return res.status(200).json({ ok: true, counted: true, plays_count: Number(counts[0]?.plays_count || 0) });
     } catch (error) {
       console.error("Nochalant play tracking failed:", error?.message || error);
