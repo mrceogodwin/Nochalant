@@ -77,7 +77,10 @@ export default async function handler(req, res) {
       const trackId = req.query.download.trim();
       if (!/^[0-9a-f-]{36}$/i.test(trackId)) return res.status(400).json({ ok: false, error: "Invalid track." });
       const rows = await sql`SELECT mt.audio_object_key FROM music_tracks mt JOIN music_releases mr ON mr.id = mt.release_id AND mr.status = 'published' JOIN artist_profiles ap ON ap.id = mt.artist_id AND ap.verification_status = 'verified' WHERE mt.id = ${trackId} AND mt.status = 'published' LIMIT 1`;
-      const downloadUrl = safeHttpsUrl(rows[0]?.audio_object_key);
+      const storedAudio = String(rows[0]?.audio_object_key || "");
+      const downloadUrl = storedAudio.startsWith("neon-storage:")
+        ? await createMusicDownloadUrl(storedAudio.slice("neon-storage:".length), 300)
+        : safeHttpsUrl(storedAudio);
       if (!downloadUrl) return res.status(404).json({ ok: false, error: "This track does not have a downloadable audio file yet." });
       await sql`UPDATE music_tracks SET download_count = download_count + 1 WHERE id = ${trackId} AND status = 'published'`;
       return res.redirect(302, downloadUrl);
