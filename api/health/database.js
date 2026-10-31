@@ -33,7 +33,11 @@ const REQUIRED_TABLES = [
   "post_viewers",
   "community_profiles",
   "community_opinions",
-  "opinion_reports"
+  "opinion_reports",
+  "podcast_shows",
+  "podcast_seasons",
+  "podcast_episodes",
+  "podcast_clips"
 ];
 
 export default async function handler(req, res) {
