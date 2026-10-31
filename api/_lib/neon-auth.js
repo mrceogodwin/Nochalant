@@ -20,10 +20,10 @@ export async function requireActiveUser(req) {
     const sql = neon(databaseUrl);
     const displayName = typeof payload.name === "string" && payload.name.trim() ? payload.name.trim().slice(0,120) : (typeof payload.email === "string" ? payload.email.split("@")[0] : "Nochalant member");
     const email = typeof payload.email === "string" ? payload.email.slice(0,254) : null;
-    let rows = await sql`SELECT id, auth_user_id, display_name, email, role, account_status, suspended_until FROM user_profiles WHERE auth_user_id = ${payload.sub} LIMIT 1`;
+    let rows = await sql`SELECT id, auth_user_id, display_name, email, role, account_type, account_status, suspended_until FROM user_profiles WHERE auth_user_id = ${payload.sub} LIMIT 1`;
     let profile = rows[0];
     if (!profile) {
-      rows = await sql`INSERT INTO user_profiles (auth_user_id, display_name, email) VALUES (${payload.sub}, ${displayName}, ${email}) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = COALESCE(NULLIF(user_profiles.display_name, ''), EXCLUDED.display_name), email = COALESCE(user_profiles.email, EXCLUDED.email) RETURNING id, auth_user_id, display_name, email, role, account_status, suspended_until`;
+      rows = await sql`INSERT INTO user_profiles (auth_user_id, display_name, email) VALUES (${payload.sub}, ${displayName}, ${email}) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = COALESCE(NULLIF(user_profiles.display_name, ''), EXCLUDED.display_name), email = COALESCE(user_profiles.email, EXCLUDED.email) RETURNING id, auth_user_id, display_name, email, role, account_type, account_status, suspended_until`;
       profile = rows[0];
     }
     // One-time first-owner bootstrap: only this exact owner identity may claim
