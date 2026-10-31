@@ -70,3 +70,10 @@ export async function resolveMusicAssetUrl(value, expiresIn = 3600) {
   if (typeof value === "string") { try { const url = new URL(value); return url.protocol === "https:" ? url.toString() : null; } catch { return null; } }
   return null;
 }
+
+export async function verifyPromotionVideoUpload(objectKey) {
+  const result = await headObject(objectKey);
+  if (!result.size || result.size > 200 * 1024 * 1024) throw new Error("Promotion videos must be non-empty and under 200 MB.");
+  if (!["video/mp4", "video/webm", "video/quicktime"].includes(result.contentType)) throw new Error("Promotion videos must be MP4, WebM or MOV.");
+  return result;
+}
