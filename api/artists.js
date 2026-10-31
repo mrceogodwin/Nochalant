@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
+import { createMusicDownloadUrl } from "./_lib/music-storage.js";
 
 const safeHttpsUrl = (value) => {
   if (!value) return null;
@@ -9,7 +10,7 @@ const safeHttpsUrl = (value) => {
   } catch { return null; }
 };
 
-const mapTrack = (track) => ({
+const mapTrack = async (track) => ({
   id: track.id,
   title: track.title,
   release_title: track.release_title,
@@ -24,7 +25,9 @@ const mapTrack = (track) => ({
   release_date: track.release_date,
   plays_count: Number(track.plays_count || 0),
   download_count: Number(track.download_count || 0),
-  audio_url: safeHttpsUrl(track.audio_object_key)
+  audio_url: typeof track.audio_object_key === "string" && track.audio_object_key.startsWith("neon-storage:")
+    ? await createMusicDownloadUrl(track.audio_object_key.slice("neon-storage:".length), 3600)
+    : safeHttpsUrl(track.audio_object_key)
 });
 
 export default async function handler(req, res) {
@@ -109,7 +112,7 @@ export default async function handler(req, res) {
       ORDER BY mt.published_at DESC NULLS LAST, mr.release_date DESC NULLS LAST, mt.created_at DESC
       LIMIT 120
     `;
-    const tracks = trackRows.map(mapTrack);
+    const tracks = await Promise.all(trackRows.map(mapTrack));
     const artists = artistRows.map(artist => {
       const artistTracks = tracks.filter(track => track.artist_id === artist.id);
       return {
