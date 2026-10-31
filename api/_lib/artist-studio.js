@@ -1,6 +1,6 @@
 import { requireActiveUser } from "./neon-auth.js";
 import { randomUUID } from "node:crypto";
-import { createMusicUploadUrl } from "./music-storage.js";
+import { createMusicUploadUrl, verifyMusicUpload } from "./music-storage.js";
 
 const clean = (value, max = 180) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const safeHttps = (value) => {
@@ -116,6 +116,7 @@ export async function handleArtistStudio(req, res) {
         return res.status(400).json({ ok: false, error: "Choose a draft release, enter a track title and upload an audio file." });
       }
       if (audioObjectKey && !ownedStorageKey) return res.status(400).json({ ok: false, error: "Invalid uploaded audio file reference." });
+      if (ownedStorageKey) await verifyMusicUpload(audioObjectKey);
       if (durationSeconds !== null && (!Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 86400)) {
         return res.status(400).json({ ok: false, error: "Track duration must be a positive number of seconds." });
       }
