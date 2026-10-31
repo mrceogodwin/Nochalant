@@ -20,7 +20,7 @@ export async function handlePromotions(req, res) {
       const sql = neon(sqlUrl);
       const rows = await sql`
         SELECT id, campaign_type, media_kind, package_code, title, description, media_url, media_object_key,
-               destination_url, contact_text, currency, starts_at, ends_at, impressions_count, clicks_count, created_at
+               destination_url, contact_text, currency, design_config, starts_at, ends_at, impressions_count, clicks_count, created_at
         FROM promotion_campaigns
         WHERE status IN ('approved','active') AND payment_status = 'paid'
           AND (ends_at IS NULL OR ends_at > now())
@@ -64,19 +64,22 @@ export async function handlePromotions(req, res) {
       const destination = req.body?.destinationUrl ? safeHttps(req.body.destinationUrl) : null;
       const contact = clean(req.body?.contactText, 120);
       const currency = clean(req.body?.currency, 3).toUpperCase() === "USD" ? "USD" : "NGN";
-      if (!pkg || !title || !kind || (pkg.kind && pkg.kind !== kind) || !objectKey.startsWith("promotions/" + auth.profile.id + "/") || objectKey.includes("..")) return res.status(400).json({ ok: false, error: "Complete the campaign details and choose a matching package." });
+      const isText = kind === "text";
+      const textBody = clean(req.body?.textBody, 700);
+      const design = req.body?.designConfig && typeof req.body.designConfig === "object" ? req.body.designConfig : {};
+      const allowed = { theme: ["midnight","lime","cream","ember"], layout: ["editorial","poster","minimal"], alignment: ["left","center"], icon: ["none","spark","star","bolt","heart","music","megaphone"], font: ["modern","serif","mono"] };
+      const defaults = { theme: "midnight", layout: "editorial", alignment: "left", icon: "none", font: "modern" };
+      const designConfig = Object.fromEntries(Object.entries(allowed).map(([key, values]) => [key, values.includes(design[key]) ? design[key] : defaults[key]]));
+      if (!pkg || !title || !["image","video","text"].includes(kind) || (pkg.kind && pkg.kind !== kind) || (isText && textBody.length < 12) || (!isText && (!objectKey.startsWith("promotions/" + auth.profile.id + "/") || objectKey.includes("..")))) return res.status(400).json({ ok: false, error: "Complete the campaign details and choose a matching package." });
       if (req.body?.destinationUrl && !destination) return res.status(400).json({ ok: false, error: "Destination links must use HTTPS." });
-      if (kind === "image") await verifyArtworkUpload(objectKey);
-      else await verifyPromotionVideoUpload(objectKey);
-      // Campaigns remain pending payment and are never published by this endpoint.
+      if (!isText && kind === "image") await verifyArtworkUpload(objectKey);
+      if (!isText && kind === "video") await verifyPromotionVideoUpload(objectKey);
       const amount = pkg[currency];
       const rows = await auth.sql`
         INSERT INTO promotion_campaigns
-          (buyer_user_id, campaign_type, title, budget_minor, currency, status, sponsored_label_required,
-           media_kind, package_code, description, media_object_key, destination_url, contact_text, payment_status)
+          (buyer_user_id, campaign_type, title, budget_minor, currency, status, sponsored_label_required, media_kind, package_code, description, media_object_key, destination_url, contact_text, payment_status, design_config)
         VALUES
-          (${auth.profile.id}, 'featured_carousel', ${title}, ${amount}, ${currency}, 'pending_payment', true,
-           ${kind}, ${packageCode}, ${description}, ${objectKey}, ${destination}, ${contact || null}, 'unpaid')
+          (${auth.profile.id}, 'featured_carousel', ${title}, ${amount}, ${currency}, 'pending_payment', true, ${kind}, ${packageCode}, ${isText ? textBody : description}, ${isText ? null : objectKey}, ${destination}, ${contact || null}, 'unpaid', ${JSON.stringify(designConfig)}::jsonb)
         RETURNING id, title, package_code, currency, budget_minor, status, payment_status, created_at
       `;
       return res.status(201).json({ ok: true, campaign: rows[0], message: "Campaign saved. Payment and admin review are required before it can go live." });
