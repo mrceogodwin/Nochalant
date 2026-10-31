@@ -12,6 +12,23 @@ const makeSlug = value => clean(value, 140).toLowerCase().normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 110);
 
 export async function handlePodcast(req, res) {
+  if (req.method === "GET" && req.query?.admin === "1") {
+    const auth = await requireActiveUser(req);
+    if (auth.error) return res.status(auth.error.status).json({ ok:false, error:auth.error.message });
+    if (auth.profile.role !== "super_admin") return res.status(403).json({ ok:false, error:"Only the Super Admin can access podcast drafts." });
+    try {
+      const [shows,seasons,episodes,clips] = await Promise.all([
+        auth.sql`SELECT * FROM podcast_shows ORDER BY sort_order ASC, created_at DESC LIMIT 100`,
+        auth.sql`SELECT * FROM podcast_seasons ORDER BY show_id, season_number DESC LIMIT 200`,
+        auth.sql`SELECT * FROM podcast_episodes ORDER BY created_at DESC LIMIT 300`,
+        auth.sql`SELECT * FROM podcast_clips ORDER BY created_at DESC LIMIT 300`
+      ]);
+      return res.status(200).json({ok:true,shows,seasons,episodes,clips});
+    } catch (error) {
+      console.error("Nochalant podcast admin catalogue failed:",error?.message||error);
+      return res.status(503).json({ok:false,error:"Podcast editorial catalogue is unavailable."});
+    }
+  }
   if (req.method === "GET") {
     const connectionString = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
     if (!connectionString) return res.status(503).json({ ok:false, error:"Podcast catalogue is temporarily unavailable." });
