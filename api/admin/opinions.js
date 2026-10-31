@@ -126,6 +126,21 @@ export default async function handler(req, res) {
         artistsAvailable = false;
         console.error("Nochalant artist table is not ready:", artistError?.message || artistError);
       }
+      let artistApplications = [];
+      let artistApplicationsAvailable = true;
+      try {
+        artistApplications = await auth.sql`
+          SELECT ap.id, ap.stage_name, ap.slug, ap.bio, ap.avatar_url, ap.city, ap.country_code,
+                 ap.verification_status, ap.created_at, up.display_name, up.email
+          FROM artist_profiles ap
+          JOIN user_profiles up ON up.id = ap.owner_user_id
+          WHERE ap.verification_status IN ('unverified','pending')
+          ORDER BY ap.created_at ASC LIMIT 100
+        `;
+      } catch (applicationError) {
+        artistApplicationsAvailable = false;
+        console.error("Nochalant artist verification queue is not ready:", applicationError?.message || applicationError);
+      }
       let musicReleases = [];
       let musicAvailable = true;
       try {
@@ -145,7 +160,7 @@ export default async function handler(req, res) {
         musicAvailable = false;
         console.error("Nochalant music review queue is not ready:", musicError?.message || musicError);
       }
-      return res.status(200).json({ ok: true, opinions, reports, users, artists, artistsAvailable, musicReleases, musicAvailable });
+      return res.status(200).json({ ok: true, opinions, reports, users, artists, artistsAvailable, artistApplications, artistApplicationsAvailable, musicReleases, musicAvailable });
     } catch (error) {
       console.error("Nochalant moderation queue failed:", error?.message || error);
       return res.status(503).json({ ok: false, error: "Moderation queue is temporarily unavailable." });
@@ -206,6 +221,21 @@ export default async function handler(req, res) {
       if (!rows.length) return res.status(404).json({ ok:false,error:"Artist not found." });
       return res.status(200).json({ ok:true, artist:rows[0] });
     }
+    if (action === "verify_artist_profile" || action === "reject_artist_profile") {
+      const artistProfileId = String(req.body?.artistProfileId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(artistProfileId)) return res.status(400).json({ ok: false, error: "Invalid artist profile." });
+      const status = action === "verify_artist_profile" ? "verified" : "rejected";
+      const rows = await auth.sql`
+        UPDATE artist_profiles
+        SET verification_status = ${status},
+            verified_at = CASE WHEN ${status} = 'verified' THEN now() ELSE verified_at END,
+            verified_by = CASE WHEN ${status} = 'verified' THEN ${auth.profile.id} ELSE verified_by END
+        WHERE id = ${artistProfileId} AND verification_status IN ('unverified','pending')
+        RETURNING id, stage_name, verification_status
+      `;
+      if (!rows.length) return res.status(404).json({ ok: false, error: "Artist application not found." });
+      return res.status(200).json({ ok: true, artist: rows[0] });
+    }
     if (action === "publish_music_release" || action === "reject_music_release") {
       const releaseId = String(req.body?.releaseId || "");
       if (!/^[0-9a-f-]{36}$/i.test(releaseId)) return res.status(400).json({ ok: false, error: "Invalid music release." });
@@ -215,6 +245,7 @@ export default async function handler(req, res) {
           UPDATE music_releases
           SET status = ${nextStatus}
           WHERE id = ${releaseId} AND status IN ('submitted','under_review')
+            AND EXISTS (SELECT 1 FROM artist_profiles ap WHERE ap.id = music_releases.artist_id AND ap.verification_status = 'verified')
           RETURNING id, status
         ), changed_tracks AS (
           UPDATE music_tracks
