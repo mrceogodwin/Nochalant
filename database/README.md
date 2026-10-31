@@ -34,12 +34,13 @@ Open the SQL Editor for the Nochalant Neon project and select the `production` b
 4. `database/migrations/004_nochalant_faces.sql`
 5. `database/migrations/005_nochalant_opinions_moderation.sql`
 6. `database/migrations/006_editorial_artists.sql`
+7. `database/migrations/007_artist_download_counts.sql`
 
 Do not skip a failed migration or run a later migration first. If a script errors, stop and inspect the error before retrying. These files are intended to be re-runnable in most respects, but do not assume a partially failed script completed.
 
 ## 4. Verify the schema
 
-After all six migrations complete, open:
+After all seven migrations complete, open:
 
 `https://nochalant.vercel.app/api/health/database`
 
@@ -80,3 +81,8 @@ Migration 005 creates the user-generated Opinions feed and reporting queue, plus
 ## 7. Editorial artist spotlight catalog
 
 Migration 006 creates the editorial `artists` catalog used by the homepage spotlight and Super Admin artist manager. This is intentionally separate from `artist_profiles`, which represents creator-owned profiles. The database health endpoint checks both tables.
+
+
+## 8. Artist music and download counts
+
+Migration 007 adds a server-maintained download counter to published music tracks. The homepage artist spotlight reads verified creator profiles from `artist_profiles` and derives download totals from their published tracks. Counts remain zero until actual track downloads are implemented and recorded by the server; do not seed or invent download figures.
