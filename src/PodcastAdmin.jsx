@@ -9,6 +9,7 @@ export default function PodcastAdmin() {
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState("");
   const [notice,setNotice] = useState("");
+  const [hostForm,setHostForm] = useState({showId:"",hostName:"",hostRole:"",hostBio:"",hostImageUrl:""});
   const load = useCallback(async () => {
     const token = await getAuthToken();
     if (!token) throw new Error("Your session has expired. Sign in again.");
@@ -16,6 +17,7 @@ export default function PodcastAdmin() {
     const data = await response.json().catch(()=>({}));
     if (!response.ok || !data.ok) throw new Error(data.error || "Podcast catalogue could not load.");
     setCatalogue(data);
+    setHostForm(current=>{const show=data.shows.find(item=>item.id===current.showId)||data.shows[0];return show?{showId:show.id,hostName:show.host_name||"",hostRole:show.host_role||"",hostBio:show.host_bio||"",hostImageUrl:show.host_image_url||""}:current;});
   },[]);
   useEffect(()=>{load().catch(e=>setError(e.message));},[load]);
   const change = e => setForm(current=>({...current,[e.target.name]:e.target.value}));
@@ -31,6 +33,17 @@ export default function PodcastAdmin() {
       setForm(current=>({...blank,showId:current.showId,seasonId:current.seasonId}));
       await load();
     } catch(e){setError(e.message||"Podcast action failed.");}
+    finally{setBusy(false);}
+  };
+  const saveHost = async event => {
+    event.preventDefault(); setBusy(true); setError(""); setNotice("");
+    try {
+      const token=await getAuthToken();
+      const response=await fetch("/api/podcast",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action:"update_show_host",...hostForm})});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok||!data.ok) throw new Error(data.error||"Host profile could not be saved.");
+      setNotice("Podcast host profile updated."); await load();
+    }catch(e){setError(e.message||"Host profile could not be saved.");}
     finally{setBusy(false);}
   };
   const publish = async (kind,id) => {
@@ -52,6 +65,17 @@ export default function PodcastAdmin() {
     {error&&<p className="podcast-admin-error" role="alert">{error}</p>}
     {notice&&<p className="podcast-admin-notice" role="status">{notice}</p>}
     <div className="podcast-admin-stats"><span><b>{shows.length}</b> series</span><span><b>{seasons.length}</b> seasons</span><span><b>{episodes.length}</b> episodes</span><span><b>{(catalogue.clips||[]).length}</b> clips</span></div>
+    <form className="podcast-admin-form podcast-host-editor" onSubmit={saveHost}>
+      <h3>Podcast host profile</h3><p className="fine-print">This profile appears in the podcast heading on the public site. Changes take effect after saving.</p>
+      <label>Series<select value={hostForm.showId} onChange={e=>{const show=shows.find(item=>item.id===e.target.value);setHostForm(show?{showId:show.id,hostName:show.host_name||"",hostRole:show.host_role||"",hostBio:show.host_bio||"",hostImageUrl:show.host_image_url||""}:current=>({...current,showId:e.target.value}));}} required><option value="">Choose a series</option>{shows.map(show=><option key={show.id} value={show.id}>{show.title}</option>)}</select></label>
+      <div className="podcast-admin-form-grid">
+        <label>Host name<input value={hostForm.hostName} onChange={e=>setHostForm(current=>({...current,hostName:e.target.value}))} maxLength="120" placeholder="Host's display name"/></label>
+        <label>Role / title<input value={hostForm.hostRole} onChange={e=>setHostForm(current=>({...current,hostRole:e.target.value}))} maxLength="100" placeholder="e.g. Host & Presenter"/></label>
+        <label className="podcast-admin-span">Host photo URL (HTTPS)<input type="url" value={hostForm.hostImageUrl} onChange={e=>setHostForm(current=>({...current,hostImageUrl:e.target.value}))} placeholder="https://…"/></label>
+        <label className="podcast-admin-span">Short bio<textarea rows="2" maxLength="700" value={hostForm.hostBio} onChange={e=>setHostForm(current=>({...current,hostBio:e.target.value}))} placeholder="A short introduction to the host."/></label>
+      </div>
+      <button className="button button-green" disabled={busy||!hostForm.showId}>Save host profile</button>
+    </form>
     <div className="podcast-admin-forms">
       <form className="podcast-admin-form" onSubmit={e=>submit(e,"create_show")}><h3>New series</h3><label>Series title<input name="title" value={form.title} onChange={change} required maxLength="180" placeholder="e.g. Nochalant Sessions"/></label><label>Description<textarea name="description" value={form.description} onChange={change} rows="3" maxLength="4000"/></label><button className="button button-green" disabled={busy}>Save series draft</button></form>
       <form className="podcast-admin-form" onSubmit={e=>submit(e,"create_season")}><h3>New season</h3><label>Series<select name="showId" value={form.showId} onChange={change} required><option value="">Choose a series</option>{shows.map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select></label><label>Season number<input name="seasonNumber" type="number" min="1" value={form.seasonNumber} onChange={change} required/></label><label>Season title<input name="title" value={form.title} onChange={change} required maxLength="180"/></label><label>Description<textarea name="description" value={form.description} onChange={change} rows="2"/></label><button className="button button-green" disabled={busy||!shows.length}>Save season draft</button></form>
