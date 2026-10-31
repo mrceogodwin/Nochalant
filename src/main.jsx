@@ -690,19 +690,29 @@ function App() {
 
       <section className="artists-section container" id="artists" aria-labelledby="artists-title">
         <div className="artists-heading">
-          <div><span className="eyebrow">THE SOUND OF THE CULTURE</span><h2 id="artists-title">Artists on <em>Nochalant.</em></h2><p>Meet the voices, sounds and talent moving the culture.</p></div>
+          <div><span className="eyebrow">THE SOUND OF THE CULTURE</span><h2 id="artists-title">Artists on <em>Nochalant.</em></h2><p>Released music, original cover art and the artists moving the culture.</p></div>
           <div className="artists-controls" aria-label="Artist carousel controls">
-            <button type="button" onClick={() => moveArtistRail(-1)} aria-label="Previous artists" disabled={artists.length === 0}><span aria-hidden="true">←</span></button>
-            <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next artists" disabled={artists.length === 0}><span aria-hidden="true">→</span></button>
+            <button type="button" onClick={() => moveArtistRail(-1)} aria-label="Previous releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">←</span></button>
+            <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">→</span></button>
           </div>
         </div>
-        <div className="artists-viewport" ref={artistRailRef} aria-label="Artists on Nochalant. Swipe or use the arrow controls to browse artists." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
-          {artists.length > 0 ? <div className="artists-track">{artists.map(artist => <a className="artist-card" key={artist.id} href={artist.profile_url || "#artists"} target={artist.profile_url ? "_blank" : undefined} rel={artist.profile_url ? "noreferrer" : undefined}>
-            <span className="artist-avatar">{artist.image_url ? <img src={artist.image_url} alt={`${artist.name} artist portrait`} loading="lazy" /> : <span>{artist.name?.trim().slice(0,1).toUpperCase() || "A"}</span>}</span>
-            <span className="artist-name">{artist.name}</span>
-            {artist.genre && <span className="artist-genre">{artist.genre}</span>}
-            {Number.isFinite(Number(artist.download_count)) && <span className="artist-downloads" aria-label={`${Number(artist.download_count).toLocaleString()} downloads`}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(artist.download_count).toLocaleString()}</span>}
-          </a>)}</div> : <div className="artists-empty">{artistsLoading ? "Loading artists…" : "The artist spotlight is getting ready. Check back soon."}</div>}
+        <div className="artists-viewport" ref={artistRailRef} aria-label="Nochalant releases. Swipe or use the arrow controls to browse." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
+          {artists.some(artist => artist.tracks?.length) ? <div className="artists-track">{artists.flatMap(artist => artist.tracks || []).map(track => {
+            const playableTracks = artists.flatMap(item => item.tracks || []);
+            return <article className="artist-card artist-track-card" key={track.id}>
+              <button type="button" className="artist-avatar artist-track-art" onClick={() => openArtistProfile(track.artist_slug)} aria-label={"View " + track.artist_name + "'s artist profile"}>
+                {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy" /> : <span>{track.artist_name?.slice(0,1).toUpperCase() || "N"}</span>}
+                <span className="artist-track-play" aria-hidden="true">▶</span>
+              </button>
+              <button type="button" className="artist-name artist-track-title" onClick={() => openArtistProfile(track.artist_slug)}>{track.title}</button>
+              <button type="button" className="artist-track-artist" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}</button>
+              <div className="artist-track-stats">
+                <span title="Eligible plays"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>{Number(track.plays_count || 0).toLocaleString()}</span>
+                {track.audio_url ? <a href={track.audio_url} target="_blank" rel="noreferrer" download title="Download track" aria-label={"Download " + track.title}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</a> : <span title="Downloads"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</span>}
+              </div>
+              <button type="button" className="artist-track-listen" onClick={() => playArtistTrack(track, playableTracks)} disabled={!track.audio_url}>{track.audio_url ? "PLAY TRACK" : "AUDIO COMING SOON"}</button>
+            </article>;
+          })}</div> : <div className="artists-empty">{artistsLoading ? "Loading verified artist releases…" : "No artist releases have been published yet. Verified artist releases will appear here with their original cover art."}</div>}
         </div>
       </section>
 
