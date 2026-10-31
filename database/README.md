@@ -36,6 +36,7 @@ Open the SQL Editor for the Nochalant Neon project and select the `production` b
 6. `database/migrations/006_editorial_artists.sql`
 7. `database/migrations/007_artist_download_counts.sql`
 8. `database/migrations/008_account_types.sql`
+9. `database/migrations/009_podcast_publishing.sql`
 
 Do not skip a failed migration or run a later migration first. If a script errors, stop and inspect the error before retrying. These files are intended to be re-runnable in most respects, but do not assume a partially failed script completed.
 
@@ -92,3 +93,14 @@ Migration 007 adds a server-maintained download counter to published music track
 ## 9. Member account types
 
 Migration 008 adds `user_profiles.account_type`. Supported types are `fan`, `artist`, `creator`, `event_organizer`, `business`, and `media`. This is a dashboard personalization field only; it must never grant staff, moderation, payment, artist verification, or publishing privileges. Artist profile verification remains separately reviewed by the editorial team.
+
+
+## 10. Podcast publishing foundation
+
+Migration 009 creates the editorial podcast catalogue:
+- `podcast_shows`: show identity, artwork, host, featured state and publishing status.
+- `podcast_seasons`: ordered seasons belonging to a show.
+- `podcast_episodes`: full episodes, optional season membership, playback URL/object key, visibility and review/publishing state.
+- `podcast_clips`: short-form clips linked to full episodes, including optional clip in/out points.
+
+The schema stores media references only. It does not create a media bucket, upload workflow, transcoding pipeline or public playback API. Those must be implemented and tested separately before real episodes can be published.
