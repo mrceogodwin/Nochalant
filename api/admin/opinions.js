@@ -245,7 +245,7 @@ export default async function handler(req, res) {
           UPDATE music_releases
           SET status = ${nextStatus}
           WHERE id = ${releaseId} AND status IN ('submitted','under_review')
-            AND EXISTS (SELECT 1 FROM artist_profiles ap WHERE ap.id = music_releases.artist_id AND ap.verification_status = 'verified')
+            AND (${nextStatus} <> 'published' OR EXISTS (SELECT 1 FROM artist_profiles ap WHERE ap.id = music_releases.artist_id AND ap.verification_status = 'verified'))
           RETURNING id, status
         ), changed_tracks AS (
           UPDATE music_tracks
