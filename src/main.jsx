@@ -62,6 +62,12 @@ function App() {
   const [communityFaces, setCommunityFaces] = useState(demoFaces);
   const [artists, setArtists] = useState([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
+  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [artistProfileLoading, setArtistProfileLoading] = useState(false);
+  const [artistProfileError, setArtistProfileError] = useState("");
+  const [audioQueue, setAudioQueue] = useState([]);
+  const [audioQueueIndex, setAudioQueueIndex] = useState(0);
+  const [activeAudioTrack, setActiveAudioTrack] = useState(null);
   const artistRailRef = useRef(null);
   const [artistRailPaused, setArtistRailPaused] = useState(false);
   const [opinions, setOpinions] = useState([]);
@@ -410,6 +416,69 @@ function App() {
       .finally(() => { if (!controller.signal.aborted) setArtistsLoading(false); });
     return () => controller.abort();
   }, []);
+
+  const openArtistProfile = async (slug) => {
+    if (!slug) return;
+    setArtistProfileLoading(true);
+    setArtistProfileError("");
+    setSelectedArtist(null);
+    setModal("artist-profile");
+    try {
+      const response = await fetch("/api/artists?slug=" + encodeURIComponent(slug));
+      const data = await response.json();
+      if (!response.ok || !data?.ok || !data.artist) throw new Error(data?.error || "Artist profile could not be loaded.");
+      setSelectedArtist(data.artist);
+    } catch (error) {
+      setArtistProfileError(error?.message || "Artist profile could not be loaded.");
+    } finally {
+      setArtistProfileLoading(false);
+    }
+  };
+
+  const playArtistTrack = async (track, trackList = []) => {
+    if (!track?.audio_url) {
+      notify("This release is listed, but its playable audio file has not been connected yet.");
+      return;
+    }
+    const queue = trackList.filter(item => item.audio_url);
+    const index = Math.max(0, queue.findIndex(item => item.id === track.id));
+    setAudioQueue(queue);
+    setAudioQueueIndex(index);
+    setActiveAudioTrack(track);
+    setAudioPlayerVisible(true);
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src = track.audio_url;
+    audio.load();
+    try {
+      setAudioError(false);
+      await audio.play();
+    } catch {
+      setAudioPlaying(false);
+      setAudioError(true);
+      notify("This track could not start. Please try again.");
+    }
+  };
+
+  const moveAudioQueue = async (direction) => {
+    if (!audioQueue.length) return;
+    const nextIndex = (audioQueueIndex + direction + audioQueue.length) % audioQueue.length;
+    const nextTrack = audioQueue[nextIndex];
+    setAudioQueueIndex(nextIndex);
+    setActiveAudioTrack(nextTrack);
+    const audio = audioRef.current;
+    if (!audio || !nextTrack?.audio_url) return;
+    audio.src = nextTrack.audio_url;
+    audio.load();
+    try {
+      setAudioError(false);
+      await audio.play();
+    } catch {
+      setAudioPlaying(false);
+      setAudioError(true);
+      notify("The next track could not start.");
+    }
+  };
 
   const moveArtistRail = (direction) => {
     const rail = artistRailRef.current;
