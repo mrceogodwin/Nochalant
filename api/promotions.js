@@ -113,7 +113,7 @@ export default async function handler(req, res) {
         return res.status(502).json({ ok: false, error: "Bachs could not create checkout. Please try again." });
       }
       await auth.sql`UPDATE payment_orders SET status = 'pending', checkout_url = ${checkout.checkout_url}, metadata = metadata || ${JSON.stringify({ checkout_id: checkout.checkout_id })}::jsonb WHERE id = ${orderId}`;
-      await auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference} WHERE id = ${campaign.id} AND payment_status = 'unpaid'`;
+      await auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference} WHERE id = ${campaign.id} AND status = 'pending_payment' AND payment_status IN ('unpaid','failed')`;
       return res.status(200).json({ ok: true, checkoutUrl: checkout.checkout_url, checkoutId: checkout.checkout_id });
     }
     if (action === "admin_queue") {
