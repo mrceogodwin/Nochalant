@@ -101,7 +101,7 @@ export default async function handler(req, res) {
         headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
         body: JSON.stringify({
           pricing: { currency: campaign.currency, amount },
-          customer: { email: auth.profile.email || undefined, name: auth.profile.display_name || undefined },
+          ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
           reference,
           metadata: { campaign_id: campaign.id, payment_order_id: orderId, order_type: "promotion" },
           expires_in_minutes: 60
