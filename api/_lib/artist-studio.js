@@ -88,7 +88,7 @@ export async function handleArtistStudio(req, res) {
       const rows = await auth.sql`
         UPDATE artist_profiles
         SET stage_name = ${stageName}, bio = ${bio}, city = ${city || null},
-            avatar_url = ${avatarUrl}, banner_url = ${bannerUrl}
+            avatar_url = COALESCE(${avatarUrl}, avatar_url), banner_url = COALESCE(${bannerUrl}, banner_url)
         WHERE id = ${artist.id} AND owner_user_id = ${auth.profile.id}
         RETURNING id, stage_name, slug, bio, avatar_url, banner_url, country_code, city, verification_status
       `;
