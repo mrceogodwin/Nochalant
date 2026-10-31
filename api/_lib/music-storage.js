@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const required = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_ENDPOINT_URL_S3", "AWS_REGION", "NEON_STORAGE_BUCKET"];
@@ -29,4 +29,12 @@ export async function createMusicDownloadUrl(objectKey, expiresIn = 3600) {
   const { client, bucket } = getMusicStorage();
   const command = new GetObjectCommand({ Bucket: bucket, Key: objectKey });
   return getSignedUrl(client, command, { expiresIn });
+}
+
+export async function verifyMusicUpload(objectKey) {
+  const { client, bucket } = getMusicStorage();
+  const result = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: objectKey }));
+  const size = Number(result.ContentLength || 0);
+  if (!size || size > 100 * 1024 * 1024) throw new Error("Uploaded audio file is empty or exceeds 100 MB.");
+  return { size, contentType: result.ContentType || null };
 }
