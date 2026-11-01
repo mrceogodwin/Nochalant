@@ -153,6 +153,12 @@ export async function handleAccountType(req, res) {
       artistProfile
     });
   } catch (error) {
+    if (error?.code === "23505" || /unique constraint|duplicate key/i.test(String(error?.message || ""))) {
+      return res.status(409).json({
+        ok: false,
+        error: "That username is already in use. Please choose another one."
+      });
+    }
     console.error("Nochalant account profile operation failed:", error?.message || error);
     return res.status(503).json({
       ok: false,
