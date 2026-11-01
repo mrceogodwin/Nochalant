@@ -197,17 +197,26 @@ function App() {
       setAudioError(false);
       const trackId = activeAudioTrack?.id;
       if (!trackId || trackedPlaysRef.current.has(trackId) || playbackTicketRef.current.trackId === trackId || playbackTicketRef.current.issuing) return;
-      playbackTicketRef.current = { trackId, ticket: null, issuing: true };
-      fetch("/api/artists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "issue_playback_ticket", trackId })
-      }).then(response => response.json()).then(data => {
-        if (playbackTicketRef.current.trackId !== trackId || !data?.ok || typeof data.ticket !== "string") return;
-        playbackTicketRef.current = { trackId, ticket: data.ticket, issuing: false };
-      }).catch(() => {
-        if (playbackTicketRef.current.trackId === trackId) playbackTicketRef.current = { trackId: null, ticket: null, issuing: false };
-      });
+      try {
+        let sessionId = window.sessionStorage.getItem("nochalant-audio-session");
+        if (!sessionId) {
+          sessionId = window.crypto.randomUUID();
+          window.sessionStorage.setItem("nochalant-audio-session", sessionId);
+        }
+        playbackTicketRef.current = { trackId, ticket: null, issuing: true, redeeming: false };
+        fetch("/api/artists", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "issue_playback_ticket", trackId, sessionId })
+        }).then(response => response.json()).then(data => {
+          if (playbackTicketRef.current.trackId !== trackId || !data?.ok || typeof data.ticket !== "string") return;
+          playbackTicketRef.current = { trackId, ticket: data.ticket, issuing: false, redeeming: false };
+        }).catch(() => {
+          if (playbackTicketRef.current.trackId === trackId) playbackTicketRef.current = { trackId: null, ticket: null, issuing: false, redeeming: false };
+        });
+      } catch {
+        playbackTicketRef.current = { trackId: null, ticket: null, issuing: false, redeeming: false };
+      }
     };
     const onPause = () => setAudioPlaying(false);
     const onEnded = () => setAudioPlaying(false);
@@ -236,22 +245,33 @@ function App() {
     const duration = Number(activeAudioTrack.duration_seconds || audioDuration || 0);
     const threshold = duration > 0 && duration < 30 ? Math.ceil(duration * 0.8) : 30;
     const ticketState = playbackTicketRef.current;
-    if (audioCurrent < threshold || trackedPlaysRef.current.has(trackId) ||
-        ticketState.trackId !== trackId || !ticketState.ticket) return;
-    trackedPlaysRef.current.add(trackId);
+    if (audioCurrent < threshold + 3 || trackedPlaysRef.current.has(trackId) ||
+        ticketState.trackId !== trackId || !ticketState.ticket || ticketState.redeeming) return;
     const ticket = ticketState.ticket;
-    playbackTicketRef.current = { trackId, ticket: null, issuing: false };
+    playbackTicketRef.current = { ...ticketState, redeeming: true };
     fetch("/api/artists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "redeem_playback_ticket", trackId, ticket })
     }).then(response => response.json()).then(data => {
-      if (!data?.ok || !data.counted) return;
-      setArtists(current => current.map(artist => ({
-        ...artist,
-        tracks: (artist.tracks || []).map(track => track.id === trackId ? { ...track, plays_count: data.plays_count } : track)
-      })));
-    }).catch(() => {});
+      if (playbackTicketRef.current.trackId !== trackId) return;
+      if (data?.ok && (data.counted || data.duplicate)) {
+        trackedPlaysRef.current.add(trackId);
+        playbackTicketRef.current = { trackId, ticket: null, issuing: false, redeeming: false };
+        if (data.counted) {
+          setArtists(current => current.map(artist => ({
+            ...artist,
+            tracks: (artist.tracks || []).map(track => track.id === trackId ? { ...track, plays_count: data.plays_count } : track)
+          })));
+        }
+      } else {
+        playbackTicketRef.current = { trackId: null, ticket: null, issuing: false, redeeming: false };
+      }
+    }).catch(() => {
+      if (playbackTicketRef.current.trackId === trackId) {
+        playbackTicketRef.current = { trackId: null, ticket: null, issuing: false, redeeming: false };
+      }
+    });
   }, [audioCurrent, audioDuration, activeAudioTrack]);
 
   const filtered = useMemo(() => demoStories.slice(1).filter(item =>
