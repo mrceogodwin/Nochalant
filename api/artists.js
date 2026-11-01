@@ -53,7 +53,10 @@ export default async function handler(req, res) {
       const eligibleSeconds = duration > 0 && duration < 30 ? Math.ceil(duration * 0.8) : 30;
 
       if (action === "issue_playback_ticket") {
-        const issued = issuePlaybackTicket(trackId, eligibleSeconds, ticketSecret);
+        const sessionId = String(req.body?.sessionId || "");
+        if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return res.status(400).json({ ok: false, error: "A valid listening session is required." });
+        const sessionHash = createHash("sha256").update(sessionId).digest("hex");
+        const issued = issuePlaybackTicket(trackId, eligibleSeconds, ticketSecret, sessionHash);
         return res.status(200).json({ ok: true, ...issued });
       }
       if (action !== "redeem_playback_ticket") {
@@ -66,12 +69,12 @@ export default async function handler(req, res) {
         return res.status(409).json({ ok: false, error: "Track duration changed; request a new playback ticket." });
       }
 
-      const nonceHash = createHash("sha256").update(ticketPayload.nonce).digest("hex");
+      const eventId = createHash("sha256").update("nochalant:" + trackId + ":" + ticketPayload.sessionHash + ":" + new Date().toISOString().slice(0, 10)).digest("hex");
       const inserted = await sql`
         INSERT INTO music_play_events
           (track_id, anonymous_listener_hash, session_hash, provider_event_id, listened_seconds, duration_seconds, eligible, source)
         VALUES
-          (${trackId}, ${nonceHash}, ${nonceHash}, ${nonceHash}, ${eligibleSeconds}, ${duration || null}, true, 'nochalant')
+          (${trackId}, ${ticketPayload.sessionHash}, ${ticketPayload.sessionHash}, ${eventId}, ${eligibleSeconds}, ${duration || null}, true, 'nochalant')
         ON CONFLICT (provider_event_id) DO NOTHING
         RETURNING id
       `;
