@@ -922,3 +922,48 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 
 .deferred-panel-loading{display:flex;align-items:center;justify-content:center;min-height:90px;padding:24px;color:#aab293;font:700 11px 'Space Grotesk',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+
+
+/* Member appearance and navigation preferences */
+.site-shell.header-not-sticky .site-header{position:relative;top:auto}
+.drawer-preferences{width:100%;margin-top:8px;padding:17px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.drawer-preferences .drawer-kicker{display:block;margin-bottom:14px}
+.drawer-preference-row,.drawer-preference-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.drawer-preference-row strong,.drawer-preference-toggle strong{display:block;color:var(--ink);font-size:12px}
+.drawer-preference-row small,.drawer-preference-toggle small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+.skin-switch{display:flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.skin-switch button{border:0;border-radius:7px;padding:7px 10px;background:transparent;color:var(--muted);font-size:10px;font-weight:800}
+.skin-switch button.active{background:var(--lime);color:#15180e}
+.drawer-preference-toggle{position:relative;cursor:pointer}
+.drawer-preference-toggle input{position:absolute;right:0;width:42px;height:24px;opacity:0;cursor:pointer}
+.drawer-preference-toggle i{width:42px;height:24px;flex:none;border-radius:20px;background:#666;position:relative;transition:background .2s}
+.drawer-preference-toggle i:after{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:white;transition:transform .2s}
+.drawer-preference-toggle input:checked+i{background:var(--lime)}
+.drawer-preference-toggle input:checked+i:after{transform:translateX(18px);background:#171a13}
+.drawer-preference-toggle input:focus-visible+i{outline:2px solid var(--lime);outline-offset:3px}
+:root:has(.skin-light){color-scheme:light;--bg:#f2f0e8;--surface:#fffdf7;--surface-2:#e9e6dc;--ink:#22251d;--muted:#74776b;--line:#dedbcf;--lime:#a8c94b;--orange:#e56a48;--gold:#b78c36}
+.skin-light{background:radial-gradient(ellipse at 82% 5%,#dce7c655 0,transparent 34%),var(--bg);color:var(--ink)}
+.skin-light .ticker{background:#dce9b7;color:#303a1c}
+.skin-light .ticker-label{background:#303a1c;color:#e8f3c9}
+.skin-light .site-header{background:#f7f5eef0;border-color:var(--line)}
+.skin-light .brand:before{background:#a8c94b;color:#20251a}
+.skin-light .brand span,.skin-light .main-nav a:hover,.skin-light .footer-links a:hover{color:#718e27}
+.skin-light .main-nav,.skin-light .main-nav button,.skin-light .main-nav a,.skin-light .nav-login,.skin-light .text-button{color:#55594d}
+.skin-light .nav-spill{background:#fffdf7;border-color:#d8d5c9;color:#34382d}
+.skin-light .nav-join,.skin-light .button-green{background:#a8c94b;border-color:#a8c94b;color:#20251a}
+.skin-light .feature-nav-link{color:#73766a}
+.skin-light .feature-nav-link.active,.skin-light .feature-nav-link:hover{color:#718e27}
+.skin-light .feature-nav-link.active:after{background:#a8c94b}
+.skin-light .lead-copy>p,.skin-light .podcast-heading p{color:#666a5e}
+.skin-light .lead-story{border-color:#d7d9c5;box-shadow:18px 18px 0 #a8c94b20}
+.skin-light .member-app-dock{background:linear-gradient(135deg,#fffef9f5,#f1efe6f5);border-color:#c7d99a;box-shadow:0 12px 48px #393b241f,0 0 0 1px #a8c94b22}
+.skin-light .member-app-dock button{color:#44493a}
+.skin-light .member-app-dock button.active{color:#718e27}
+.skin-light .member-app-dock button.active span:after{background:#a8c94b}
+.skin-light .member-app-dock .dock-create{background:#a8c94b;color:#20251a}
+.skin-light .drawer-preferences,.skin-light .main-nav{background:#fffdf7}
+.skin-light .skin-switch{background:#ece9df}
+.skin-light .skin-switch button.active{background:#a8c94b;color:#20251a}
+.skin-light .button-outline{border-color:#9bad70;color:#627b25}
+.skin-light .social-feed-aside,.skin-light .podcast-empty,.skin-light .card,.skin-light .panel{background-color:var(--surface);color:var(--ink)}
+@media(max-width:760px){.skin-light .main-nav{background:#f7f5eefc;border-color:var(--line)}}
