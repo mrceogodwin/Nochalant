@@ -196,7 +196,7 @@ function App() {
       setAudioPlaying(true);
       setAudioError(false);
       const trackId = activeAudioTrack?.id;
-      if (!trackId || trackedPlaysRef.current.has(trackId) || playbackTicketRef.current.trackId === trackId || playbackTicketRef.current.issuing) return;
+      if (!trackId || trackedPlaysRef.current.has(trackId) || playbackTicketRef.current.trackId === trackId) return;
       try {
         let sessionId = window.sessionStorage.getItem("nochalant-audio-session");
         if (!sessionId) {
