@@ -122,3 +122,18 @@ input[type=range]{accent-color:var(--lime)}
   .story-card{border-radius:14px}
 }
 @media(prefers-reduced-motion:reduce){button,.button,.story-card,.artist-avatar,.artist-avatar img{transition:none!important}}
+
+
+/* Keep the More destination a normal dock item; only the centre Create action is raised. */
+.member-app-dock{grid-template-columns:repeat(5,minmax(0,1fr))}
+.member-app-dock>.dock-more{
+  position:relative;z-index:2;justify-self:stretch;align-self:stretch;
+  width:auto;height:auto;min-height:52px;border-radius:17px;
+  padding:4px 2px;background:transparent!important;color:#e8e9df!important;
+  box-shadow:none!important;transform:none;
+}
+.member-app-dock>.dock-more svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.member-app-dock>.dock-more.active{color:color-mix(in srgb,var(--lime) 82%,#dce5c7)!important;background:rgba(255,255,255,.045)!important}
+.member-app-dock>.dock-more.active span:after{content:"";display:block;width:14px;height:2px;margin:4px auto 0;border-radius:4px;background:color-mix(in srgb,var(--lime) 78%,#dce5c7)}
+.member-app-dock>.dock-more:active{transform:scale(.94)}
+@media(max-width:600px){.member-app-dock>.dock-more{min-height:50px;width:auto;height:auto}}
