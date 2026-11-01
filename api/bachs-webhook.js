@@ -107,14 +107,14 @@ export default async function handler(req, res) {
         return res.status(503).json({ received: false, retry: true });
       }
       const expectedChargeId = typeof refund.metadata?.charge_id === "string" ? refund.metadata.charge_id : "";
-      if (expectedChargeId !== chargeId || (event.type !== "refund.paid" && Number(refund.amount_minor) !== amountMinor) || (refund.provider_refund_id && refund.provider_refund_id !== refundId)) {
+      if (expectedChargeId !== chargeId || (event.type !== "refund.paid" && Number(refund.amount_minor) !== amountMinor) || (event.type === "refund.paid" && amountMinor > Number(refund.amount_minor)) || (refund.provider_refund_id && refund.provider_refund_id !== refundId)) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Refund reference, charge or amount mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Refund details did not match the recorded request");
       }
       const nextStatus = event.type === "refund.paid" ? "successful" : event.type === "refund.failed" ? "failed" : "pending";
       await sql.transaction([
         sql`SELECT id FROM payment_orders WHERE id = ${refund.payment_order_id} FOR UPDATE`,
-        sql`UPDATE payment_refunds SET status = ${nextStatus}, provider_refund_id = ${refundId}, refunded_amount_minor = ${event.type === "refund.paid" ? amountMinor : null}, updated_at = now() WHERE id = ${refund.id} AND status IN ('requested','pending','successful')`,
+        sql`UPDATE payment_refunds SET status = CASE WHEN status = 'successful' THEN 'successful' ELSE ${nextStatus} END, provider_refund_id = ${refundId}, refunded_amount_minor = CASE WHEN ${event.type === "refund.paid"} THEN ${amountMinor} ELSE refunded_amount_minor END, updated_at = now() WHERE id = ${refund.id} AND status IN ('requested','pending','successful')`,
         sql`UPDATE payment_orders SET status = CASE WHEN COALESCE((SELECT SUM(refunded_amount_minor) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful'),0) >= amount_minor THEN 'refunded' WHEN COALESCE((SELECT SUM(refunded_amount_minor) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful'),0) > 0 THEN 'partially_refunded' ELSE status END, updated_at = now() WHERE id = ${refund.payment_order_id} AND status IN ('successful','partially_refunded','refunded')
       ]);
       await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
