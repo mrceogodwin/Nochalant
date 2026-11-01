@@ -4,7 +4,8 @@ import {
   isValidBachsEventEnvelope,
   getBachsCheckoutId,
   matchesBachsSuccessfulPayment,
-  isWithinBachsIdempotencyWindow
+  isWithinBachsIdempotencyWindow,
+  parseBachsRefundEvent
 } from "../api/_lib/bachs-webhook-validation.js";
 
 test("accepts a well-formed Bachs event envelope", () => {
@@ -43,4 +44,14 @@ test("allows uncertain checkout retries only inside the 24-hour idempotency wind
   assert.equal(isWithinBachsIdempotencyWindow("2026-10-31T11:59:59.000Z", now), false);
   assert.equal(isWithinBachsIdempotencyWindow("2026-11-01T12:01:00.000Z", now), false);
   assert.equal(isWithinBachsIdempotencyWindow("invalid-date", now), false);
+});
+
+test("parses valid Bachs refund events", () => {
+  const result = parseBachsRefundEvent({ type: "refund.paid", data: { reference: "rf_1", refund_id: "id_1", charge_id: "ch_1", refunded_amount: "25.25", currency: "ngn" } });
+  assert.deepEqual(result, { reference: "rf_1", refundId: "id_1", chargeId: "ch_1", currency: "NGN", amountMinor: 2525, status: "successful" });
+});
+
+test("rejects malformed Bachs refund events", () => {
+  assert.equal(parseBachsRefundEvent({ type: "refund.paid", data: { reference: "rf_1", refund_id: "id_1", charge_id: "ch_1", refunded_amount: "1.001", currency: "NGN" } }), null);
+  assert.equal(parseBachsRefundEvent({ type: "refund.created", data: [] }), null);
 });
