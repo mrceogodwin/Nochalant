@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getAuthToken } from "./auth.js";
 
 async function socialRequest({ method = "GET", query = "", body, signal }) {
@@ -53,6 +53,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [profile, setProfile] = useState(null);
   const [memberProfile, setMemberProfile] = useState(null);
   const [memberProfileLoading, setMemberProfileLoading] = useState(false);
+  const memberProfileRequest = useRef(0);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileDraft, setProfileDraft] = useState({ displayName: "", username: "", bio: "", websiteUrl: "", location: "", avatarUrl: "" });
   const [viewerProfileId, setViewerProfileId] = useState("");
@@ -160,12 +161,23 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
 
   const openMemberProfile = async (memberId) => {
     if (!memberId) return;
+    const requestId = ++memberProfileRequest.current;
+    setMemberProfile(null);
     setMemberProfileLoading(true);
     try {
       const data = await socialRequest({ query: "?member=" + encodeURIComponent(memberId) });
-      setMemberProfile({ ...data.profile, posts: data.posts || [] });
-    } catch (err) { setNotice(err.message); }
-    finally { setMemberProfileLoading(false); }
+      if (requestId === memberProfileRequest.current) setMemberProfile({ ...data.profile, posts: data.posts || [] });
+    } catch (err) {
+      if (requestId === memberProfileRequest.current) setNotice(err.message);
+    } finally {
+      if (requestId === memberProfileRequest.current) setMemberProfileLoading(false);
+    }
+  };
+
+  const closeMemberProfile = () => {
+    memberProfileRequest.current += 1;
+    setMemberProfile(null);
+    setMemberProfileLoading(false);
   };
 
   const toggleMemberProfileFollow = async () => {
@@ -341,9 +353,9 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       <article className="social-story-card"><div className="social-story-viewer-top"><span className="social-story-avatar">{avatarContent(activeStory.author_name, activeStory.avatar_url)}</span><div><strong>{activeStory.author_name}</strong><small>Expires {new Date(activeStory.expires_at).toLocaleString()}</small></div><button type="button" onClick={() => setActiveStory(null)} aria-label="Close story">×</button></div><p>{activeStory.body}</p><small>{Number(activeStory.view_count || 0).toLocaleString()} views</small></article>
     </div>}
 
-    {(memberProfileLoading || memberProfile) && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !memberProfileLoading) setMemberProfile(null); }}>
+    {(memberProfileLoading || memberProfile) && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !memberProfileLoading) closeMemberProfile(); }}>
       {memberProfileLoading ? <div className="social-composer social-profile-viewer">Loading member profile…</div> : <article className="social-composer social-profile-viewer">
-        <div className="social-composer-head"><div><span className="eyebrow">NOCHALANT MEMBER</span><h2>Creator profile</h2></div><button type="button" onClick={() => setMemberProfile(null)} aria-label="Close member profile">×</button></div>
+        <div className="social-composer-head"><div><span className="eyebrow">NOCHALANT MEMBER</span><h2>Creator profile</h2></div><button type="button" onClick={closeMemberProfile} aria-label="Close member profile">×</button></div>
         <div className="social-public-profile-head"><span className="social-public-profile-avatar">{avatarContent(memberProfile.display_name, memberProfile.avatar_url)}</span><div><h3>{memberProfile.display_name}</h3><small>@{memberProfile.username || "member"} · {String(memberProfile.account_type || "fan").replaceAll("_", " ")}</small></div></div>
         {memberProfile.bio && <p className="social-public-profile-bio">{memberProfile.bio}</p>}
         <div className="social-profile-stats"><span><strong>{Number(memberProfile.follower_count || 0).toLocaleString()}</strong><small>Followers</small></span><span><strong>{Number(memberProfile.following_count || 0).toLocaleString()}</strong><small>Following</small></span><span><strong>{(memberProfile.posts || []).length}</strong><small>Posts</small></span></div>
