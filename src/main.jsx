@@ -955,7 +955,7 @@ function App() {
           <div className="drawer-preference-row"><div><strong>App appearance</strong><small>Choose your Nochalant skin</small></div><div className="skin-switch" role="group" aria-label="App appearance"><button type="button" className={appSkin==="dark"?"active":""} onClick={()=>setAppSkin("dark")}>Dark</button><button type="button" className={appSkin==="light"?"active":""} onClick={()=>setAppSkin("light")}>Light</button></div></div>
           <label className="drawer-preference-toggle"><span><strong>Sticky header</strong><small>Keep navigation at the top</small></span><input type="checkbox" checked={stickyHeaderEnabled} onChange={e=>setStickyHeaderEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
           <label className="drawer-preference-toggle"><span><strong>Bottom app dock</strong><small>Keep quick navigation at the bottom</small></span><input type="checkbox" checked={memberDockEnabled} onChange={e=>setMemberDockEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
-        </section>}
+        </section>
       </nav>
       <div className="nav-actions">{currentUser && <button className="text-button nav-login" onClick={() => {setActiveScreen("dashboard");setMobileMenu(false);window.scrollTo({top:0,behavior:"smooth"});}}>My dashboard</button>}{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
     </div></header>
