@@ -171,7 +171,7 @@ export async function handleAccountType(req, res) {
               WHERE user_profile_id = ${auth.profile.id}
                 AND is_primary = true AND status = 'active'
                 AND account_type <> ${accountType}
-            ) THEN true ELSE user_account_types.is_primary END,
+            ) THEN true ELSE false END,
             activated_at = COALESCE(user_account_types.activated_at, now()),
             updated_at = now()
         RETURNING account_type, status, is_primary`,
