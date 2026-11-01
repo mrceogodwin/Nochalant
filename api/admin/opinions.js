@@ -285,23 +285,30 @@ async function handleSocialNetwork(req, res) {
       const safeAvatar = safeUrl(avatarUrl);
       if ((websiteUrl && !safeWebsite) || (avatarUrl && !safeAvatar)) return res.status(400).json({ ok: false, error: "Website and avatar links must use HTTPS." });
       try {
-        await auth.sql`
-          INSERT INTO user_profile_details (user_profile_id, username, avatar_url, bio, website_url, location)
-          VALUES (${auth.profile.id}, ${username}, ${safeAvatar}, ${bio}, ${safeWebsite}, ${location || null})
-          ON CONFLICT (user_profile_id) DO UPDATE SET
-            username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url, bio = EXCLUDED.bio,
-            website_url = EXCLUDED.website_url, location = EXCLUDED.location, updated_at = now()
+        const updated = await auth.sql`
+          WITH saved_details AS (
+            INSERT INTO user_profile_details (user_profile_id, username, avatar_url, bio, website_url, location)
+            VALUES (${auth.profile.id}, ${username}, ${safeAvatar}, ${bio}, ${safeWebsite}, ${location || null})
+            ON CONFLICT (user_profile_id) DO UPDATE SET
+              username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url, bio = EXCLUDED.bio,
+              website_url = EXCLUDED.website_url, location = EXCLUDED.location, updated_at = now()
+            RETURNING user_profile_id
+          ),
+          saved_profile AS (
+            UPDATE user_profiles SET display_name = ${displayName}
+            WHERE id = ${auth.profile.id}
+            RETURNING id, display_name, account_type
+          )
+          SELECT p.id, p.display_name, p.account_type
+          FROM saved_profile p
+          JOIN saved_details d ON d.user_profile_id = p.id
         `;
+        if (!updated.length) throw new Error("Profile update did not complete.");
+        return res.status(200).json({ ok: true, profile: { ...updated[0], username, avatar_url: safeAvatar, bio, website_url: safeWebsite, location: location || null } });
       } catch (error) {
         if (error?.code === "23505") return res.status(409).json({ ok: false, error: "That username is already taken." });
         throw error;
       }
-      const updated = await auth.sql`
-        UPDATE user_profiles SET display_name = ${displayName}
-        WHERE id = ${auth.profile.id}
-        RETURNING id, display_name, account_type
-      `;
-      return res.status(200).json({ ok: true, profile: { ...updated[0], username, avatar_url: safeAvatar, bio, website_url: safeWebsite, location: location || null } });
     }
     if (action === "mark_notification_read") {
       const notificationId = String(req.body?.notificationId || "");
