@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { issuePlaybackTicket, verifyPlaybackTicket } from "./_lib/playback-ticket.js";
 import { neon } from "@neondatabase/serverless";
 import { createMusicDownloadUrl, resolveMusicAssetUrl } from "./_lib/music-storage.js";
 
@@ -33,31 +34,48 @@ const mapTrack = async (track) => ({
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
+    const action = String(req.body?.action || "");
     const trackId = String(req.body?.trackId || "");
-    const sessionId = String(req.body?.sessionId || "").slice(0, 180);
-    const listenedSeconds = Math.max(0, Math.min(86400, Number(req.body?.listenedSeconds) || 0));
-    if (!/^[0-9a-f-]{36}$/i.test(trackId) || sessionId.length < 12) {
-      return res.status(400).json({ ok: false, error: "A valid track and listening session are required." });
+    if (!/^[0-9a-f-]{36}$/i.test(trackId)) {
+      return res.status(400).json({ ok: false, error: "A valid track is required." });
     }
     const connectionString = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
     if (!connectionString) return res.status(503).json({ ok: false, error: "Play tracking is temporarily unavailable." });
+    const ticketSecret = process.env.PLAYBACK_TICKET_SECRET;
+    if (!ticketSecret || Buffer.byteLength(ticketSecret) < 32) {
+      return res.status(503).json({ ok: false, error: "Secure play tracking is not configured yet." });
+    }
     try {
       const sql = neon(connectionString);
       const rows = await sql`SELECT id, duration_seconds FROM music_tracks WHERE id = ${trackId} AND status = 'published' LIMIT 1`;
       if (!rows.length) return res.status(404).json({ ok: false, error: "Published track not found." });
       const duration = Number(rows[0].duration_seconds || 0);
       const eligibleSeconds = duration > 0 && duration < 30 ? Math.ceil(duration * 0.8) : 30;
-      if (listenedSeconds < eligibleSeconds) return res.status(202).json({ ok: true, counted: false, required_seconds: eligibleSeconds });
-      const hash = value => createHash("sha256").update(String(value)).digest("hex");
-      const sessionHash = hash(sessionId);
-      const eventId = hash("nochalant:" + trackId + ":" + sessionHash + ":" + new Date().toISOString().slice(0, 10));
-      await sql`
+
+      if (action === "issue_playback_ticket") {
+        const issued = issuePlaybackTicket(trackId, eligibleSeconds, ticketSecret);
+        return res.status(200).json({ ok: true, ...issued });
+      }
+      if (action !== "redeem_playback_ticket") {
+        return res.status(400).json({ ok: false, error: "Unsupported play-tracking action." });
+      }
+
+      const ticketPayload = verifyPlaybackTicket(req.body?.ticket, trackId, ticketSecret);
+      if (!ticketPayload) return res.status(400).json({ ok: false, error: "Playback ticket is invalid, expired, or too early." });
+      if (ticketPayload.eligibleSeconds !== eligibleSeconds) {
+        return res.status(409).json({ ok: false, error: "Track duration changed; request a new playback ticket." });
+      }
+
+      const nonceHash = createHash("sha256").update(ticketPayload.nonce).digest("hex");
+      const inserted = await sql`
         INSERT INTO music_play_events
           (track_id, anonymous_listener_hash, session_hash, provider_event_id, listened_seconds, duration_seconds, eligible, source)
         VALUES
-          (${trackId}, ${sessionHash}, ${sessionHash}, ${eventId}, ${Math.floor(listenedSeconds)}, ${duration || null}, true, 'nochalant')
+          (${trackId}, ${nonceHash}, ${nonceHash}, ${nonceHash}, ${eligibleSeconds}, ${duration || null}, true, 'nochalant')
         ON CONFLICT (provider_event_id) DO NOTHING
+        RETURNING id
       `;
+      if (!inserted.length) return res.status(200).json({ ok: true, counted: false, duplicate: true });
       const counts = await sql`SELECT COUNT(*)::bigint AS plays_count FROM music_play_events WHERE track_id = ${trackId} AND eligible = true`;
       return res.status(200).json({ ok: true, counted: true, plays_count: Number(counts[0]?.plays_count || 0) });
     } catch (error) {
