@@ -1095,3 +1095,16 @@ body.navigation-drawer-open{overflow:hidden}
  .account-dashboard-head{align-items:flex-start;flex-direction:column}
  .workspace-switcher{padding-block:10px}
 }
+
+
+.member-profile-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:22px 0;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.member-profile-editor>div{grid-column:1/-1}
+.member-profile-editor h2{margin:5px 0;font-size:22px}
+.member-profile-editor p{margin:0;color:var(--muted);font-size:12px}
+.member-profile-editor label{display:grid;gap:6px;color:var(--muted);font-size:11px;font-weight:700}
+.member-profile-editor input,.member-profile-editor textarea{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px}
+.member-profile-editor textarea{resize:vertical}
+.member-profile-editor button{justify-self:start}
+.skin-light .member-profile-editor{background:#fff;border-color:#e4e4e4}
+.skin-light .member-profile-editor input,.skin-light .member-profile-editor textarea{background:#fff;color:#111;border-color:#dedede}
+@media(max-width:640px){.member-profile-editor{grid-template-columns:1fr;padding:15px}.member-profile-editor>div{grid-column:auto}}
