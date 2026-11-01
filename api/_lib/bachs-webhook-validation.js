@@ -50,3 +50,24 @@ export function isWithinBachsIdempotencyWindow(createdAt, now = Date.now()) {
   const ageMs = nowMs - createdMs;
   return Number.isFinite(createdMs) && Number.isFinite(nowMs) && ageMs >= 0 && ageMs < 86400000;
 }
+
+export function parseBachsRefundEvent(event) {
+  if (!event || !["refund.created", "refund.paid", "refund.failed"].includes(event.type) ||
+      !event.data || typeof event.data !== "object" || Array.isArray(event.data)) return null;
+  const data = event.data;
+  const reference = typeof data.reference === "string" ? data.reference.trim() : "";
+  const refundId = typeof data.refund_id === "string" ? data.refund_id.trim() : "";
+  const chargeId = typeof data.charge_id === "string" ? data.charge_id.trim() : "";
+  const currency = typeof data.currency === "string" ? data.currency.trim().toUpperCase() : "";
+  const amountValue = event.type === "refund.paid" ? data.refunded_amount : data.requested_amount;
+  const amountText = typeof amountValue === "string" ? amountValue.trim() : "";
+  const match = /^(0|[1-9][0-9]*)(?:\.([0-9]{1,2}))?$/.exec(amountText);
+  const amountMinor = match ? Number(match[1]) * 100 + Number((match[2] || "").padEnd(2, "0")) : NaN;
+  if (!reference || reference.length > 128 || !refundId || refundId.length > 200 ||
+      !chargeId || chargeId.length > 200 || !/^[A-Z]{3}$/.test(currency) ||
+      !Number.isSafeInteger(amountMinor) || amountMinor <= 0) return null;
+  return {
+    reference, refundId, chargeId, currency, amountMinor,
+    status: event.type === "refund.paid" ? "successful" : event.type === "refund.failed" ? "failed" : "pending"
+  };
+}
