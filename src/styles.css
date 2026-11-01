@@ -1386,3 +1386,6 @@ body.navigation-drawer-open{overflow:hidden}
   .skin-light .main-nav.open{background:var(--surface)!important;border-color:var(--line)!important}
   .skin-light .drawer-preferences{background:var(--surface)!important}
 }
+
+.member-player-reopen{bottom:108px;z-index:76;right:14px}
+@media(max-width:600px){.member-player-reopen{bottom:108px;right:12px}}
