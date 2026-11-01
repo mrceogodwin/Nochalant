@@ -195,7 +195,12 @@ export async function handleAccountType(req, res) {
       auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status)
         SELECT id, display_name, ${artistSlug}, 'unverified'
         FROM user_profiles
-        WHERE id = ${auth.profile.id} AND ${accountType === "artist"}
+        WHERE id = ${auth.profile.id}
+          AND ${accountType === "artist"}
+          AND NOT EXISTS (
+            SELECT 1 FROM artist_profiles
+            WHERE owner_user_id = user_profiles.id
+          )
         ON CONFLICT DO NOTHING`,
       auth.sql`SELECT id, stage_name, slug, verification_status
         FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`
