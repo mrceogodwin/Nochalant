@@ -164,8 +164,9 @@ async function handleSocialNetwork(req, res) {
         `;
         if (!accessible.length) return res.status(404).json({ ok: false, error: "Post not found." });
         const comments = await auth.sql`
-          SELECT c.id, c.body, c.created_at, u.id AS author_id, u.display_name AS author_name, u.account_type
+          SELECT c.id, c.body, c.created_at, u.id AS author_id, u.display_name AS author_name, u.account_type, d.avatar_url
           FROM community_comments c JOIN user_profiles u ON u.id = c.author_id
+          LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
           WHERE c.post_id = ${commentsFor} AND c.status = 'published' AND u.account_status = 'active'
           ORDER BY c.created_at ASC LIMIT 100
         `;
@@ -174,7 +175,7 @@ async function handleSocialNetwork(req, res) {
       const feed = req.query?.feed === "following" ? "following" : "for-you";
       const posts = await auth.sql`
         SELECT p.id, p.author_id, p.body, p.visibility, p.created_at,
-          u.display_name AS author_name, u.account_type,
+          u.display_name AS author_name, u.account_type, d.avatar_url, d.username,
           (SELECT COUNT(*)::int FROM community_reactions r WHERE r.post_id = p.id AND r.reaction = 'like') AS like_count,
           (SELECT COUNT(*)::int FROM community_comments c WHERE c.post_id = p.id AND c.status = 'published') AS comment_count,
           EXISTS (SELECT 1 FROM community_reactions r WHERE r.post_id = p.id AND r.user_id = ${auth.profile.id} AND r.reaction = 'like') AS viewer_liked,
@@ -182,6 +183,7 @@ async function handleSocialNetwork(req, res) {
             SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id
           )) AS viewer_follows_author
         FROM community_posts p JOIN user_profiles u ON u.id = p.author_id
+        LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
         WHERE p.status = 'published' AND u.account_status = 'active'
           AND (p.author_id = ${auth.profile.id} OR p.visibility = 'public'
             OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
@@ -190,8 +192,9 @@ async function handleSocialNetwork(req, res) {
         ORDER BY p.created_at DESC LIMIT 40
       `;
       const suggestedMembers = await auth.sql`
-        SELECT u.id, u.display_name, u.account_type
+        SELECT u.id, u.display_name, u.account_type, d.avatar_url, d.username
         FROM user_profiles u
+        LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
         WHERE u.id <> ${auth.profile.id} AND u.account_status = 'active'
           AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = u.id)
         ORDER BY u.created_at DESC LIMIT 8
