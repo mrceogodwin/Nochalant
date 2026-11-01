@@ -9,6 +9,7 @@ The member Social screen is backed by the authenticated `/api/social` route and 
 - Likes, comments and member follows.
 - Suggested members and notification inbox.
 - Text stories that expire after 24 hours, with public/followers visibility and view tracking.
+- Public creator/member profiles with recent posts, follower counts and follow/unfollow actions.
 - Member profile editing: display name, username, bio, website, location and HTTPS avatar URL.
 
 ## API actions
@@ -19,6 +20,7 @@ Authenticated requests use a Neon Auth bearer token.
 - `GET /api/social?feed=following`
 - `GET /api/social?stories=1`
 - `GET /api/social?profile=1`
+- `GET /api/social?member=<profile-uuid>`
 - `GET /api/social?commentsFor=<post-uuid>`
 - `GET /api/social?notifications=1`
 - `POST /api/social` with `create_post`, `comment`, `toggle_like`, `follow`, `unfollow`, `create_story`, `view_story`, `update_profile`, or `mark_notification_read`.
