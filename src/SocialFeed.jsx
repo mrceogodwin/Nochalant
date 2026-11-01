@@ -39,6 +39,16 @@ function timeAgo(value) {
 export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [feed, setFeed] = useState("for-you");
   const [posts, setPosts] = useState([]);
+  const [stories, setStories] = useState([]);
+  const [storyComposerOpen, setStoryComposerOpen] = useState(false);
+  const [storyDraft, setStoryDraft] = useState("");
+  const [storyVisibility, setStoryVisibility] = useState("public");
+  const [storyPosting, setStoryPosting] = useState(false);
+  const [activeStory, setActiveStory] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileDraft, setProfileDraft] = useState({ displayName: "", username: "", bio: "", websiteUrl: "", location: "", avatarUrl: "" });
   const [viewerProfileId, setViewerProfileId] = useState("");
   const [suggestedMembers, setSuggestedMembers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -64,6 +74,8 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       setViewerProfileId(data.viewerProfileId || "");
       setPosts(Array.isArray(data.posts) ? data.posts : []);
       setSuggestedMembers(Array.isArray(data.suggestedMembers) ? data.suggestedMembers : []);
+      const storyData = await socialRequest({ query: "?stories=1", signal });
+      setStories(Array.isArray(storyData.stories) ? storyData.stories : []);
     } catch (err) {
       if (err?.name !== "AbortError") setError(err.message || "Could not load Nochalant Social.");
     } finally {
@@ -140,6 +152,63 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     finally { setBusyAction(""); }
   };
 
+  const openProfile = async () => {
+    setProfileOpen(true);
+    try {
+      const data = await socialRequest({ query: "?profile=1" });
+      const value = data.profile || {};
+      setProfile(value);
+      setProfileDraft({
+        displayName: value.display_name || currentUser?.name || "",
+        username: value.username || "",
+        bio: value.bio || "",
+        websiteUrl: value.website_url || "",
+        location: value.location || "",
+        avatarUrl: value.avatar_url || ""
+      });
+    } catch (err) { setNotice(err.message); }
+  };
+
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    if (profileSaving) return;
+    setProfileSaving(true);
+    try {
+      const data = await socialRequest({ method: "POST", body: { action: "update_profile", ...profileDraft } });
+      setProfile(data.profile);
+      setProfileDraft(value => ({ ...value, displayName: data.profile.display_name }));
+      setNotice("Your profile has been updated.");
+      setProfileOpen(false);
+    } catch (err) { setNotice(err.message); }
+    finally { setProfileSaving(false); }
+  };
+
+  const createStory = async (event) => {
+    event.preventDefault();
+    const body = storyDraft.trim();
+    if (!body || storyPosting) return;
+    setStoryPosting(true);
+    try {
+      const data = await socialRequest({ method: "POST", body: { action: "create_story", body, visibility: storyVisibility } });
+      setStories(items => [data.story, ...items]);
+      setStoryDraft("");
+      setStoryComposerOpen(false);
+      setActiveStory(data.story);
+      setNotice("Your story is live for 24 hours.");
+    } catch (err) { setNotice(err.message); }
+    finally { setStoryPosting(false); }
+  };
+
+  const openStory = async (story) => {
+    setActiveStory(story);
+    if (!story.viewer_seen) {
+      try {
+        await socialRequest({ method: "POST", body: { action: "view_story", storyId: story.id } });
+        setStories(items => items.map(item => item.id === story.id ? { ...item, viewer_seen: true, view_count: Number(item.view_count || 0) + 1 } : item));
+      } catch (err) { setNotice(err.message); }
+    }
+  };
+
   const openNotifications = async () => {
     const opening = !notificationsOpen;
     setNotificationsOpen(opening);
@@ -187,6 +256,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     <header className="social-network-header">
       <div><span className="eyebrow">THE PEOPLE · THE CULTURE</span><h1 id="social-title">Nochalant <em>Social.</em></h1><p>What's happening in your world?</p></div>
       <button className="social-create-top" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋ <span>Create post</span></button>
+      <button className="social-profile-top" type="button" onClick={openProfile}>Profile</button>
       <button className="social-notification-toggle" type="button" onClick={openNotifications} aria-expanded={notificationsOpen} aria-label="Notifications">🔔<span>Notifications</span></button>
     </header>
 
@@ -201,6 +271,15 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
         </article>)}
       </div>
     </section>}
+
+    <section className="social-stories-rail" aria-label="Stories">
+      <button type="button" className="social-story-bubble social-story-add" onClick={() => setStoryComposerOpen(true)}>
+        <span className="social-story-avatar">＋</span><strong>Your story</strong>
+      </button>
+      {stories.map(story => <button type="button" className={"social-story-bubble" + (story.viewer_seen ? " seen" : "")} key={story.id} onClick={() => openStory(story)}>
+        <span className="social-story-avatar">{initials(story.author_name)}</span><strong>{story.author_name || "Member"}</strong>
+      </button>)}
+    </section>
 
     <div className="social-feed-toolbar">
       <div className="social-feed-tabs" role="tablist" aria-label="Choose your feed">
@@ -217,6 +296,32 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       </button>) : <p className="social-notification-empty">You're all caught up. New follows and replies will appear here.</p>}
     </section>}
     {notice && <div className="social-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
+
+    {storyComposerOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !storyPosting) setStoryComposerOpen(false); }}>
+      <form className="social-composer social-story-composer" onSubmit={createStory}>
+        <div className="social-composer-head"><div><span className="eyebrow">24 HOURS · NOCHALANT STORIES</span><h2>Add to your story</h2></div><button type="button" onClick={() => setStoryComposerOpen(false)} aria-label="Close story composer">×</button></div>
+        <textarea value={storyDraft} onChange={event => setStoryDraft(event.target.value)} maxLength={500} rows={5} placeholder="A quick thought, update or moment…" required/>
+        <div className="social-composer-bottom"><label>Audience <select value={storyVisibility} onChange={event => setStoryVisibility(event.target.value)}><option value="public">Everyone</option><option value="followers">Followers only</option></select></label><span>{storyDraft.length}/500</span><button className="button button-green" type="submit" disabled={!storyDraft.trim() || storyPosting}>{storyPosting ? "Publishing…" : "Share story"}</button></div>
+        <p className="social-story-media-note">Text stories are enabled. Photo and video stories will be enabled after secure upload, scanning and moderation are ready.</p>
+      </form>
+    </div>}
+
+    {activeStory && <div className="social-composer-backdrop social-story-viewer" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setActiveStory(null); }}>
+      <article className="social-story-card"><div className="social-story-viewer-top"><span className="social-story-avatar">{initials(activeStory.author_name)}</span><div><strong>{activeStory.author_name}</strong><small>Expires {new Date(activeStory.expires_at).toLocaleString()}</small></div><button type="button" onClick={() => setActiveStory(null)} aria-label="Close story">×</button></div><p>{activeStory.body}</p><small>{Number(activeStory.view_count || 0).toLocaleString()} views</small></article>
+    </div>}
+
+    {profileOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !profileSaving) setProfileOpen(false); }}>
+      <form className="social-composer social-profile-editor" onSubmit={saveProfile}>
+        <div className="social-composer-head"><div><span className="eyebrow">YOUR NOCHALANT IDENTITY</span><h2>Edit profile</h2></div><button type="button" onClick={() => setProfileOpen(false)} aria-label="Close profile editor">×</button></div>
+        <label>Display name<input value={profileDraft.displayName} onChange={event => setProfileDraft(v => ({ ...v, displayName: event.target.value }))} maxLength={80} required/></label>
+        <label>Username<input value={profileDraft.username} onChange={event => setProfileDraft(v => ({ ...v, username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") }))} minLength={3} maxLength={24} pattern="[a-z0-9_]{3,24}" placeholder="yourname" required/><small>3–24 letters, numbers or underscores.</small></label>
+        <label>Bio<textarea value={profileDraft.bio} onChange={event => setProfileDraft(v => ({ ...v, bio: event.target.value }))} maxLength={280} rows={3} placeholder="Tell people a little about yourself."/></label>
+        <label>Website<input type="url" value={profileDraft.websiteUrl} onChange={event => setProfileDraft(v => ({ ...v, websiteUrl: event.target.value }))} placeholder="https://example.com"/></label>
+        <label>Location<input value={profileDraft.location} onChange={event => setProfileDraft(v => ({ ...v, location: event.target.value }))} maxLength={100} placeholder="City, country"/></label>
+        <label>Avatar image URL<input type="url" value={profileDraft.avatarUrl} onChange={event => setProfileDraft(v => ({ ...v, avatarUrl: event.target.value }))} placeholder="https://…"/></label>
+        <button className="button button-green" type="submit" disabled={profileSaving}>{profileSaving ? "Saving…" : "Save profile"}</button>
+      </form>
+    </div>}
 
     {composerOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !posting) setComposerOpen(false); }}>
       <form className="social-composer" onSubmit={createPost} aria-label="Create a post">
