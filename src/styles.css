@@ -1237,3 +1237,31 @@ body.navigation-drawer-open{overflow:hidden}
 .social-notification-item em{color:var(--muted);font-size:8px;font-style:normal}
 .social-notification-empty{padding:17px;margin:0;color:var(--muted);font-size:10px;line-height:1.6}
 @media(max-width:760px){.social-notification-toggle{padding:10px 11px}.social-notification-toggle span{display:none}.social-notification-panel{width:100%;margin:-10px 0 16px}}
+
+/* Stories and creator profile editor */
+.social-profile-top{padding:10px 13px;border:1px solid var(--line);border-radius:9px;background:#171a13;color:var(--ink);font-size:11px;font-weight:800}
+.social-stories-rail{display:flex;gap:15px;overflow-x:auto;margin:0 0 19px;padding:5px 2px 11px;scrollbar-width:thin;scrollbar-color:#515a3a transparent}
+.social-story-bubble{flex:0 0 70px;display:flex;align-items:center;flex-direction:column;gap:7px;border:0;background:transparent;color:var(--ink)}
+.social-story-avatar{width:58px;height:58px;display:grid;place-items:center;border:2px solid var(--lime);border-radius:50%;background:linear-gradient(145deg,#323d20,#171b12);color:var(--lime);font:700 18px 'Space Grotesk',sans-serif;box-shadow:0 0 0 3px #d5f36a18}
+.social-story-bubble.seen .social-story-avatar{border-color:#59604d;box-shadow:none;color:#8c927f}
+.social-story-bubble strong{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cdd0c2;font-size:9px;font-weight:700}
+.social-story-add .social-story-avatar{border-style:dashed;background:#1b2114;font-size:27px}
+.social-story-media-note{margin:12px 0 0;color:var(--muted);font-size:9px;line-height:1.6}
+.social-story-card{width:min(440px,100%);min-height:430px;display:flex;flex-direction:column;justify-content:space-between;padding:22px;border:1px solid #687548;border-radius:20px;background:radial-gradient(ellipse at 15% 10%,#374526 0%,#1a2115 42%,#0e100d 100%);box-shadow:0 25px 90px #000a}
+.social-story-viewer-top{display:flex;align-items:center;gap:11px}
+.social-story-viewer-top .social-story-avatar{width:43px;height:43px}
+.social-story-viewer-top>div{display:grid;gap:4px;min-width:0}
+.social-story-viewer-top strong{font-size:11px}
+.social-story-viewer-top small,.social-story-card>small{color:#b3b99f;font-size:9px}
+.social-story-viewer-top button{margin-left:auto;border:0;background:transparent;color:white;font-size:24px}
+.social-story-card>p{margin:35px 0;color:#fff;font:600 clamp(22px,5vw,31px)/1.35 'Space Grotesk',sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
+.social-profile-editor{max-height:min(88vh,760px);overflow-y:auto}
+.social-profile-editor>label{display:grid;gap:6px;margin:0 0 13px;color:#cbd0bd;font-size:10px;font-weight:700}
+.social-profile-editor input,.social-profile-editor textarea{width:100%;padding:11px 12px;border:1px solid #343a2b;border-radius:8px;background:#0c0e0b;color:var(--ink);font:400 11px/1.5 inherit}
+.social-profile-editor label small{color:var(--muted);font-size:8px;font-weight:400}
+.social-profile-editor>button{width:100%;margin-top:5px}
+@media(max-width:760px){
+ .social-profile-top{padding:10px 11px}
+ .social-story-card{min-height:65vh}
+ .social-stories-rail{gap:12px;margin-inline:-2px}
+}
