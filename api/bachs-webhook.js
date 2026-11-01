@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
+import { isValidBachsEventEnvelope, getBachsCheckoutId, matchesBachsSuccessfulPayment } from "./_lib/bachs-webhook-validation.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -53,20 +54,7 @@ export default async function handler(req, res) {
     } catch {
       return res.status(400).send("Invalid webhook JSON");
     }
-    if (
-      !event ||
-      typeof event !== "object" ||
-      Array.isArray(event) ||
-      typeof event.id !== "string" ||
-      !event.id.trim() ||
-      event.id.length > 200 ||
-      typeof event.type !== "string" ||
-      !event.type.trim() ||
-      event.type.length > 120 ||
-      !event.data ||
-      typeof event.data !== "object" ||
-      Array.isArray(event.data)
-    ) return res.status(400).send("Invalid event envelope");
+    if (!isValidBachsEventEnvelope(event)) return res.status(400).send("Invalid event envelope");
     const sql = neon(databaseUrl);
     const inserted = await sql`
       INSERT INTO payment_webhook_events (provider, provider_event_id, event_type, signature_verified, payload, processing_status)
@@ -80,7 +68,7 @@ export default async function handler(req, res) {
     }
 
     if (event.type === "collection.succeeded") {
-      const checkoutId = typeof event.data.checkout_id === "string" ? event.data.checkout_id.trim() : "";
+      const checkoutId = getBachsCheckoutId(event.data);
       if (!checkoutId || checkoutId.length > 200) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', error_message = 'Missing checkout_id' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Missing checkout ID");
@@ -94,10 +82,7 @@ export default async function handler(req, res) {
         await sql`UPDATE payment_webhook_events SET error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status <> 'processed'`;
         return res.status(503).json({ received: false, retry: true });
       }
-      const receivedAmount = Number(event.data.amount);
-      const receivedMinor = Math.round(receivedAmount * 100);
-      const receivedCurrency = typeof event.data.currency === "string" ? event.data.currency.trim().toUpperCase() : "";
-      if (!Number.isFinite(receivedAmount) || !Number.isSafeInteger(receivedMinor) || receivedMinor < 1 || receivedMinor !== Number(order.amount_minor) || receivedCurrency !== String(order.currency).trim().toUpperCase() || typeof event.data.status !== "string" || event.data.status.trim().toUpperCase() !== "SUCCEEDED") {
+      if (!matchesBachsSuccessfulPayment(event.data, order)) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Payment amount, currency or status mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Payment details did not match the order");
       }
