@@ -256,6 +256,21 @@ function App() {
       const form = new FormData(event.currentTarget);
       const token = await getAuthToken();
       if (!token) throw new Error("Your session has expired. Please sign in again.");
+      let avatarObjectKey = "";
+      const avatarFile = form.get("avatar");
+      if (avatarFile instanceof File && avatarFile.size > 0) {
+        const uploadResponse = await fetch("/api/account/type", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: "create_profile_avatar_upload", contentType: avatarFile.type, size: avatarFile.size }),
+          cache: "no-store"
+        });
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+        if (!uploadResponse.ok || !uploadData.ok) throw new Error(uploadData.error || "Profile photo upload could not be started.");
+        const putResponse = await fetch(uploadData.url, { method: "PUT", headers: uploadData.headers, body: avatarFile });
+        if (!putResponse.ok) throw new Error("Profile photo upload failed. Please try again.");
+        avatarObjectKey = uploadData.objectKey;
+      }
       const response = await fetch("/api/account/type", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -264,7 +279,8 @@ function App() {
           username: form.get("username"),
           bio: form.get("bio"),
           websiteUrl: form.get("websiteUrl"),
-          location: form.get("location")
+          location: form.get("location"),
+          avatarObjectKey
         }),
         cache: "no-store"
       });
@@ -1133,6 +1149,7 @@ function App() {
         <div className="podcast-library-grid">{podcastDisplayItems.map((item,index) => <button type="button" key={item.id || item.title} className={selectedPodcastIndex === index ? "podcast-library-card is-selected" : "podcast-library-card"} onClick={() => {setActivePodcastEpisode(null);setPodcastSelection(index);}} aria-pressed={selectedPodcastIndex === index}><div className={item.art}><span>{String(index+1).padStart(2,"0")}</span><b>{item.label}</b></div><div><strong>{item.title}</strong><p>{item.subtitle}</p></div></button>)}</div>
       </section> : activeScreen === "dashboard" ? <section className="account-dashboard container screen-page" aria-labelledby="account-dashboard-title"><div className="account-dashboard-head"><div><span className="eyebrow">YOUR NOCHALANT SPACE</span><h1 id="account-dashboard-title">Your dashboard<span>.</span></h1><p>Welcome back, {accountProfile?.profile?.display_name || currentUser?.name || "member"}.</p></div><div className="dashboard-workspace-control"><span className="account-type-chip">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span><label htmlFor="dashboard-workspace-select">Switch workspace</label><select id="dashboard-workspace-select" value={accountProfile?.profile?.account_type || "fan"} disabled={workspaceBusy} onChange={event => changeWorkspace(event.target.value)}>{(accountProfile?.accountTypes || [{account_type:accountProfile?.profile?.account_type || "fan"}]).map(item => <option key={item.account_type} value={item.account_type}>{ACCOUNT_TYPE_LABELS[item.account_type] || item.account_type}</option>)}</select></div></div>{accountProfileLoading ? <div className="account-dashboard-loading">Loading your account tools…</div> : accountProfileError ? <div className="account-dashboard-loading" role="alert">{accountProfileError} <button className="button button-outline" type="button" onClick={() => setAccountProfileRefresh(value => value + 1)}>Retry</button></div> : <><form className="member-profile-editor artist-studio-form" onSubmit={saveMemberProfile}>
           <div><span className="eyebrow">YOUR PUBLIC IDENTITY</span><h2>Member profile</h2><p>Set up the profile people see when you join the Nochalant community.</p></div>
+          <div className="member-avatar-editor"><span className="member-avatar-preview">{accountProfile?.profileDetails?.avatar_url ? <img src={accountProfile.profileDetails.avatar_url} alt="Your profile"/> : (accountProfile?.profile?.display_name || currentUser?.name || "N").charAt(0).toUpperCase()}</span><label>Profile photo<input name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/avif"/></label></div>
           <label>Username<input name="username" minLength="3" maxLength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="your_username" defaultValue={accountProfile?.profileDetails?.username || ""}/></label>
           <label>Bio<textarea name="bio" rows="3" maxLength="280" placeholder="A little about you…" defaultValue={accountProfile?.profileDetails?.bio || ""}/></label>
           <label>Website<input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={accountProfile?.profileDetails?.website_url || ""}/></label>
