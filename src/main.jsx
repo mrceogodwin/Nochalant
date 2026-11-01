@@ -918,6 +918,7 @@ function App() {
       <nav id="nochalant-mobile-menu" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation">
         {currentUser?.id && <section className="drawer-account" aria-label="Member account">
           <span className="drawer-kicker">MY ACCOUNT</span>
+          <div className="drawer-member-identity"><span className="drawer-member-avatar">{(accountProfile?.profile?.display_name || currentUser?.name || currentUser?.email || "N").trim().charAt(0).toUpperCase()}</span><span><strong>{accountProfile?.profile?.display_name || currentUser?.name || "Nochalant member"}</strong><small>{accountProfile?.profileDetails?.username ? "@"+accountProfile.profileDetails.username : currentUser?.email || "Member account"}</small></span></div>
           <button type="button" className="drawer-account-dashboard" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>
             <span><strong>My dashboard</strong><small>{accountProfile?.profile?.display_name || currentUser?.name || currentUser?.email || "Nochalant member"}</small></span><b>↗</b>
           </button>
