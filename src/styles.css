@@ -1066,3 +1066,32 @@ body.navigation-drawer-open{overflow:hidden}
   .drawer-backdrop{top:101px}
   .main-nav,.main-nav.open{top:101px;height:calc(100dvh - 101px)}
 }
+
+
+/* Member workspace switcher */
+.drawer-member-identity{display:flex;align-items:center;gap:11px;padding:12px 0 15px;border-bottom:1px solid var(--line);margin-bottom:9px}
+.drawer-member-avatar{width:42px;height:42px;display:grid;place-items:center;flex:none;border-radius:50%;background:var(--lime);color:#11140c;font:800 17px 'Space Grotesk',sans-serif}
+.drawer-member-identity strong,.drawer-member-identity small{display:block;min-width:0;overflow-wrap:anywhere}
+.drawer-member-identity strong{font-size:12px;color:var(--ink)}
+.drawer-member-identity small{margin-top:4px;color:var(--muted);font-size:10px}
+.workspace-switcher{display:grid;gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+.workspace-switcher-label,.workspace-add-label{color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.12em}
+.workspace-choice{width:100%;min-height:37px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);text-align:left;font-size:11px;font-weight:700}
+.workspace-choice.active{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 9%,var(--surface))}
+.workspace-choice small{color:var(--muted);font-size:8px;letter-spacing:.1em}
+.workspace-choice.active small{color:var(--lime)}
+.workspace-add-label{margin-top:6px}
+.workspace-switcher select,.dashboard-workspace-control select{width:100%;min-height:39px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font-size:11px}
+.dashboard-workspace-control{display:grid;gap:7px;min-width:180px;max-width:250px}
+.dashboard-workspace-control label{color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.account-dashboard-head{align-items:center}
+.drawer-preferences{padding-top:17px}
+.skin-light .workspace-choice,.skin-light .workspace-switcher select,.skin-light .dashboard-workspace-control select{background:#fff;color:#111;border-color:#dedede}
+.skin-light .workspace-choice.active{background:#f5f5f5;border-color:#111}
+.skin-light .workspace-choice.active small{color:#111}
+.skin-light .drawer-member-identity strong{color:#111}
+@media(max-width:760px){
+ .dashboard-workspace-control{width:100%;max-width:none}
+ .account-dashboard-head{align-items:flex-start;flex-direction:column}
+ .workspace-switcher{padding-block:10px}
+}
