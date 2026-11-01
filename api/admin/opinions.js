@@ -26,7 +26,13 @@ async function proxyNeonAuth(req, res) {
     const value = req.headers[name];
     if (typeof value === "string") headers.set(name, value);
   }
-  headers.set("origin", "https://nochalant.vercel.app");
+  const authOrigin = process.env.VERCEL_ENV === "production"
+    ? "https://nochalant.vercel.app"
+    : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+  if (!authOrigin) {
+    return res.status(503).json({ message: "Preview authentication origin is not configured." });
+  }
+  headers.set("origin", authOrigin);
 
   const init = { method: req.method, headers, redirect: "manual" };
   if (!["GET", "HEAD"].includes(req.method) && req.body !== undefined) {
