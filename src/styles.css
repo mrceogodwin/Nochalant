@@ -1603,3 +1603,60 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  .player-reopen,.member-player-reopen{right:14px;bottom:calc(16px + env(safe-area-inset-bottom))}
 }
 @media(prefers-reduced-motion:reduce){.player-reopen{transition:none!important}}
+
+
+/* 2026-11: flagship compact player, podcast control and Hot or Trash layout */
+.mini-player-dock{width:min(430px,calc(100% - 32px));}
+.mini-player-dock .mini-player{display:grid;grid-template-columns:54px minmax(0,1fr) auto auto auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(220,255,133,.2);border-radius:23px;background:linear-gradient(145deg,rgba(48,53,42,.94),rgba(20,23,19,.97));box-shadow:inset 1px 1px 0 rgba(255,255,255,.13),inset -2px -3px 8px rgba(0,0,0,.34),0 14px 30px rgba(0,0,0,.42);backdrop-filter:blur(22px)}
+.mini-player-dock .player-artwork{width:54px;height:54px;border-radius:10px;border:1px solid rgba(207,253,102,.32);object-fit:cover}
+.mini-player-dock .player-main{min-width:0;display:grid;gap:7px}
+.mini-player-dock .player-title b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.mini-player-dock .player-title small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.mini-player-dock .player-progress{display:flex;align-items:center;gap:6px;font-size:9px}
+.mini-player-dock .player-progress input{min-width:35px;width:100%;accent-color:var(--lime)}
+.player-inline-queue{display:grid;gap:4px}
+.player-inline-queue button{width:25px;height:23px;padding:0;border:1px solid #78865a66;border-radius:7px;background:linear-gradient(145deg,#343b2a,#171b14);color:var(--lime);font-size:20px;line-height:1;box-shadow:inset 1px 1px 0 #ffffff16,0 3px 7px #0006}
+.player-inline-queue button:disabled{opacity:.3;cursor:not-allowed}
+.mini-player-dock .player-toggle{width:54px;height:54px;border-radius:50%;background:linear-gradient(145deg,#e0ff86,#b9e84b);box-shadow:inset 2px 2px 4px #ffffffa8,inset -3px -4px 7px #72952b55,0 5px 13px #0007}
+.mini-player-dock .player-close{font-size:22px;color:#bfc4b4}
+.mini-player-dock.is-dragging{cursor:grabbing;opacity:.96}
+@media(max-width:600px){
+ .mini-player-dock{right:8px;bottom:12px;width:calc(100% - 16px)}
+ .mini-player-dock .mini-player{grid-template-columns:42px minmax(0,1fr) auto auto auto;gap:7px;padding:9px 10px;border-radius:19px}
+ .mini-player-dock .player-artwork{width:42px;height:42px;border-radius:8px}
+ .mini-player-dock .player-toggle{width:43px;height:43px}
+ .player-inline-queue button{width:22px;height:20px;font-size:17px}
+ .mini-player-dock .player-close{font-size:19px}
+}
+/* Podcast feature uses a clear, oversized media control — never a monogram. */
+.podcast-stage-play{width:clamp(84px,14vw,116px);height:clamp(84px,14vw,116px);display:grid;place-items:center;filter:drop-shadow(0 12px 22px #0008)}
+.podcast-stage-play svg{width:100%;height:100%;overflow:visible}
+.podcast-stage-play circle{fill:url(#podcastPlayFill);stroke:var(--lime);stroke-width:1.5}
+.podcast-stage-play path{fill:#10120b;transform:translateX(2px)}
+.podcast-library-screen:has(.podcast-stage-play){background:radial-gradient(ellipse at 50% 45%,#343d25 0%,#171b13 42%,#090b09 82%)}
+.podcast-library-screen:has(.podcast-stage-play) .podcast-stage-play circle{fill:var(--lime)}
+/* Shorter Hot or Trash editorial card; portrait becomes a circular subject thumbnail. */
+#hot-or-trash.split-section{grid-template-columns:minmax(220px,.72fr) minmax(0,1.28fr);max-width:1040px;margin-inline:auto}
+#hot-or-trash .jury-image{min-height:250px;height:100%;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#333b27 0%,#171a13 54%,#0c0e0b 100%)}
+#hot-or-trash .jury-image img{width:clamp(150px,19vw,220px);height:clamp(150px,19vw,220px);min-height:0;aspect-ratio:1/1;border:4px solid rgba(207,253,102,.78);border-radius:50%;object-fit:cover;box-shadow:0 0 0 8px rgba(207,253,102,.08),inset 0 3px 9px #0008,0 16px 30px #0008}
+#hot-or-trash .jury-image .image-tag{top:18px;left:18px}
+#hot-or-trash .jury-panel{padding:22px 26px}
+#hot-or-trash .jury-panel h2{font-size:clamp(30px,4vw,46px);margin:8px 0}
+#hot-or-trash .jury-panel>p{margin:8px 0 12px;font-size:13px;line-height:1.55}
+#hot-or-trash .jury-options{margin-top:12px;gap:10px}
+#hot-or-trash .jury-option{min-height:48px;padding:11px 14px;font-size:13px}
+#hot-or-trash .vote-results{padding-top:11px}
+#hot-or-trash .vote-result-row{margin:8px 0 4px;font-size:12px}
+#hot-or-trash .vote-bar{height:6px}
+#hot-or-trash .opinion-rail{margin:12px 0 2px;padding-top:10px}
+#hot-or-trash .opinion-chip{min-height:78px;padding:10px 12px}
+#hot-or-trash .jury-panel>.muted{display:block;margin-top:9px;font-size:10px}
+@media(max-width:760px){
+ #hot-or-trash.split-section{display:flex;flex-direction:column;max-width:520px}
+ #hot-or-trash .jury-image{min-height:180px;height:180px}
+ #hot-or-trash .jury-image img{width:136px;height:136px}
+ #hot-or-trash .jury-panel{padding:17px 16px 18px}
+ #hot-or-trash .jury-panel h2{font-size:32px}
+ #hot-or-trash .jury-panel>p{font-size:12px}
+ #hot-or-trash .jury-option{min-height:43px}
+}
