@@ -149,32 +149,48 @@ export async function handleAccountType(req, res) {
       return res.status(400).json({ ok: false, error: "Choose a valid account type." });
     }
 
-    const existing = await auth.sql`SELECT account_type, status, is_primary
-      FROM user_account_types WHERE user_profile_id = ${auth.profile.id}`;
-    const alreadyActive = existing.some(item => item.account_type === accountType && item.status === "active");
-    if (!alreadyActive) {
-      const hasPrimary = existing.some(item => item.is_primary && item.status === "active");
-      await auth.sql`INSERT INTO user_account_types
+    // Activation and primary selection share the same per-member advisory lock
+    // as workspace switching, preventing concurrent requests from creating
+    // conflicting primary workspaces.
+    const activationResults = await auth.sql.transaction([
+      auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
+      auth.sql`INSERT INTO user_account_types
         (user_profile_id, account_type, status, is_primary)
-        VALUES (${auth.profile.id}, ${accountType}, 'active', ${!hasPrimary})
+        VALUES (
+          ${auth.profile.id}, ${accountType}, 'active',
+          NOT EXISTS (
+            SELECT 1 FROM user_account_types
+            WHERE user_profile_id = ${auth.profile.id}
+              AND is_primary = true AND status = 'active'
+          )
+        )
         ON CONFLICT (user_profile_id, account_type) DO UPDATE
         SET status = 'active',
             is_primary = CASE WHEN NOT EXISTS (
               SELECT 1 FROM user_account_types
               WHERE user_profile_id = ${auth.profile.id}
                 AND is_primary = true AND status = 'active'
+                AND account_type <> ${accountType}
             ) THEN true ELSE user_account_types.is_primary END,
             activated_at = COALESCE(user_account_types.activated_at, now()),
-            updated_at = now()`;
-    }
-
-    // Keep the legacy account_type as the primary workspace for older feature
-    // handlers. Adding a second workspace never overwrites the primary choice.
-    const primary = await auth.sql`SELECT account_type FROM user_account_types
-      WHERE user_profile_id = ${auth.profile.id} AND status = 'active' AND is_primary = true LIMIT 1`;
-    const primaryType = primary[0]?.account_type || accountType;
-    await auth.sql`UPDATE user_profiles SET account_type = ${primaryType}
-      WHERE id = ${auth.profile.id}`;
+            updated_at = now()
+        RETURNING account_type, status, is_primary`,
+      auth.sql`UPDATE user_profiles
+        SET account_type = COALESCE((
+          SELECT account_type FROM user_account_types
+          WHERE user_profile_id = ${auth.profile.id}
+            AND status = 'active' AND is_primary = true
+          LIMIT 1
+        ), account_type), updated_at = now()
+        WHERE id = ${auth.profile.id}
+        RETURNING account_type`,
+      auth.sql`SELECT account_type, status, is_primary, activated_at
+        FROM user_account_types
+        WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+        ORDER BY is_primary DESC, activated_at ASC`
+    ]);
+    const primaryType = activationResults[2]?.[0]?.account_type || auth.profile.account_type || accountType;
+    const accountTypes = activationResults[3] || [];
 
     let artistProfile = null;
     if (accountType === "artist") {
@@ -205,7 +221,7 @@ export async function handleAccountType(req, res) {
       artistProfile
     });
   } catch (error) {
-    if (error?.code === "23505" || /unique constraint|duplicate key/i.test(String(error?.message || ""))) {
+    if (error?.code === "23505" && error?.constraint === "user_profile_details_username_key") {
       return res.status(409).json({
         ok: false,
         error: "That username is already in use. Please choose another one."
