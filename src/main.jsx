@@ -48,6 +48,13 @@ function App() {
   const [commentDraft, setCommentDraft] = useState("");
   const [toast, setToast] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [appSkin, setAppSkin] = useState(() => { try { return localStorage.getItem("nochalant:skin") === "light" ? "light" : "dark"; } catch { return "dark"; } });
+  const [stickyHeaderEnabled, setStickyHeaderEnabled] = useState(() => { try { return localStorage.getItem("nochalant:sticky-header") !== "off"; } catch { return true; } });
+  const [memberDockEnabled, setMemberDockEnabled] = useState(() => { try { return localStorage.getItem("nochalant:member-dock") !== "off"; } catch { return true; } });
+  useEffect(() => { try { localStorage.setItem("nochalant:skin", appSkin); } catch {} }, [appSkin]);
+  useEffect(() => { try { localStorage.setItem("nochalant:sticky-header", stickyHeaderEnabled ? "on" : "off"); } catch {} }, [stickyHeaderEnabled]);
+  useEffect(() => { try { localStorage.setItem("nochalant:member-dock", memberDockEnabled ? "on" : "off"); } catch {} }, [memberDockEnabled]);
+
   const [activeScreen, setActiveScreen] = useState("home");
   const audioRef = useRef(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
@@ -827,7 +834,7 @@ function App() {
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
 
-  return <div className="site-shell">
+  return <div className={"site-shell"+(appSkin === "light" ? " skin-light" : "")+(stickyHeaderEnabled ? "" : " header-not-sticky")}>
     <div className="ticker"><span className="ticker-label">NOCHALANT LIVE</span><div className="ticker-window"><div className="ticker-track"><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>FREE DAILY SUBMISSIONS</span><span>WHAT'S HAPPENING? CHECK THE AGENDA</span><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
     <header className="site-header"><div className="nav-wrap">
       <a className="brand header-brand" href="#top">NOCHALANT<span>.</span></a>
@@ -843,7 +850,14 @@ function App() {
           <a href="#agenda" onClick={() => setMobileMenu(false)}>Events <span>07</span></a>
           <a href="#artists" onClick={() => setMobileMenu(false)}>Bookings <span>08</span></a>
           <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>09</span></button>
-        </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div></nav>
+        </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
+        {currentUser?.id && <section className="drawer-preferences" aria-label="App preferences">
+          <span className="drawer-kicker">YOUR APP EXPERIENCE</span>
+          <div className="drawer-preference-row"><div><strong>App appearance</strong><small>Choose your Nochalant skin</small></div><div className="skin-switch" role="group" aria-label="App appearance"><button type="button" className={appSkin==="dark"?"active":""} onClick={()=>setAppSkin("dark")}>Dark</button><button type="button" className={appSkin==="light"?"active":""} onClick={()=>setAppSkin("light")}>Light</button></div></div>
+          <label className="drawer-preference-toggle"><span><strong>Sticky header</strong><small>Keep navigation at the top</small></span><input type="checkbox" checked={stickyHeaderEnabled} onChange={e=>setStickyHeaderEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
+          <label className="drawer-preference-toggle"><span><strong>Bottom app dock</strong><small>Keep quick navigation at the bottom</small></span><input type="checkbox" checked={memberDockEnabled} onChange={e=>setMemberDockEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
+        </section>}
+      </nav>
       <div className="nav-actions">{currentUser && <button className="text-button nav-login" onClick={() => {setActiveScreen("dashboard");setMobileMenu(false);window.scrollTo({top:0,behavior:"smooth"});}}>My dashboard</button>}{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
     </div></header>
     
@@ -1060,7 +1074,7 @@ function App() {
       </div>
     </div> : <button className="player-reopen" onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
 
-    {currentUser?.id && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
+    {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
       <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
       <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
