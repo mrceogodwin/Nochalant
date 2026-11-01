@@ -1251,7 +1251,7 @@ function App() {
         <span>{audioQueue.length ? (audioQueueIndex + 1) + " / " + audioQueue.length : "NO TRACK QUEUE"}</span>
         <button type="button" onClick={() => moveAudioQueue(1)} disabled={!audioQueue.length} aria-label="Next track"><span>NEXT</span> ›</button>
       </div>
-    </div> : <button className="player-reopen" onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
+    </div> : <button className={"player-reopen"+(currentUser?.id?" member-player-reopen":"")} onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
 
     {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
       <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
