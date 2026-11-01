@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   isValidBachsEventEnvelope,
   getBachsCheckoutId,
-  matchesBachsSuccessfulPayment
+  matchesBachsSuccessfulPayment,
+  isWithinBachsIdempotencyWindow
 } from "../api/_lib/bachs-webhook-validation.js";
 
 test("accepts a well-formed Bachs event envelope", () => {
@@ -32,4 +33,14 @@ test("matches successful payment only when amount, currency and status agree", (
   assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00", currency: "USD", status: "SUCCEEDED" }, order), false);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00", currency: "NGN", status: "PENDING" }, order), false);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "Infinity", currency: "NGN", status: "SUCCEEDED" }, order), false);
+});
+
+test("allows uncertain checkout retries only inside the 24-hour idempotency window", () => {
+  const now = Date.parse("2026-11-01T12:00:00.000Z");
+  assert.equal(isWithinBachsIdempotencyWindow("2026-11-01T11:00:00.000Z", now), true);
+  assert.equal(isWithinBachsIdempotencyWindow("2026-10-31T12:00:00.001Z", now), true);
+  assert.equal(isWithinBachsIdempotencyWindow("2026-10-31T12:00:00.000Z", now), false);
+  assert.equal(isWithinBachsIdempotencyWindow("2026-10-31T11:59:59.000Z", now), false);
+  assert.equal(isWithinBachsIdempotencyWindow("2026-11-01T12:01:00.000Z", now), false);
+  assert.equal(isWithinBachsIdempotencyWindow("invalid-date", now), false);
 });
