@@ -54,6 +54,14 @@ function App() {
   useEffect(() => { try { localStorage.setItem("nochalant:skin", appSkin); } catch {} }, [appSkin]);
   useEffect(() => { try { localStorage.setItem("nochalant:sticky-header", stickyHeaderEnabled ? "on" : "off"); } catch {} }, [stickyHeaderEnabled]);
   useEffect(() => { try { localStorage.setItem("nochalant:member-dock", memberDockEnabled ? "on" : "off"); } catch {} }, [memberDockEnabled]);
+  useEffect(() => {
+    if (!mobileMenu) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = event => { if (event.key === "Escape") setMobileMenu(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", closeOnEscape); };
+  }, [mobileMenu]);
 
   const [activeScreen, setActiveScreen] = useState("home");
   const audioRef = useRef(null);
@@ -481,18 +489,27 @@ function App() {
   };
 
   useEffect(() => {
-    if (!currentUser) { setAccountProfile(null); return; }
+    if (!currentUser) { setAccountProfile(null); setAccountProfileLoading(false); return; }
     const controller = new AbortController();
     setAccountProfileLoading(true);
     (async () => {
       try {
         const token = await getAuthToken();
-        if (!token) return;
+        if (!token) throw new Error("Your session is still being prepared. Sign in again if your dashboard does not appear.");
+        const pendingType = window.localStorage.getItem("nochalant_pending_account_type");
+        if (pendingType && ["fan","artist","creator","event_organizer","business","media"].includes(pendingType)) {
+          const saveResponse = await fetch("/api/account/type", { method: "POST", signal: controller.signal, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ accountType: pendingType }) });
+          const saved = await saveResponse.json().catch(() => ({}));
+          if (!saveResponse.ok || !saved.ok) throw new Error(saved.error || "Your selected account type could not be saved.");
+          window.localStorage.removeItem("nochalant_pending_account_type");
+          if (!controller.signal.aborted) setAccountProfile(saved);
+        }
         const response = await fetch("/api/account/type", { signal: controller.signal, headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
         const data = await response.json().catch(() => ({}));
-        if (response.ok && data.ok && !controller.signal.aborted) setAccountProfile(data);
+        if (!response.ok || !data.ok) throw new Error(data.error || "Your account profile could not be loaded.");
+        if (!controller.signal.aborted) setAccountProfile(data);
       } catch (error) {
-        if (error?.name !== "AbortError") console.warn("Account dashboard profile could not load:", error?.message || error);
+        if (error?.name !== "AbortError" && !controller.signal.aborted) console.warn("Account dashboard profile could not load:", error?.message || error);
       } finally {
         if (!controller.signal.aborted) setAccountProfileLoading(false);
       }
@@ -785,7 +802,13 @@ function App() {
           console.warn("Account type will be retried after sign-in:", profileError?.message || profileError);
         }
       }
-      setAuthMessage(modal === "signup" ? "Account created. Your selected account type will be activated when your profile is ready." : "You are signed in.");
+      if (sessionResult?.data?.user) {
+        setActiveScreen("dashboard");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      setAuthMessage(modal === "signup"
+        ? (sessionResult?.data?.user ? "Your account is ready. Opening your member dashboard…" : "Your account was created. Verify your email, then sign in to open your member dashboard.")
+        : "You are signed in.");
       notify(modal === "signup" ? "Your Nochalant account was created." : "Welcome back to Nochalant.");
       closeModal();
     } catch (error) {
@@ -839,18 +862,23 @@ function App() {
     <header className="site-header"><div className="nav-wrap">
       <a className="brand header-brand" href="#top">NOCHALANT<span>.</span></a>
       <button className="menu-toggle" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle navigation">☰</button>
-      <nav className={mobileMenu ? "main-nav open" : "main-nav"}>
+      <div className={mobileMenu ? "drawer-backdrop is-open" : "drawer-backdrop"} onClick={() => setMobileMenu(false)} aria-hidden="true"></div>
+      <nav id="nochalant-mobile-drawer" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation">
+        <div className="drawer-top"><strong>NOCHALANT<span>.</span></strong><button type="button" onClick={() => setMobileMenu(false)} aria-label="Close navigation">×</button></div>
         <div className="drawer-flagship"><span className="drawer-kicker">NOCHALANT FLAGSHIP</span>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home <span>01</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>02</span></button>
-          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>\n          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>04</span></button>
+          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>04</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>04</span></button>
-          {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>05</span></button> : <a href="#artists" onClick={() => setMobileMenu(false)}>Artists <span>05</span></a>}
+          {currentUser?.id && <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>{accountProfile?.profile?.account_type === "artist" ? "Artist Studio" : "My dashboard"} <span>05</span></button>}
+          <a href="#artists" onClick={() => setMobileMenu(false)}>Artists <span>06</span></a>
           <a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda <span>06</span></a>
           <a href="#agenda" onClick={() => setMobileMenu(false)}>Events <span>07</span></a>
           <a href="#artists" onClick={() => setMobileMenu(false)}>Bookings <span>08</span></a>
           <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>09</span></button>
-        </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
+        </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span>
+          {currentUser?.id && <button type="button" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>My dashboard</button>}<a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
         {currentUser?.id && <section className="drawer-preferences" aria-label="App preferences">
           <span className="drawer-kicker">YOUR APP EXPERIENCE</span>
           <div className="drawer-preference-row"><div><strong>App appearance</strong><small>Choose your Nochalant skin</small></div><div className="skin-switch" role="group" aria-label="App appearance"><button type="button" className={appSkin==="dark"?"active":""} onClick={()=>setAppSkin("dark")}>Dark</button><button type="button" className={appSkin==="light"?"active":""} onClick={()=>setAppSkin("light")}>Light</button></div></div>
