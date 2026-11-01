@@ -93,60 +93,27 @@ export async function handleAccountType(req, res) {
     }
 
     if (req.body?.action === "switch_primary") {
-      const requestedType = String(req.body?.accountType || "");
-      if (!ACCOUNT_TYPES.has(requestedType)) {
-        return res.status(400).json({ ok: false, error: "Choose a valid workspace." });
-      }
-      const membership = await auth.sql`SELECT id FROM user_account_types
-        WHERE user_profile_id = ${auth.profile.id}
-          AND account_type = ${requestedType} AND status = 'active' LIMIT 1`;
-      if (!membership.length) {
-        return res.status(403).json({ ok: false, error: "That workspace is not active on your account yet." });
-      }
-      // Serialize workspace switches per member and update the primary membership
-      // plus the legacy account_type mirror in one database transaction.
-      // The row lock prevents an administrator changing this membership mid-switch.
-      const transactionResults = await auth.sql.transaction([
-        auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
-        auth.sql`SELECT id FROM user_account_types
-          WHERE user_profile_id = ${auth.profile.id}
-            AND account_type = ${requestedType} AND status = 'active'
-          FOR UPDATE`,
-        auth.sql`UPDATE user_account_types SET is_primary = false, updated_at = now()
-          WHERE user_profile_id = ${auth.profile.id} AND is_primary = true
-            AND EXISTS (
-              SELECT 1 FROM user_account_types
-              WHERE user_profile_id = ${auth.profile.id}
-                AND account_type = ${requestedType} AND status = 'active'
-            )`,
-        auth.sql`UPDATE user_account_types SET is_primary = true, updated_at = now()
-          WHERE user_profile_id = ${auth.profile.id}
-            AND account_type = ${requestedType} AND status = 'active'`,
-        auth.sql`UPDATE user_profiles SET account_type = ${requestedType}, updated_at = now()
-          WHERE id = ${auth.profile.id}
-            AND EXISTS (
-              SELECT 1 FROM user_account_types
-              WHERE user_profile_id = ${auth.profile.id}
-                AND account_type = ${requestedType} AND status = 'active' AND is_primary = true
-            )`,
-        auth.sql`SELECT account_type, status, is_primary, activated_at
-          FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
-          ORDER BY is_primary DESC, activated_at ASC`
-      ]);
-      const accountTypes = transactionResults[5] || [];
-      if (!accountTypes.some(item => item.account_type === requestedType && item.is_primary)) {
-        return res.status(403).json({ ok: false, error: "That workspace is no longer active. Refresh your account and try again." });
-      }
-      return res.status(200).json({
-        ok: true,
-        profile: { ...auth.profile, account_type: requestedType },
-        accountTypes
+      return res.status(403).json({
+        ok: false,
+        error: "Account type is fixed during registration. Contact Nochalant support if your account type needs to be reviewed."
       });
     }
 
     const accountType = String(req.body?.accountType || "");
     if (!ACCOUNT_TYPES.has(accountType)) {
       return res.status(400).json({ ok: false, error: "Choose a valid account type." });
+    }
+
+    // An account type is selected once during registration. Existing members
+    // cannot activate or switch to another type through this endpoint.
+    const existingMemberships = await auth.sql`SELECT account_type
+      FROM user_account_types
+      WHERE user_profile_id = ${auth.profile.id} AND status = 'active'`;
+    if (existingMemberships.length && !existingMemberships.some(row => row.account_type === accountType)) {
+      return res.status(409).json({
+        ok: false,
+        error: "Your account type was already selected during registration and cannot be changed here."
+      });
     }
 
     // Activation and primary selection share the same per-member advisory lock
