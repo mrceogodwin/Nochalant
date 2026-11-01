@@ -13,8 +13,10 @@ function getMusicStorage() {
     throw new Error("Neon Storage endpoint configuration is invalid.");
   }
   const bucket = process.env.NEON_STORAGE_BUCKET;
-  if (!/^[a-z0-9][a-z0-9.-]{1,62}$/.test(bucket)) throw new Error("Neon Storage bucket configuration is invalid.");
-  return { endpoint, bucket, region: process.env.AWS_REGION, accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY };
+  if (!/^[a-z0-9][a-z0-9.-]{2,62}$/.test(bucket)) throw new Error("Neon Storage bucket configuration is invalid.");
+  const region = process.env.AWS_REGION;
+  if (!/^[a-z0-9-]{3,32}$/.test(region)) throw new Error("Neon Storage region configuration is invalid.");
+  return { endpoint, bucket, region, accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY };
 }
 
 function assertSafeObjectKey(objectKey) {
