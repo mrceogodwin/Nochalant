@@ -919,3 +919,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .member-player-dock .player-queue-controls{padding-block:4px}
 @media(max-width:600px){.member-app-dock{bottom:max(8px,env(safe-area-inset-bottom));width:calc(100% - 22px);min-height:70px;padding:6px 8px;border-radius:24px}.member-app-dock button{min-height:52px}.member-app-dock button svg{width:21px;height:21px}.member-app-dock button span{font-size:7px}.member-app-dock .dock-create{width:54px;height:54px;min-height:54px}.member-player-dock{bottom:92px;width:calc(100% - 22px)}.member-player-dock .mini-player-dock .mini-player{width:100%}body:has(.member-app-dock){padding-bottom:calc(100px + env(safe-area-inset-bottom))}}
 @media(prefers-reduced-motion:reduce){.member-app-dock{transition:none}}
+
+
+.deferred-panel-loading{display:flex;align-items:center;justify-content:center;min-height:90px;padding:24px;color:#aab293;font:700 11px 'Space Grotesk',sans-serif;letter-spacing:.1em;text-transform:uppercase}
