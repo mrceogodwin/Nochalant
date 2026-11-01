@@ -757,6 +757,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 }
 .mini-player-dock.is-dragging .player-artwork,.mini-player-dock.is-dragging .player-title{cursor:grabbing}
 .mini-player-dock.is-dragging{will-change:left,top;filter:drop-shadow(0 16px 32px #000b)}
+.mini-player-dock.is-positioned{right:auto!important;bottom:auto!important}
 /* Player frame and queue navigation */
 .mini-player-dock{position:fixed;z-index:76;right:22px;bottom:18px;width:min(430px,calc(100% - 32px));display:grid;gap:0;filter:drop-shadow(0 12px 28px #0009)}
 .mini-player-dock .mini-player{position:static;width:100%;border:2px solid #68764a;border-bottom:1px solid #68764a;border-radius:3px 3px 0 0;box-shadow:none;backdrop-filter:blur(16px)}
