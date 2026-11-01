@@ -3,11 +3,11 @@ name: Security and Build Verification
 on:
   push:
     branches:
-      - fix/member-dashboard-mobile-drawer-light-skin-20261101
+      - fix/member-dashboard-mobile-drawer-light-20261101
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: true
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -29,6 +32,16 @@ jobs:
         run: npm test
       - name: Build production assets
         run: npm run build
+      - name: Commit verified dependency lockfile
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Commit verified dependency lockfile"
+            git push
+          fi
       - name: Upload generated dependency lock
         uses: actions/upload-artifact@v4
         with:
