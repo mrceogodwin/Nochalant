@@ -77,13 +77,12 @@ export default async function handler(req, res) {
         return res.status(503).json({ received: false, retry: true });
       }
       const receivedAmount = Number(event.data.amount);
-      const expectedAmount = Number(order.amount_minor) / 100;
       const receivedCurrency = String(event.data.currency || "").toUpperCase();
       if (!Number.isFinite(receivedAmount) || Math.round(receivedAmount * 100) !== Number(order.amount_minor) || receivedCurrency !== String(order.currency).trim().toUpperCase() || String(event.data.status || "").toUpperCase() !== "SUCCEEDED") {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Payment amount, currency or status mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Payment details did not match the order");
       }
-      const applied = await sql.transaction([
+      await sql.transaction([
         sql`SELECT id FROM payment_orders WHERE id = ${order.id} AND status IN ('created','pending','failed') FOR UPDATE`,
         sql`UPDATE payment_orders SET status = 'successful', paid_at = COALESCE(paid_at, now()), metadata = metadata || ${JSON.stringify({ bachs_event_id: event.id, charge_id: event.data.charge_id || null })}::jsonb WHERE id = ${order.id} AND status IN ('created','pending','failed') RETURNING id`,
         sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status IN ('pending','failed') AND payment_reference = ${order.provider_reference} RETURNING id`,
@@ -113,6 +112,11 @@ export default async function handler(req, res) {
         sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ last_bachs_event: event.type })}::jsonb WHERE id = ${orders[0].id} AND status IN ('created','pending')`,
         sql`UPDATE promotion_campaigns SET payment_status = 'failed', status = 'pending_payment' WHERE id = ${orders[0].campaign_id} AND payment_status = 'pending' AND payment_reference = ${orders[0].provider_reference}`
       ]);
+    }
+    const supportedEvent = event.type === "collection.failed" || event.type === "collection.underpaid" || event.type === "checkout.expired";
+    if (!supportedEvent) {
+      await sql`UPDATE payment_webhook_events SET processing_status = 'ignored', processed_at = now(), error_message = 'Unsupported event type' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+      return res.status(200).json({ received: true, ignored: true });
     }
     await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
     return res.status(200).json({ received: true });
