@@ -751,6 +751,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .artist-profile-track>button:disabled{opacity:.35}
 .artist-profile-loading{padding:20px;color:#b2b7a5;font-size:12px}
 
+/* Keep the reference rectangular player; drag it from its artwork or title area. */
+.mini-player-dock .player-artwork,.mini-player-dock .player-title{
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.mini-player-dock.is-dragging .player-artwork,.mini-player-dock.is-dragging .player-title{cursor:grabbing}
+.mini-player-dock.is-dragging{will-change:left,top;filter:drop-shadow(0 16px 32px #000b)}
 /* Player frame and queue navigation */
 .mini-player-dock{position:fixed;z-index:76;right:22px;bottom:18px;width:min(430px,calc(100% - 32px));display:grid;gap:0;filter:drop-shadow(0 12px 28px #0009)}
 .mini-player-dock .mini-player{position:static;width:100%;border:2px solid #68764a;border-bottom:1px solid #68764a;border-radius:3px 3px 0 0;box-shadow:none;backdrop-filter:blur(16px)}
