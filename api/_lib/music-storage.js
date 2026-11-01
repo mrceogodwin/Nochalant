@@ -9,7 +9,12 @@ function getMusicStorage() {
   const missing = required.filter(key => !process.env[key]);
   if (missing.length) throw new Error("Music storage is not configured.");
   const endpoint = new URL(process.env.AWS_ENDPOINT_URL_S3);
-  return { endpoint, bucket: process.env.NEON_STORAGE_BUCKET, region: process.env.AWS_REGION, accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY };
+  if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+    throw new Error("Neon Storage endpoint configuration is invalid.");
+  }
+  const bucket = process.env.NEON_STORAGE_BUCKET;
+  if (!/^[a-z0-9][a-z0-9.-]{1,62}$/.test(bucket)) throw new Error("Neon Storage bucket configuration is invalid.");
+  return { endpoint, bucket, region: process.env.AWS_REGION, accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY };
 }
 
 function assertSafeObjectKey(objectKey) {
@@ -27,6 +32,9 @@ function assertSafeObjectKey(objectKey) {
 
 function createPresignedUrl(method, objectKey, expiresIn = 3600) {
   assertSafeObjectKey(objectKey);
+  if (!Number.isSafeInteger(expiresIn) || expiresIn < 1 || expiresIn > 604800) {
+    throw new Error("Neon Storage URL expiry must be between 1 second and 7 days.");
+  }
   const { endpoint, bucket, region, accessKey, secretKey } = getMusicStorage();
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
