@@ -898,3 +898,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .podcast-host-socials{display:flex;flex-wrap:wrap;gap:10px}
 .podcast-host-socials a{padding:10px 15px;border:1px solid #55633d;border-radius:30px;color:#d5f36a;font-size:12px;font-weight:700;text-decoration:none}
 @media(max-width:520px){.podcast-host-profile-hero{align-items:flex-start;padding:25px 18px;gap:14px}.podcast-host-profile-hero img,.podcast-host-profile-hero>.podcast-host-avatar{width:78px;height:78px;flex-basis:78px}.podcast-host-profile-body{padding:20px 18px}}
+
+
+/* Member app dock — fixed, thumb-first navigation */
+.member-app-dock{position:fixed;z-index:70;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(590px,calc(100% - 28px));min-height:76px;display:grid;grid-template-columns:1fr 1fr 1.12fr 1fr 1fr;align-items:center;gap:3px;padding:8px 12px;border:1px solid #a8bd58;border-radius:28px;background:linear-gradient(135deg,#151811f5,#090b09f5);box-shadow:0 12px 48px #000b,0 0 0 1px #d6f66716,0 0 32px #bdde4a12;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
+.member-app-dock.is-hidden{transform:translate(-50%,calc(100% + 28px));opacity:0;pointer-events:none}
+.member-app-dock button{min-width:0;min-height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:0;border-radius:16px;background:transparent;color:#f2f3e9;cursor:pointer;transition:color .18s ease,background .18s ease,transform .18s ease}
+.member-app-dock button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.member-app-dock button:first-child svg{fill:currentColor;stroke:currentColor}
+.member-app-dock button span{font:800 8px 'Space Grotesk',sans-serif;letter-spacing:.12em}
+.member-app-dock button.active{color:#d6f667}
+.member-app-dock button.active span:after{content:"";display:block;width:14px;height:2px;margin:4px auto 0;border-radius:4px;background:#d6f667}
+.member-app-dock button:not(.dock-create):active{transform:scale(.92);background:#d6f66712}
+.member-app-dock .dock-create{width:58px;height:58px;min-height:58px;justify-self:center;border-radius:50%;background:#d6f667;color:#11140c;box-shadow:0 0 0 5px #d6f66718,0 6px 20px #d6f66730}
+.member-app-dock .dock-create svg{width:29px;height:29px;stroke-width:2.8}
+.member-app-dock .dock-create:active{transform:scale(.92)}
+.member-player-dock{bottom:105px;right:50%;transform:translateX(50%);width:min(590px,calc(100% - 28px))}
+.member-player-dock .mini-player{border-radius:14px 14px 0 0}
+.member-player-dock .player-queue-controls{border-radius:0 0 14px 14px}
+.member-player-dock .player-queue-controls{padding-block:4px}
+@media(max-width:600px){.member-app-dock{bottom:max(8px,env(safe-area-inset-bottom));width:calc(100% - 22px);min-height:70px;padding:6px 8px;border-radius:24px}.member-app-dock button{min-height:52px}.member-app-dock button svg{width:21px;height:21px}.member-app-dock button span{font-size:7px}.member-app-dock .dock-create{width:54px;height:54px;min-height:54px}.member-player-dock{bottom:92px;width:calc(100% - 22px)}.member-player-dock .mini-player-dock .mini-player{width:100%}body:has(.member-app-dock){padding-bottom:calc(100px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.member-app-dock{transition:none}}
