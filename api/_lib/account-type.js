@@ -210,10 +210,6 @@ export async function handleAccountType(req, res) {
       }
     }
 
-    const accountTypes = await auth.sql`SELECT account_type, status, is_primary, activated_at
-      FROM user_account_types
-      WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
-      ORDER BY is_primary DESC, activated_at ASC`;
     return res.status(200).json({
       ok: true,
       profile: { ...auth.profile, account_type: primaryType },
