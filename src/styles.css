@@ -1008,59 +1008,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 }
 body.navigation-drawer-open{overflow:hidden}
 
-/* Light skin is intentionally black and white; the lime identity belongs to dark mode. */
-.skin-light{
-  --bg:#ffffff;--surface:#ffffff;--surface-2:#f5f5f5;--ink:#111111;
-  --muted:#626262;--line:#dedede;--lime:#111111;--orange:#111111;--gold:#111111;
-  background:#fff!important;color:#111!important;color-scheme:light;
-}
-.skin-light .ticker{background:#111!important;color:#fff!important}
-.skin-light .ticker-label{background:#fff!important;color:#111!important}
-.skin-light .site-header{background:#fffffff5!important;border-color:#dedede!important}
-.skin-light .brand:before{background:#111!important;color:#fff!important}
-.skin-light .brand span,.skin-light .main-nav a:hover,.skin-light .footer-links a:hover{color:#111!important}
-.skin-light .main-nav,.skin-light .main-nav button,.skin-light .main-nav a,
-.skin-light .nav-login,.skin-light .text-button{color:#111!important}
-.skin-light .nav-spill,.skin-light .nav-join{background:#fff!important;border:1px solid #111!important;color:#111!important;box-shadow:none!important}
-.skin-light .menu-toggle{background:#fff!important;border:1px solid #111!important;color:#111!important}
-.skin-light .button-green,.skin-light .nav-join{background:#111!important;border-color:#111!important;color:#fff!important}
-.skin-light .button-outline{background:transparent!important;border-color:#111!important;color:#111!important}
-.skin-light .lead-copy>p,.skin-light .podcast-heading p{color:#555!important}
-.skin-light .lead-story{border-color:#111!important;box-shadow:12px 12px 0 #11111112!important}
-.skin-light .feature-nav-link,.skin-light .feature-nav-link.active,.skin-light .feature-nav-link:hover{color:#111!important}
-.skin-light .feature-nav-link.active:after{background:#111!important}
-.skin-light .member-app-dock{background:#fffffff5!important;border:1px solid #111!important;box-shadow:0 12px 40px #0002!important}
-.skin-light .member-app-dock button{color:#111!important}
-.skin-light .member-app-dock button.active{color:#111!important}
-.skin-light .member-app-dock button.active span:after{background:#111!important}
-.skin-light .member-app-dock .dock-create{background:#111!important;color:#fff!important;box-shadow:0 0 0 5px #11111112!important}
-.skin-light .drawer-preferences,.skin-light .main-nav,.skin-light .social-feed-aside,
-.skin-light .podcast-empty,.skin-light .card,.skin-light .panel{background:#fff!important;color:#111!important}
-.skin-light .skin-switch{background:#f4f4f4!important;border-color:#ddd!important}
-.skin-light .skin-switch button{color:#333!important}
-.skin-light .skin-switch button.active{background:#111!important;color:#fff!important}
-.skin-light .drawer-preference-row strong,.skin-light .drawer-preference-toggle strong,
-.skin-light .drawer-preference-row small,.skin-light .drawer-preference-toggle small{color:#111!important}
-.skin-light .drawer-preference-toggle i{background:#aaa}
-.skin-light .drawer-preference-toggle input:checked+i{background:#111!important}
-.skin-light .drawer-flagship>a,.skin-light .drawer-flagship>button,
-.skin-light .drawer-quick>a,.skin-light .drawer-quick>button,
-.skin-light .drawer-account-dashboard,.skin-light .drawer-account-logout{background:#f5f5f5!important;color:#111!important;border-color:#ddd!important}
-.skin-light .drawer-account-dashboard small,.skin-light .drawer-flagship>a span,
-.skin-light .drawer-flagship>button span{color:#555!important}
-.skin-light .account-dashboard-card,.skin-light .artist-studio-form,
-.skin-light .social-post,.skin-light .promotion-admin-panel{background:#fff!important;color:#111!important;border-color:#ddd!important}
-.skin-light .account-dashboard-card p,.skin-light .artist-studio-form label,
-.skin-light .social-post-body,.skin-light .social-post-foot{color:#444!important}
-.skin-light .modal-card{background:#fff!important;color:#111!important;border-color:#ddd!important}
-.skin-light .modal-card input,.skin-light .modal-card textarea,.skin-light .modal-card select{background:#fff!important;color:#111!important;border-color:#ccc!important}
-.skin-light .modal-card form label,.skin-light .modal-intro,.skin-light .modal-card>p{color:#333!important}
-.skin-light .drawer-backdrop{background:#0008!important}
-@media(max-width:760px){
-  .skin-light .main-nav,.skin-light .main-nav.open{background:#fff!important;border-color:#ddd!important}
-  .skin-light .drawer-preferences{background:#fff!important}
-}
-
 @media(max-width:760px){
   .site-header:has(.main-nav.open){backdrop-filter:none;-webkit-backdrop-filter:none}
   .drawer-backdrop{top:101px}
