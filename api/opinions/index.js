@@ -1,4 +1,3 @@
-import { neon } from "@neondatabase/serverless";
 import { requireActiveUser } from "../_lib/neon-auth.js";
 
 export default async function handler(req, res) {
@@ -24,13 +23,10 @@ export default async function handler(req, res) {
     res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
-  const connectionString = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
-  if (!connectionString) {
-    return res.status(503).json({ ok: false, error: "Opinions are not connected to the database yet." });
-  }
+  const auth = await requireActiveUser(req);
+  if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
   try {
-    const sql = neon(connectionString);
-    const rows = await sql`
+    const rows = await auth.sql`
       SELECT o.id, o.body, o.topic, o.published_at,
              p.display_name AS author_name
       FROM community_opinions o
