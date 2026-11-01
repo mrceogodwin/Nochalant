@@ -56,7 +56,14 @@ export async function handleAccountType(req, res) {
       if (avatarObjectKey && (!avatarObjectKey.startsWith("members/" + auth.profile.id + "/avatar-") || avatarObjectKey.includes(".."))) {
         return res.status(400).json({ ok: false, error: "Invalid profile photo reference." });
       }
-      if (avatarObjectKey) await verifyArtworkUpload(avatarObjectKey);
+      if (avatarObjectKey) {
+        const uploadedAvatar = await verifyArtworkUpload(avatarObjectKey);
+        // Profile-photo uploads have a stricter 5 MB limit than general artwork.
+        // Enforce it against the stored object, not only the client-supplied size.
+        if (uploadedAvatar.size > 5 * 1024 * 1024) {
+          return res.status(400).json({ ok: false, error: "Profile photos must be 5 MB or smaller." });
+        }
+      }
       if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
         return res.status(400).json({ ok: false, error: "Username must be 3–24 characters using letters, numbers or underscores." });
       }
