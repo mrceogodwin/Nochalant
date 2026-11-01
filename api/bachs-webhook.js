@@ -45,6 +45,7 @@ export default async function handler(req, res) {
   const secret = process.env.BACHS_WEBHOOK_SECRET;
   const databaseUrl = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
   if (!secret || !databaseUrl) return res.status(503).send("Webhook is not configured");
+  let eventId = null;
   try {
     const rawBody = await readRawBody(req);
     if (!verifySignature(rawBody, req.headers, secret)) return res.status(400).send("Invalid webhook signature");
@@ -55,6 +56,7 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid webhook JSON");
     }
     if (!isValidBachsEventEnvelope(event)) return res.status(400).send("Invalid event envelope");
+    eventId = String(event.id);
     const sql = neon(databaseUrl);
     const inserted = await sql`
       INSERT INTO payment_webhook_events (provider, provider_event_id, event_type, signature_verified, payload, processing_status)
@@ -147,8 +149,8 @@ export default async function handler(req, res) {
       const sql = neon(databaseUrl);
       await sql`UPDATE payment_webhook_events
         SET processing_status = 'received', error_message = 'Webhook processing interrupted; awaiting provider retry'
-        WHERE provider = 'bachs' AND processing_status = 'processing'
-          AND received_at > now() - interval '5 minutes'`;
+        WHERE provider = 'bachs' AND provider_event_id = ${eventId}
+          AND processing_status = 'processing'`;
     } catch (releaseError) {
       console.error("Bachs webhook claim release failed:", releaseError?.message || releaseError);
     }
