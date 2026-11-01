@@ -1660,3 +1660,23 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  #hot-or-trash .jury-panel>p{font-size:12px}
  #hot-or-trash .jury-option{min-height:43px}
 }
+
+
+/* Story grid: sharp rectangular cards, clean image surfaces and tiny bottom category marker. */
+#latest .story-card{border-radius:0!important}
+#latest .story-image{border-radius:0!important}
+#latest .story-image img{border-radius:0!important}
+#latest .story-category{top:auto;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid rgba(207,253,102,.48);border-radius:3px;background:rgba(9,12,8,.82);font-size:7px;line-height:1;letter-spacing:.04em}
+#latest .story-category-mark{display:grid;place-items:center;width:13px;height:13px;border-radius:50%;background:var(--lime);color:#10120b;font-size:8px}
+#latest .story-category-label{font-size:7px;font-weight:800}
+#latest .story-content{border-radius:0}
+#latest .story-more-wrap{display:flex;justify-content:flex-end;margin:18px 0 0}
+#latest .story-more-link{display:inline-flex;align-items:center;gap:9px;padding:9px 2px;border:0;border-bottom:1px solid rgba(207,253,102,.55);background:transparent;color:var(--lime);font:800 11px 'Space Grotesk',sans-serif;letter-spacing:.14em;cursor:pointer}
+#latest .story-more-link span{font-size:16px;transition:transform .18s}
+#latest .story-more-link:hover span{transform:translateX(4px)}
+/* Minimized player is a true floating control: drag anywhere, reopen at the same coordinates. */
+.player-reopen,.member-player-reopen{position:fixed;z-index:90;width:66px;height:66px;min-width:66px;display:grid;place-items:center;padding:0;border-radius:50%;touch-action:none;cursor:grab;background:linear-gradient(145deg,#24291d,#10130e);border:1px solid rgba(207,253,102,.52);color:var(--lime);box-shadow:inset 2px 2px 5px rgba(255,255,255,.11),inset -4px -5px 9px rgba(0,0,0,.65),0 12px 28px rgba(0,0,0,.48)}
+.player-reopen svg,.member-player-reopen svg{width:29px;height:29px}
+.player-reopen:active,.member-player-reopen:active{cursor:grabbing}
+.player-reopen[style*="left"],.member-player-reopen[style*="left"]{right:auto!important;bottom:auto!important}
+@media(max-width:600px){.player-reopen,.member-player-reopen{width:62px;height:62px;min-width:62px}}
