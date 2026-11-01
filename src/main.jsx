@@ -867,48 +867,71 @@ function App() {
         : await authClient.signIn.email({ email, password });
       if (result?.error) throw new Error(result.error.message || "Authentication failed.");
 
-      if (isSignup) window.localStorage.setItem("nochalant_pending_account_type", accountType);
+      const pendingKey = "nochalant_pending_account_type";
+      if (isSignup) {
+        window.localStorage.setItem(pendingKey, JSON.stringify({ email: email.toLowerCase(), accountType }));
+      }
       const sessionResult = await authClient.getSession();
       const signedInUser = sessionResult?.data?.user || null;
 
       if (!signedInUser && isSignup) {
-        setAuthMessage("Your account was created. Verify your email if requested, then sign in to activate your selected workspace. Your selection has been saved on this device.");
+        setAuthMessage("Your account was created. Verify your email if requested, then sign in with this same email to finish setting up your selected account type.");
         return;
       }
       if (signedInUser) setCurrentUser(signedInUser);
 
-      const pendingAccountType = isSignup
-        ? accountType
-        : window.localStorage.getItem("nochalant_pending_account_type");
+      let pendingSelection = null;
+      try {
+        const stored = window.localStorage.getItem(pendingKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.email && parsed?.accountType) pendingSelection = parsed;
+          else window.localStorage.removeItem(pendingKey);
+        }
+      } catch {
+        window.localStorage.removeItem(pendingKey);
+      }
+      if (pendingSelection && pendingSelection.email !== email.toLowerCase()) {
+        window.localStorage.removeItem(pendingKey);
+        pendingSelection = null;
+      }
+      const pendingAccountType = isSignup ? accountType : pendingSelection?.accountType || "";
+      let accountSetupNotice = "";
       if (pendingAccountType && signedInUser) {
         try {
           const token = await getAuthToken();
           if (!token) throw new Error("A secure session token was not available.");
           const profileResponse = await fetch("/api/account/type", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
             body: JSON.stringify({ accountType: pendingAccountType }),
             cache: "no-store"
           });
           const profileData = await profileResponse.json().catch(() => ({}));
           if (!profileResponse.ok || !profileData.ok) {
-            throw new Error(profileData.error || "Your selected workspace could not be activated.");
+            if (profileResponse.status === 409) {
+              window.localStorage.removeItem(pendingKey);
+              accountSetupNotice = "You are signed in. Your existing account type is unchanged; account types cannot be switched after registration.";
+            } else {
+              throw new Error(profileData.error || "Your selected account type could not be activated.");
+            }
+          } else {
+            window.localStorage.removeItem(pendingKey);
+            setAccountProfileRefresh(value => value + 1);
           }
-          window.localStorage.removeItem("nochalant_pending_account_type");
-          setAccountProfileRefresh(value => value + 1);
         } catch (profileError) {
-          console.error("Nochalant workspace activation failed:", profileError?.message || profileError);
-          try { await authClient.signOut(); } catch {}
-          clearRememberedAuthSession();
-          setCurrentUser(null);
-          setAuthMessage(`Your account exists, but the ${ACCOUNT_TYPE_LABELS[pendingAccountType] || pendingAccountType} workspace was not activated. Your selection is saved. Please try signing in again shortly. ${profileError?.message || ""}`.trim());
-          return;
+          console.error("Nochalant account setup needs attention:", profileError?.message || profileError);
+          accountSetupNotice = "You are signed in, but account setup is not complete yet. " + (profileError?.message || "Please retry account setup.");
         }
       }
 
-      setAuthMessage(isSignup ? "Your account and selected workspace are ready." : "You are signed in.");
-      notify(isSignup ? "Your Nochalant account and workspace are ready." : "Welcome back to Nochalant.");
-      if (signedInUser) setActiveScreen("dashboard");
+      setAuthMessage(accountSetupNotice || (isSignup ? "Your account and selected account type are ready." : "You are signed in."));
+      notify(isSignup ? "Welcome to Nochalant." : "Welcome back to Nochalant.");
+      if (signedInUser) {
+        setMemberDockTab("home");
+        setActiveScreen("home");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       closeModal();
     } catch (error) {
       setAuthMessage(error?.message || "We couldn't complete that request. Please try again.");
@@ -970,7 +993,7 @@ function App() {
             <span className="drawer-account-type">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span>
           </div>
           <span className="drawer-kicker">YOUR NOCHALANT</span>
-          <button type="button" className="drawer-account-link is-primary" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}> <span>My dashboard</span><b>↗</b></button>
+          <button type="button" className="drawer-account-link is-primary" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}> <span>My dashboard</span></button>
           <button type="button" className="drawer-account-link" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Profile settings</button>
           {accountProfile?.profile?.account_type === "artist" && <button type="button" className="drawer-account-link" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist studio &amp; music catalogue</button>}
           {accountProfile?.profile?.account_type === "creator" && <button type="button" className="drawer-account-link" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Creator portfolio &amp; bookings</button>}
