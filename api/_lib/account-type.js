@@ -33,6 +33,38 @@ export async function handleAccountType(req, res) {
       });
     }
 
+    if (req.body?.action === "save_profile") {
+      const username = String(req.body?.username || "").trim().toLowerCase();
+      const bio = String(req.body?.bio || "").trim();
+      const website = String(req.body?.websiteUrl || "").trim();
+      const location = String(req.body?.location || "").trim();
+      if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
+        return res.status(400).json({ ok: false, error: "Username must be 3–24 characters using letters, numbers or underscores." });
+      }
+      if (bio.length > 280 || location.length > 100) {
+        return res.status(400).json({ ok: false, error: "Please shorten your bio or location." });
+      }
+      let websiteUrl = null;
+      if (website) {
+        try {
+          const parsed = new URL(website);
+          if (parsed.protocol !== "https:") throw new Error("https required");
+          websiteUrl = parsed.toString();
+        } catch {
+          return res.status(400).json({ ok: false, error: "Enter a valid secure website address beginning with https://." });
+        }
+      }
+      const saved = await auth.sql`INSERT INTO user_profile_details
+        (user_profile_id, username, bio, website_url, location)
+        VALUES (${auth.profile.id}, ${username || null}, ${bio}, ${websiteUrl}, ${location})
+        ON CONFLICT (user_profile_id) DO UPDATE SET
+          username = EXCLUDED.username, bio = EXCLUDED.bio,
+          website_url = EXCLUDED.website_url, location = EXCLUDED.location,
+          updated_at = now()
+        RETURNING username, avatar_url, bio, website_url, location`;
+      return res.status(200).json({ ok: true, profileDetails: saved[0] || null });
+    }
+
     if (req.body?.action === "switch_primary") {
       const requestedType = String(req.body?.accountType || "");
       if (!ACCOUNT_TYPES.has(requestedType)) {
