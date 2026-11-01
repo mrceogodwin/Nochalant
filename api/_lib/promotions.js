@@ -144,15 +144,24 @@ export async function handlePromotions(req, res) {
         return res.status(502).json({ ok: false, error: "Bachs could not be reached. Please try again." });
       }
       const checkout = await checkoutResponse.json().catch(() => ({}));
-      if (!checkoutResponse.ok || !checkout.checkout_url || !checkout.checkout_id) {
+      let checkoutUrl = null;
+      try {
+        const parsedCheckoutUrl = new URL(String(checkout.checkout_url || ""));
+        if (parsedCheckoutUrl.protocol === "https:" && !parsedCheckoutUrl.username && !parsedCheckoutUrl.password) checkoutUrl = parsedCheckoutUrl.toString();
+      } catch { /* Invalid provider URL is rejected below. */ }
+      const checkoutId = typeof checkout.checkout_id === "string" && checkout.checkout_id.length > 0 && checkout.checkout_id.length <= 200
+        ? checkout.checkout_id
+        : null;
+      if (!checkoutResponse.ok || !checkoutUrl || !checkoutId) {
         await auth.sql.transaction([
           auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error || checkout.message || "Checkout creation failed" })}::jsonb WHERE id = ${orderId}`,
           auth.sql`UPDATE promotion_campaigns SET payment_status = 'failed' WHERE id = ${campaign.id} AND payment_reference = ${reference} AND payment_status = 'pending'`
         ]);
         return res.status(502).json({ ok: false, error: "Bachs could not create checkout. Please try again." });
       }
-      await auth.sql`UPDATE payment_orders SET status = 'pending', checkout_url = ${checkout.checkout_url}, metadata = metadata || ${JSON.stringify({ checkout_id: checkout.checkout_id })}::jsonb WHERE id = ${orderId}`;
-      return res.status(200).json({ ok: true, checkoutUrl: checkout.checkout_url, checkoutId: checkout.checkout_id });
+      const saved = await auth.sql`UPDATE payment_orders SET status = 'pending', checkout_url = ${checkoutUrl}, metadata = metadata || ${JSON.stringify({ checkout_id: checkoutId })}::jsonb WHERE id = ${orderId} AND status = 'created' RETURNING id`;
+      if (!saved.length) return res.status(409).json({ ok: false, error: "Checkout could not be safely attached to its payment order. Please refresh before trying again." });
+      return res.status(200).json({ ok: true, checkoutUrl, checkoutId });
     }
     if (action === "admin_queue") {
       if (auth.profile.role !== "super_admin") return res.status(403).json({ ok: false, error: "Administrator access required." });
