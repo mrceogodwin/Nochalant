@@ -51,7 +51,7 @@ The new workspace migration is additive and backfills each existing member's cur
 
 ## 4. Verify the schema
 
-After all nine migrations complete, open:
+After all migrations in the ordered list above complete on the intended branch, open:
 
 `https://nochalant.vercel.app/api/health/database`
 
@@ -119,4 +119,4 @@ The schema stores media references only. A public catalogue API and Super Admin 
 
 Migration 015 creates member workspace memberships, member profile details and the initial Podcast staff account table. This is a schema foundation, not a complete invitation or permission system. Podcast team invitations, per-show assignments, granular action permissions and staff dashboard workflows remain pending application work and must be tested before production. Do not grant Podcast or staff access through a public account-type selector.
 
-The workspace and profile APIs depend on migration 015. Until it is applied to the target Neon branch, those APIs may return a controlled "not ready" response. Never apply this migration directly to production as a shortcut.
+The workspace and profile APIs depend on migration 015. Until it is applied to the target Neon branch, those APIs may return a controlled "not ready" response. Never apply this migration directly to production as a shortcut. The current validation branch is a separate preflight environment; successful checks there do not prove that Production is ready.
