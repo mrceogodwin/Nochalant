@@ -22,14 +22,20 @@ export function getBachsCheckoutId(data) {
 }
 
 export function matchesBachsSuccessfulPayment(data, order) {
-  const amount = Number(data?.amount);
-  const amountMinor = Math.round(amount * 100);
+  const amountText = typeof data?.amount === "number" || typeof data?.amount === "string"
+    ? String(data.amount).trim()
+    : "";
+  const amountMatch = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(amountText);
+  const amountMinor = amountMatch
+    ? Number(amountMatch[1]) * 100 + Number((amountMatch[2] || "").padEnd(2, "0"))
+    : NaN;
+  const expectedMinor = Number(order?.amount_minor);
   const currency = typeof data?.currency === "string" ? data.currency.trim().toUpperCase() : "";
   const expectedCurrency = String(order?.currency ?? "").trim().toUpperCase();
-  return Number.isFinite(amount) &&
-    Number.isSafeInteger(amountMinor) &&
+  return Number.isSafeInteger(amountMinor) &&
     amountMinor > 0 &&
-    amountMinor === Number(order?.amount_minor) &&
+    Number.isSafeInteger(expectedMinor) &&
+    amountMinor === expectedMinor &&
     currency !== "" &&
     currency === expectedCurrency &&
     typeof data?.status === "string" &&
