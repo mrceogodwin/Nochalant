@@ -47,7 +47,12 @@ export default async function handler(req, res) {
   try {
     const rawBody = await readRawBody(req);
     if (!verifySignature(rawBody, req.headers, secret)) return res.status(400).send("Invalid webhook signature");
-    const event = JSON.parse(rawBody.toString("utf8"));
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      return res.status(400).send("Invalid webhook JSON");
+    }
     if (
       !event ||
       typeof event !== "object" ||
