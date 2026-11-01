@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getAuthToken } from "./auth.js";
 
-export default function SocialFeed({ currentUser, onJoin, onShare }) {
+export default function SocialFeed({ currentUser, onJoin, onLogin, onShare }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +47,7 @@ export default function SocialFeed({ currentUser, onJoin, onShare }) {
         <div><span className="eyebrow">NOCHALANT · MEMBERS ONLY</span><h2 id="social-title">Your people. <em>Your space.</em></h2><p>Nochalant Social is a private community for registered members.</p></div>
         <span className="social-aside-mark" aria-hidden="true">N<span>.</span></span>
       </div>
-      <div className="social-feed-state"><strong>Come inside the culture.</strong><p>Create a free Nochalant account or sign in to discover people, share your perspective and join conversations.</p><div className="social-member-gate-actions"><button className="button button-green" type="button" onClick={onJoin}>Create your account</button><button className="button button-outline" type="button" onClick={onJoin}>Sign in</button></div></div>
+      <div className="social-feed-state"><strong>Come inside the culture.</strong><p>Create a free Nochalant account or sign in to discover people, share your perspective and join conversations.</p><div className="social-member-gate-actions"><button className="button button-green" type="button" onClick={onJoin}>Create your account</button><button className="button button-outline" type="button" onClick={onLogin}>Sign in</button></div></div>
     </div>;
   }
 
