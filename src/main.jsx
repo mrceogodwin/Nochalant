@@ -555,26 +555,6 @@ function App() {
   };
 
   useEffect(() => {
-    if (!currentUser) { setAccountProfile(null); return; }
-    const controller = new AbortController();
-    setAccountProfileLoading(true);
-    (async () => {
-      try {
-        const token = await getAuthToken();
-        if (!token) return;
-        const response = await fetch("/api/account/type", { signal: controller.signal, headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
-        const data = await response.json().catch(() => ({}));
-        if (response.ok && data.ok && !controller.signal.aborted) setAccountProfile(data);
-      } catch (error) {
-        if (error?.name !== "AbortError") console.warn("Account dashboard profile could not load:", error?.message || error);
-      } finally {
-        if (!controller.signal.aborted) setAccountProfileLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [currentUser?.id]);
-
-  useEffect(() => {
     const controller = new AbortController();
     (async () => {
       try {
