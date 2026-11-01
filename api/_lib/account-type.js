@@ -114,21 +114,21 @@ export async function handleAccountType(req, res) {
       .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
     const artistSlug = baseSlug + "-" + randomUUID().slice(0, 8);
     const activationResults = await auth.sql.transaction([
-      auth.sql\`SELECT pg_advisory_xact_lock(hashtextextended(\${auth.profile.id}::text, 0::bigint))\`,
-      auth.sql\`WITH locked_profile AS (
+      auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
+      auth.sql`WITH locked_profile AS (
           SELECT id, account_type, account_type_locked_at
           FROM user_profiles
-          WHERE id = \${auth.profile.id}
+          WHERE id = ${auth.profile.id}
           FOR UPDATE
         ),
         decision AS (
           SELECT id,
-            (account_type_locked_at IS NULL OR account_type = \${accountType}) AS allowed
+            (account_type_locked_at IS NULL OR account_type = ${accountType}) AS allowed
           FROM locked_profile
         ),
         membership AS (
           INSERT INTO user_account_types (user_profile_id, account_type, status, is_primary)
-          SELECT id, \${accountType}, 'active', true
+          SELECT id, ${accountType}, 'active', true
           FROM decision
           WHERE allowed
           ON CONFLICT (user_profile_id, account_type) DO NOTHING
@@ -136,7 +136,7 @@ export async function handleAccountType(req, res) {
         ),
         updated_profile AS (
           UPDATE user_profiles
-          SET account_type = \${accountType},
+          SET account_type = ${accountType},
               account_type_locked_at = COALESCE(account_type_locked_at, now()),
               updated_at = now()
           FROM decision
@@ -145,20 +145,20 @@ export async function handleAccountType(req, res) {
         )
         SELECT decision.allowed, updated_profile.account_type
         FROM decision
-        LEFT JOIN updated_profile ON true\`,
-      auth.sql\`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status)
-        SELECT id, display_name, \${artistSlug}, 'unverified'
+        LEFT JOIN updated_profile ON true`,
+      auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status)
+        SELECT id, display_name, ${artistSlug}, 'unverified'
         FROM user_profiles
-        WHERE id = \${auth.profile.id}
+        WHERE id = ${auth.profile.id}
           AND account_type = 'artist'
-          AND \${accountType === "artist"}
+          AND ${accountType === "artist"}
           AND NOT EXISTS (
             SELECT 1 FROM artist_profiles
             WHERE owner_user_id = user_profiles.id
           )
-        ON CONFLICT DO NOTHING\`,
-      auth.sql\`SELECT id, stage_name, slug, verification_status
-        FROM artist_profiles WHERE owner_user_id = \${auth.profile.id} LIMIT 1\`
+        ON CONFLICT DO NOTHING`,
+      auth.sql`SELECT id, stage_name, slug, verification_status
+        FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`
     ]);
     const activation = activationResults[1]?.[0];
     if (!activation?.allowed) {
@@ -168,9 +168,9 @@ export async function handleAccountType(req, res) {
       });
     }
     const primaryType = activation.account_type || auth.profile.account_type || accountType;
-    const accountTypes = await auth.sql\`SELECT account_type, status, is_primary, activated_at
-      FROM user_account_types WHERE user_profile_id = \${auth.profile.id} AND status = 'active'
-      ORDER BY is_primary DESC, activated_at ASC\`;
+    const accountTypes = await auth.sql`SELECT account_type, status, is_primary, activated_at
+      FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+      ORDER BY is_primary DESC, activated_at ASC`;
     const artistProfile = accountType === "artist" ? activationResults[3]?.[0] || null : null;
 
     return res.status(200).json({
