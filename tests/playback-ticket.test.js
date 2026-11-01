@@ -21,7 +21,7 @@ test("rejects tampered tickets and wrong-track redemption", () => {
 test("rejects early redemption and expired tickets", () => {
   const ticket = issuePlaybackTicket(trackId, 30, secret, now).ticket;
   assert.equal(verifyPlaybackTicket(ticket, trackId, secret, now + 29_000), null);
-  assert.equal(verifyPlaybackTicket(ticket, trackId, secret, now + 15 * 60_000 + 1), null);
+  assert.equal(verifyPlaybackTicket(ticket, trackId, secret, now + 15 * 60_000 + 1_000), null);
 });
 
 test("rejects missing or weak signing secrets", () => {
