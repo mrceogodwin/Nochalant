@@ -78,7 +78,7 @@ export default async function handler(req, res) {
       ["payment_refunds", "refunded_amount_minor"],
       ["user_account_types", "is_primary"],
       ["user_profile_details", "avatar_url"],
-      ["social_feature_settings", "video_posts_enabled"]
+      ["social_feature_settings", "enabled"]
     ];
     const columnRows = await sql`
       SELECT table_name, column_name
