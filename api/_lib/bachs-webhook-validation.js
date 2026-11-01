@@ -25,7 +25,7 @@ export function matchesBachsSuccessfulPayment(data, order) {
   const amountText = typeof data?.amount === "number" || typeof data?.amount === "string"
     ? String(data.amount).trim()
     : "";
-  const amountMatch = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(amountText);
+  const amountMatch = /^(0|[1-9]\d*)(?:\.(\d{1,2}))?$/.exec(amountText);
   const amountMinor = amountMatch
     ? Number(amountMatch[1]) * 100 + Number((amountMatch[2] || "").padEnd(2, "0"))
     : NaN;
