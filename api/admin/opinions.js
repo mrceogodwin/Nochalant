@@ -114,6 +114,15 @@ async function handleSocialNetwork(req, res) {
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   try {
     if (req.method === "GET") {
+      if (req.query?.notifications === "1") {
+        const notifications = await auth.sql`
+          SELECT id, notification_type, title, body, target_path, read_at, created_at
+          FROM user_notifications
+          WHERE user_id = ${auth.profile.id}
+          ORDER BY created_at DESC LIMIT 50
+        `;
+        return res.status(200).json({ ok: true, notifications });
+      }
       const commentsFor = String(req.query?.commentsFor || "");
       if (commentsFor) {
         if (!uuidPattern.test(commentsFor)) return res.status(400).json({ ok: false, error: "Invalid post." });
@@ -165,6 +174,17 @@ async function handleSocialNetwork(req, res) {
       return res.status(405).json({ ok: false, error: "Method not allowed." });
     }
     const action = String(req.body?.action || "");
+    if (action === "mark_notification_read") {
+      const notificationId = String(req.body?.notificationId || "");
+      if (!uuidPattern.test(notificationId)) return res.status(400).json({ ok: false, error: "Invalid notification." });
+      const rows = await auth.sql`
+        UPDATE user_notifications SET read_at = COALESCE(read_at, now())
+        WHERE id = ${notificationId} AND user_id = ${auth.profile.id}
+        RETURNING id, read_at
+      `;
+      if (!rows.length) return res.status(404).json({ ok: false, error: "Notification not found." });
+      return res.status(200).json({ ok: true, notification: rows[0] });
+    }
     if (action === "create_post") {
       const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
       const visibility = req.body?.visibility === "followers" ? "followers" : "public";
