@@ -31,7 +31,11 @@ export async function requireActiveUser(req) {
     // is atomic, so concurrent first logins cannot create multiple owners.
     const firstOwnerEmail = "squadempireng@gmail.com";
     const accountEmail = String(email || profile.email || "").trim().toLowerCase();
-    if (accountEmail === firstOwnerEmail && profile.role !== "super_admin") {
+    // Email-based first-owner bootstrap is allowed only when the identity
+    // provider explicitly marks the email as verified in the signed JWT.
+    // Never infer verification from the presence of an email claim alone.
+    const emailVerified = payload.email_verified === true;
+    if (emailVerified && accountEmail === firstOwnerEmail && profile.role !== "super_admin") {
       const promoted = await sql`UPDATE user_profiles
         SET role = 'super_admin', email = COALESCE(email, ${email})
         WHERE id = ${profile.id}
