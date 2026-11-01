@@ -158,7 +158,7 @@ async function handleSocialNetwork(req, res) {
           AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = u.id)
         ORDER BY u.created_at DESC LIMIT 8
       \`;
-      return res.status(200).json({ ok: true, feed, posts, suggestedMembers });
+      return res.status(200).json({ ok: true, feed, viewerProfileId: auth.profile.id, posts, suggestedMembers });
     }
     if (req.method !== "POST") {
       res.setHeader("Allow", "GET, POST");
