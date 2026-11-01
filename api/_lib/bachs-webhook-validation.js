@@ -41,3 +41,12 @@ export function matchesBachsSuccessfulPayment(data, order) {
     typeof data?.status === "string" &&
     data.status.trim().toUpperCase() === "SUCCEEDED";
 }
+
+// Bachs caches successful idempotent responses for 24 hours. Reconcile older
+// uncertain attempts before retrying so a duplicate checkout is not created.
+export function isWithinBachsIdempotencyWindow(createdAt, now = Date.now()) {
+  const createdMs = new Date(createdAt).getTime();
+  const nowMs = now instanceof Date ? now.getTime() : Number(now);
+  const ageMs = nowMs - createdMs;
+  return Number.isFinite(createdMs) && Number.isFinite(nowMs) && ageMs >= 0 && ageMs < 86400000;
+}
