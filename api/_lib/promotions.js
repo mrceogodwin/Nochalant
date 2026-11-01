@@ -107,6 +107,7 @@ export async function handlePromotions(req, res) {
         ORDER BY created_at DESC LIMIT 1`;
       let orderId;
       let reference;
+      let idempotencyKey;
       if (priorOrders[0]) {
         const prior = priorOrders[0];
         if (prior.status === 'pending' && prior.checkout_url) {
@@ -117,8 +118,10 @@ export async function handlePromotions(req, res) {
         }
         orderId = prior.id;
         reference = prior.provider_reference;
+        idempotencyKey = prior.idempotency_key;
       } else {
         reference = "NCH-PROMO-" + randomUUID().replaceAll("-", "").toUpperCase();
+        idempotencyKey = reference;
         // Reserve the campaign's single active checkout under a row lock.
         const reservation = await auth.sql.transaction([
           auth.sql`SELECT id FROM promotion_campaigns WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id} FOR UPDATE`,
@@ -147,7 +150,7 @@ export async function handlePromotions(req, res) {
       try {
         checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
           method: "POST",
-          headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json", "Idempotency-Key": reference },
+          headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
           body: JSON.stringify({
             pricing: { currency: campaign.currency, amount },
             ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
@@ -171,12 +174,16 @@ export async function handlePromotions(req, res) {
       const checkoutId = typeof checkout.checkout_id === "string" && checkout.checkout_id.length > 0 && checkout.checkout_id.length <= 200
         ? checkout.checkout_id
         : null;
+      if (!checkoutResponse.ok && (checkoutResponse.status >= 500 || checkout.error_code === "IDEMPOTENCY_IN_PROGRESS")) {
+        await auth.sql`UPDATE payment_orders SET metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error_code || "Provider returned an uncertain response" })}::jsonb WHERE id = ${orderId} AND status = 'created'`;
+        return res.status(502).json({ ok: false, retry: true, error: "Bachs has not confirmed the checkout result. Retry this same checkout shortly; Nochalant will reuse its original idempotency key." });
+      }
       if (!checkoutResponse.ok || !checkoutUrl || !checkoutId) {
         await auth.sql.transaction([
-          auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error || checkout.message || "Checkout creation failed" })}::jsonb WHERE id = ${orderId}`,
+          auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error || checkout.message || "Checkout creation failed" })}::jsonb WHERE id = ${orderId} AND status = 'created'`,
           auth.sql`UPDATE promotion_campaigns SET payment_status = 'failed' WHERE id = ${campaign.id} AND payment_reference = ${reference} AND payment_status = 'pending'`
         ]);
-        return res.status(502).json({ ok: false, error: "Bachs could not create checkout. Please try again." });
+        return res.status(502).json({ ok: false, error: "Bachs rejected checkout creation. Please review the campaign and try again." });
       }
       const saved = await auth.sql`UPDATE payment_orders SET status = 'pending', checkout_url = ${checkoutUrl}, metadata = metadata || ${JSON.stringify({ checkout_id: checkoutId })}::jsonb WHERE id = ${orderId} AND status = 'created' RETURNING id`;
       if (!saved.length) return res.status(409).json({ ok: false, error: "Checkout could not be safely attached to its payment order. Please refresh before trying again." });
