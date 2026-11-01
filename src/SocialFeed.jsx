@@ -51,6 +51,8 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [activeStory, setActiveStory] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [memberProfile, setMemberProfile] = useState(null);
+  const [memberProfileLoading, setMemberProfileLoading] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileDraft, setProfileDraft] = useState({ displayName: "", username: "", bio: "", websiteUrl: "", location: "", avatarUrl: "" });
   const [viewerProfileId, setViewerProfileId] = useState("");
@@ -152,6 +154,31 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       setComments(value => ({ ...value, [post.id]: [...(value[post.id] || []), data.comment] }));
       setCommentDrafts(value => ({ ...value, [post.id]: "" }));
       setPosts(items => items.map(item => item.id === post.id ? { ...item, comment_count: Number(item.comment_count || 0) + 1 } : item));
+    } catch (err) { setNotice(err.message); }
+    finally { setBusyAction(""); }
+  };
+
+  const openMemberProfile = async (memberId) => {
+    if (!memberId) return;
+    setMemberProfileLoading(true);
+    try {
+      const data = await socialRequest({ query: "?member=" + encodeURIComponent(memberId) });
+      setMemberProfile({ ...data.profile, posts: data.posts || [] });
+    } catch (err) { setNotice(err.message); }
+    finally { setMemberProfileLoading(false); }
+  };
+
+  const toggleMemberProfileFollow = async () => {
+    if (!memberProfile || memberProfile.id === viewerProfileId || busyAction) return;
+    const action = memberProfile.viewer_follows ? "unfollow" : "follow";
+    setBusyAction("profile-follow");
+    try {
+      await socialRequest({ method: "POST", body: { action, targetUserId: memberProfile.id } });
+      setMemberProfile(value => ({
+        ...value,
+        viewer_follows: action === "follow",
+        follower_count: Math.max(0, Number(value.follower_count || 0) + (action === "follow" ? 1 : -1))
+      }));
     } catch (err) { setNotice(err.message); }
     finally { setBusyAction(""); }
   };
@@ -269,7 +296,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       <div className="social-people-list">
         {suggestedMembers.map(member => <article className="social-person" key={member.id}>
           <span className="social-person-avatar">{avatarContent(member.display_name, member.avatar_url)}</span>
-          <strong title={member.display_name}>{member.display_name}</strong>
+          <button type="button" className="social-person-name" onClick={() => openMemberProfile(member.id)} title={"View " + member.display_name}>{member.display_name}</button>
           <small>{String(member.account_type || "fan").replaceAll("_", " ")}</small>
           <button type="button" onClick={() => toggleFollow(member)} disabled={busyAction === "follow:" + member.id}>＋ Follow</button>
         </article>)}
@@ -314,6 +341,18 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       <article className="social-story-card"><div className="social-story-viewer-top"><span className="social-story-avatar">{avatarContent(activeStory.author_name, activeStory.avatar_url)}</span><div><strong>{activeStory.author_name}</strong><small>Expires {new Date(activeStory.expires_at).toLocaleString()}</small></div><button type="button" onClick={() => setActiveStory(null)} aria-label="Close story">×</button></div><p>{activeStory.body}</p><small>{Number(activeStory.view_count || 0).toLocaleString()} views</small></article>
     </div>}
 
+    {(memberProfileLoading || memberProfile) && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !memberProfileLoading) setMemberProfile(null); }}>
+      {memberProfileLoading ? <div className="social-composer social-profile-viewer">Loading member profile…</div> : <article className="social-composer social-profile-viewer">
+        <div className="social-composer-head"><div><span className="eyebrow">NOCHALANT MEMBER</span><h2>Creator profile</h2></div><button type="button" onClick={() => setMemberProfile(null)} aria-label="Close member profile">×</button></div>
+        <div className="social-public-profile-head"><span className="social-public-profile-avatar">{avatarContent(memberProfile.display_name, memberProfile.avatar_url)}</span><div><h3>{memberProfile.display_name}</h3><small>@{memberProfile.username || "member"} · {String(memberProfile.account_type || "fan").replaceAll("_", " ")}</small></div></div>
+        {memberProfile.bio && <p className="social-public-profile-bio">{memberProfile.bio}</p>}
+        <div className="social-profile-stats"><span><strong>{Number(memberProfile.follower_count || 0).toLocaleString()}</strong><small>Followers</small></span><span><strong>{Number(memberProfile.following_count || 0).toLocaleString()}</strong><small>Following</small></span><span><strong>{(memberProfile.posts || []).length}</strong><small>Posts</small></span></div>
+        {(memberProfile.location || memberProfile.website_url) && <div className="social-public-profile-meta">{memberProfile.location && <span>{memberProfile.location}</span>}{memberProfile.website_url && <a href={memberProfile.website_url} target="_blank" rel="noreferrer">Visit website ↗</a>}</div>}
+        {memberProfile.id !== viewerProfileId && <button type="button" className="button button-green full-width" onClick={toggleMemberProfileFollow} disabled={busyAction === "profile-follow"}>{memberProfile.viewer_follows ? "Following · Unfollow" : "＋ Follow"}</button>}
+        <div className="social-public-profile-posts"><h3>Recent posts</h3>{(memberProfile.posts || []).length ? memberProfile.posts.map(item => <article key={item.id}><p>{item.body}</p><small>{timeAgo(item.created_at)} · {Number(item.like_count || 0)} likes · {Number(item.comment_count || 0)} comments</small></article>) : <p className="social-notification-empty">No public posts yet.</p>}</div>
+      </article>}
+    </div>}
+
     {profileOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !profileSaving) setProfileOpen(false); }}>
       <form className="social-composer social-profile-editor" onSubmit={saveProfile}>
         <div className="social-composer-head"><div><span className="eyebrow">YOUR NOCHALANT IDENTITY</span><h2>Edit profile</h2></div><button type="button" onClick={() => setProfileOpen(false)} aria-label="Close profile editor">×</button></div>
@@ -340,7 +379,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     <div className="social-network-layout">
       <main className="social-network-posts">
         {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? posts.map(post => <article className="social-network-post" key={post.id}>
-          <div className="social-network-post-head"><span className="social-avatar">{avatarContent(post.author_name, post.avatar_url)}</span><div className="social-author-copy"><strong>{post.author_name || "Nochalant member"}</strong><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
+          <div className="social-network-post-head"><span className="social-avatar">{avatarContent(post.author_name, post.avatar_url)}</span><div className="social-author-copy"><button type="button" className="social-author-profile-link" onClick={() => openMemberProfile(post.author_id)}>{post.author_name || "Nochalant member"}</button><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
           <p className="social-network-post-body">{post.body}</p>
           <div className="social-network-post-actions">
             <button type="button" className={post.viewer_liked ? "liked" : ""} onClick={() => toggleLike(post)} disabled={busyAction === "like:" + post.id} aria-label={post.viewer_liked ? "Unlike post" : "Like post"}><span>{post.viewer_liked ? "♥" : "♡"}</span>{Number(post.like_count || 0).toLocaleString()} <small>Likes</small></button>
