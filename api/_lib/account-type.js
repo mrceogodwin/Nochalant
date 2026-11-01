@@ -151,9 +151,9 @@ export async function handleAccountType(req, res) {
       artistProfile = existingArtist[0] || null;
       if (!artistProfile) {
         const baseSlug = String(auth.profile.display_name || "artist").toLowerCase()
-          .normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "")
+          .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
           .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
-        const slug = baseSlug + "-" + crypto.randomUUID().slice(0, 8);
+        const slug = baseSlug + "-" + randomUUID().slice(0, 8);
         const created = await auth.sql`INSERT INTO artist_profiles
           (owner_user_id, stage_name, slug, verification_status)
           VALUES (${auth.profile.id}, ${auth.profile.display_name}, ${slug}, 'unverified')
