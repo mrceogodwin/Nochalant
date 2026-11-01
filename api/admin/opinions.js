@@ -141,6 +141,7 @@ async function handleSocialSettings(req, res) {
   }
   if (req.method !== "POST") { res.setHeader("Allow", "GET, POST"); return res.status(405).json({ ok: false, error: "Method not allowed" }); }
   if (typeof req.body?.videoPostsEnabled !== "boolean") return res.status(400).json({ ok: false, error: "Choose whether video posting is enabled or disabled." });
+  if (req.body.videoPostsEnabled === true) return res.status(409).json({ ok: false, code: "VIDEO_PIPELINE_NOT_READY", error: "Video posting cannot be enabled yet. The secure upload, malware-scanning, quarantine and moderation pipeline is not deployed." });
   try {
     const rows = await auth.sql`
       UPDATE social_feature_settings SET enabled = ${req.body.videoPostsEnabled}, updated_by = ${auth.profile.id}, updated_at = now()
