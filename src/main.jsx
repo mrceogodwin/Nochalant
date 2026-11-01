@@ -113,12 +113,13 @@ function App() {
     if (event.button !== undefined && event.button !== 0) return;
     event.preventDefault();
     playerButtonDraggedRef.current = false;
+    const rect = event.currentTarget.getBoundingClientRect();
     playerButtonDragRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      offsetX: event.clientX - (playerButtonPosition?.left ?? (window.innerWidth - 82)),
-      offsetY: event.clientY - (playerButtonPosition?.top ?? (window.innerHeight - 92))
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top
     };
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
