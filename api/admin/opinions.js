@@ -114,6 +114,35 @@ async function handleSocialNetwork(req, res) {
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   try {
     if (req.method === "GET") {
+      if (req.query?.stories === "1") {
+        const stories = await auth.sql\`
+          SELECT s.id, s.author_id, s.body, s.visibility, s.created_at, s.expires_at,
+            u.display_name AS author_name, u.account_type,
+            d.username, d.avatar_url,
+            (SELECT COUNT(*)::int FROM social_story_views v WHERE v.story_id = s.id) AS view_count,
+            EXISTS (SELECT 1 FROM social_story_views v WHERE v.story_id = s.id AND v.viewer_id = \${auth.profile.id}) AS viewer_seen
+          FROM social_stories s
+          JOIN user_profiles u ON u.id = s.author_id AND u.account_status = 'active'
+          LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
+          WHERE s.status = 'published' AND s.expires_at > now()
+            AND (s.author_id = \${auth.profile.id} OR s.visibility = 'public'
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = s.author_id))
+          ORDER BY s.created_at DESC
+          LIMIT 100
+        \`;
+        return res.status(200).json({ ok: true, stories });
+      }
+      if (req.query?.profile === "1") {
+        const rows = await auth.sql\`
+          SELECT u.id, u.display_name, u.email, u.account_type, d.username, d.avatar_url,
+            COALESCE(d.bio, '') AS bio, d.website_url, d.location,
+            (SELECT COUNT(*)::int FROM user_follows f WHERE f.followed_user_id = u.id) AS follower_count,
+            (SELECT COUNT(*)::int FROM user_follows f WHERE f.follower_id = u.id) AS following_count
+          FROM user_profiles u LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
+          WHERE u.id = \${auth.profile.id} LIMIT 1
+        \`;
+        return res.status(200).json({ ok: true, profile: rows[0] || null });
+      }
       if (req.query?.notifications === "1") {
         const notifications = await auth.sql`
           SELECT id, notification_type, title, body, target_path, read_at, created_at
@@ -174,6 +203,77 @@ async function handleSocialNetwork(req, res) {
       return res.status(405).json({ ok: false, error: "Method not allowed." });
     }
     const action = String(req.body?.action || "");
+    if (action === "create_story") {
+      const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+      const visibility = req.body?.visibility === "followers" ? "followers" : "public";
+      if (!body || body.length > 500) return res.status(400).json({ ok: false, error: "Stories must contain 1–500 characters." });
+      const rows = await auth.sql\`
+        INSERT INTO social_stories (author_id, body, visibility, expires_at)
+        VALUES (\${auth.profile.id}, \${body}, \${visibility}, now() + interval '24 hours')
+        RETURNING id, author_id, body, visibility, created_at, expires_at
+      \`;
+      return res.status(201).json({ ok: true, story: { ...rows[0], author_name: auth.profile.display_name, account_type: auth.profile.account_type, view_count: 0, viewer_seen: true } });
+    }
+    if (action === "view_story") {
+      const storyId = String(req.body?.storyId || "");
+      if (!uuidPattern.test(storyId)) return res.status(400).json({ ok: false, error: "Invalid story." });
+      const rows = await auth.sql\`
+        INSERT INTO social_story_views (story_id, viewer_id)
+        SELECT s.id, \${auth.profile.id} FROM social_stories s
+        WHERE s.id = \${storyId} AND s.status = 'published' AND s.expires_at > now()
+          AND (s.author_id = \${auth.profile.id} OR s.visibility = 'public'
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = s.author_id))
+        ON CONFLICT (story_id, viewer_id) DO NOTHING
+        RETURNING story_id
+      \`;
+      if (!rows.length) {
+        const exists = await auth.sql\`
+          SELECT id FROM social_stories
+          WHERE id = \${storyId} AND status = 'published' AND expires_at > now()
+            AND (author_id = \${auth.profile.id} OR visibility = 'public'
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = author_id))
+          LIMIT 1
+        \`;
+        if (!exists.length) return res.status(404).json({ ok: false, error: "Story not found or expired." });
+      }
+      return res.status(200).json({ ok: true, viewed: true });
+    }
+    if (action === "update_profile") {
+      const displayName = typeof req.body?.displayName === "string" ? req.body.displayName.trim() : "";
+      const username = typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : "";
+      const bio = typeof req.body?.bio === "string" ? req.body.bio.trim() : "";
+      const websiteUrl = typeof req.body?.websiteUrl === "string" ? req.body.websiteUrl.trim() : "";
+      const location = typeof req.body?.location === "string" ? req.body.location.trim() : "";
+      const avatarUrl = typeof req.body?.avatarUrl === "string" ? req.body.avatarUrl.trim() : "";
+      if (displayName.length < 2 || displayName.length > 80) return res.status(400).json({ ok: false, error: "Display name must be 2–80 characters." });
+      if (!/^[a-z0-9_]{3,24}$/.test(username)) return res.status(400).json({ ok: false, error: "Username must be 3–24 characters using letters, numbers or underscores." });
+      if (bio.length > 280 || location.length > 100) return res.status(400).json({ ok: false, error: "Bio must be 280 characters or fewer and location 100 characters or fewer." });
+      const safeUrl = (value) => {
+        if (!value) return null;
+        try { const parsed = new URL(value); return parsed.protocol === "https:" ? parsed.toString() : null; } catch { return null; }
+      };
+      const safeWebsite = safeUrl(websiteUrl);
+      const safeAvatar = safeUrl(avatarUrl);
+      if ((websiteUrl && !safeWebsite) || (avatarUrl && !safeAvatar)) return res.status(400).json({ ok: false, error: "Website and avatar links must use HTTPS." });
+      try {
+        await auth.sql\`
+          INSERT INTO user_profile_details (user_profile_id, username, avatar_url, bio, website_url, location)
+          VALUES (\${auth.profile.id}, \${username}, \${safeAvatar}, \${bio}, \${safeWebsite}, \${location || null})
+          ON CONFLICT (user_profile_id) DO UPDATE SET
+            username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url, bio = EXCLUDED.bio,
+            website_url = EXCLUDED.website_url, location = EXCLUDED.location, updated_at = now()
+        \`;
+      } catch (error) {
+        if (error?.code === "23505") return res.status(409).json({ ok: false, error: "That username is already taken." });
+        throw error;
+      }
+      const updated = await auth.sql\`
+        UPDATE user_profiles SET display_name = \${displayName}
+        WHERE id = \${auth.profile.id}
+        RETURNING id, display_name, account_type
+      \`;
+      return res.status(200).json({ ok: true, profile: { ...updated[0], username, avatar_url: safeAvatar, bio, website_url: safeWebsite, location: location || null } });
+    }
     if (action === "mark_notification_read") {
       const notificationId = String(req.body?.notificationId || "");
       if (!uuidPattern.test(notificationId)) return res.status(400).json({ ok: false, error: "Invalid notification." });
