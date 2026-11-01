@@ -19,8 +19,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS user_account_types_one_primary_idx
 -- Backfill every existing account's current type as its primary active workspace.
 INSERT INTO user_account_types (user_profile_id, account_type, status, is_primary)
 SELECT id, account_type, 'active', true FROM user_profiles
-ON CONFLICT (user_profile_id, account_type) DO UPDATE
-SET status = 'active', is_primary = true, updated_at = now();
+ON CONFLICT (user_profile_id, account_type) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS user_profile_details (
   user_profile_id uuid PRIMARY KEY REFERENCES user_profiles(id) ON DELETE CASCADE,
