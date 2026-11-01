@@ -1552,3 +1552,47 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
 }
+
+
+/* Restore Nochalant's original punchier brand palette over the soft 3D surfaces. */
+:root{--bg:#0c0d0b;--surface:#141612;--surface-2:#1b1e18;--ink:#f3f2e9;--muted:#a0a294;--line:#2b3025;--lime:#d5f36a;--orange:#ff7048;--gold:#f2c96d}
+/* A draggable circular floating player launcher. */
+.player-reopen,.member-player-reopen{
+  position:fixed;z-index:78;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));
+  width:66px;height:66px;min-width:66px;min-height:66px;padding:0;
+  display:grid;place-items:center;gap:0;border-radius:50%!important;
+  color:var(--lime);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
+  transition:box-shadow .2s ease,filter .2s ease,transform .2s ease;
+  background:linear-gradient(145deg,#292d22,#11140f)!important;
+  border:1px solid rgba(213,243,106,.34)!important;
+  box-shadow:8px 10px 24px rgba(0,0,0,.48),inset 1px 1px 0 rgba(255,255,255,.12),inset -2px -3px 6px rgba(0,0,0,.35)!important;
+}
+.player-reopen svg{width:27px;height:27px;display:block}
+.player-reopen span{display:none!important}
+.player-reopen:active{cursor:grabbing;transform:scale(.96)}
+.player-reopen:hover{filter:brightness(1.12);box-shadow:10px 13px 28px rgba(0,0,0,.55),0 0 0 4px rgba(213,243,106,.08),inset 1px 1px 0 rgba(255,255,255,.12)!important}
+.player-reopen:focus-visible{outline:2px solid var(--lime);outline-offset:4px}
+/* Make the editorial visual and voting experience one integrated Hot or Trash card. */
+#hot-or-trash.split-section{gap:0;align-items:stretch;overflow:hidden;border:1px solid rgba(213,243,106,.17);border-radius:20px;background:linear-gradient(145deg,#171a13,#0f110d);box-shadow:10px 14px 34px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.045)}
+#hot-or-trash .jury-image{height:100%;min-height:365px;border:0;border-radius:0;overflow:hidden}
+#hot-or-trash .jury-image img{height:100%;min-height:365px;object-fit:cover}
+#hot-or-trash .jury-panel{height:100%;border:0;border-radius:0;background:transparent;padding:clamp(22px,3vw,34px)}
+#hot-or-trash .opinion-rail{margin:22px 0 4px;padding:16px 0 0;border-top:1px solid rgba(213,243,106,.22);border-bottom:0;overflow:hidden}
+#hot-or-trash .opinion-rail-top{color:var(--lime);font-size:9px;letter-spacing:.13em}
+#hot-or-trash .opinion-chip{width:min(290px,76vw);min-height:104px;border-radius:13px;border:1px solid rgba(213,243,106,.19);background:linear-gradient(145deg,#20231b,#12140f);box-shadow:5px 7px 16px rgba(0,0,0,.26),inset 1px 1px 0 rgba(255,255,255,.06)}
+#hot-or-trash .opinion-chip:hover{border-color:rgba(213,243,106,.55)}
+#hot-or-trash .opinion-topic{color:var(--lime)}
+#hot-or-trash .jury-options{margin-top:22px}
+#hot-or-trash .jury-option.hot{background:linear-gradient(145deg,#e1f78a,#c4e454);color:#171b0d;border-radius:12px;box-shadow:inset 0 1px 0 #fff8,0 7px 16px rgba(0,0,0,.22)}
+#hot-or-trash .jury-option.trash{background:linear-gradient(145deg,#ff805a,#d94f31);color:#fff;border-radius:12px;box-shadow:inset 0 1px 0 #ffffff44,0 7px 16px rgba(0,0,0,.22)}
+#hot-or-trash .vote-results{padding-top:15px;border-top:1px solid rgba(255,255,255,.09)}
+#hot-or-trash .vote-bar{height:8px;border-radius:99px;background:rgba(255,112,72,.22)}
+#hot-or-trash .vote-bar i{border-radius:99px;background:linear-gradient(90deg,#b9d94e,#d5f36a)}
+#hot-or-trash .vote-bar-trash i{background:linear-gradient(90deg,#d64e32,#ff805a)}
+@media(max-width:760px){
+ #hot-or-trash.split-section{display:flex;flex-direction:column;gap:0}
+ #hot-or-trash .jury-image,#hot-or-trash .jury-image img{height:auto;min-height:0;max-height:340px;aspect-ratio:16/10}
+ #hot-or-trash .jury-panel{padding:22px 18px 24px}
+ .player-reopen,.member-player-reopen{right:14px;bottom:calc(16px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){.player-reopen{transition:none!important}}
