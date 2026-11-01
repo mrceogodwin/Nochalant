@@ -99,8 +99,23 @@ export async function handlePromotions(req, res) {
       const reference = "NCH-PROMO-" + randomUUID().replaceAll("-", "").toUpperCase();
       const amount = (Number(campaign.budget_minor) / 100).toFixed(2);
       const baseUrl = apiKey.startsWith("sk_sandbox_") ? "https://sandbox-api.bachs.io" : "https://api.bachs.io";
-      const orderRows = await auth.sql`INSERT INTO payment_orders (user_id, campaign_id, order_type, provider, provider_reference, idempotency_key, amount_minor, currency, status, metadata) VALUES (${auth.profile.id}, ${campaign.id}, 'promotion', 'bachs', ${reference}, ${reference}, ${campaign.budget_minor}, ${campaign.currency}, 'created', ${JSON.stringify({ campaign_id: campaign.id, package_title: campaign.title })}::jsonb) RETURNING id`;
-      const orderId = orderRows[0].id;
+      // Reserve the campaign's single active checkout under a row lock. Concurrent
+      // requests cannot create multiple provider sessions for the same campaign.
+      const reservation = await auth.sql.transaction([
+        auth.sql`SELECT id FROM promotion_campaigns WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id} FOR UPDATE`,
+        auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference}
+          WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id}
+            AND status = 'pending_payment' AND payment_status IN ('unpaid','failed')
+          RETURNING id`,
+        auth.sql`INSERT INTO payment_orders (user_id, campaign_id, order_type, provider, provider_reference, idempotency_key, amount_minor, currency, status, metadata)
+          SELECT ${auth.profile.id}, ${campaign.id}, 'promotion', 'bachs', ${reference}, ${reference},
+            ${campaign.budget_minor}, ${campaign.currency}, 'created',
+            ${JSON.stringify({ campaign_id: campaign.id, package_title: campaign.title })}::jsonb
+          WHERE EXISTS (SELECT 1 FROM promotion_campaigns WHERE id = ${campaign.id} AND payment_reference = ${reference})
+          RETURNING id`
+      ]);
+      const orderId = reservation[2]?.[0]?.id;
+      if (!orderId) return res.status(409).json({ ok: false, error: "A checkout is already being prepared for this campaign. Please wait and refresh your campaign status." });
       const checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
         method: "POST",
         headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
@@ -114,11 +129,13 @@ export async function handlePromotions(req, res) {
       });
       const checkout = await checkoutResponse.json().catch(() => ({}));
       if (!checkoutResponse.ok || !checkout.checkout_url || !checkout.checkout_id) {
-        await auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error || checkout.message || "Checkout creation failed" })}::jsonb WHERE id = ${orderId}`;
+        await auth.sql.transaction([
+          auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: checkout.error || checkout.message || "Checkout creation failed" })}::jsonb WHERE id = ${orderId}`,
+          auth.sql`UPDATE promotion_campaigns SET payment_status = 'failed' WHERE id = ${campaign.id} AND payment_reference = ${reference} AND payment_status = 'pending'`
+        ]);
         return res.status(502).json({ ok: false, error: "Bachs could not create checkout. Please try again." });
       }
       await auth.sql`UPDATE payment_orders SET status = 'pending', checkout_url = ${checkout.checkout_url}, metadata = metadata || ${JSON.stringify({ checkout_id: checkout.checkout_id })}::jsonb WHERE id = ${orderId}`;
-      await auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference} WHERE id = ${campaign.id} AND status = 'pending_payment' AND payment_status IN ('unpaid','failed')`;
       return res.status(200).json({ ok: true, checkoutUrl: checkout.checkout_url, checkoutId: checkout.checkout_id });
     }
     if (action === "admin_queue") {
