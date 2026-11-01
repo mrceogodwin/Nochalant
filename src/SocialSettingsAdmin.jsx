@@ -45,11 +45,11 @@ export default function SocialSettingsAdmin() {
   return <section className="promotion-admin-panel social-settings-admin">
     <div className="artists-heading"><div><span className="eyebrow">SOCIAL · FEATURE CONTROLS</span><h2>Social <em>permissions.</em></h2><p>Video posting is off by default. Only the Super Admin can change this backend setting.</p></div><button className="button button-outline" type="button" onClick={load} disabled={busy}>Refresh</button></div>
     <div className="social-video-setting-row">
-      <div><strong>Member video posting</strong><p>{ready ? (enabled ? "Enabled in backend. Posting UI remains subject to the video upload and moderation pipeline." : "Disabled. Members cannot publish videos.") : "Waiting for the Social settings database migration."}</p></div>
-      <button type="button" className={enabled && ready ? "button button-green" : "button button-outline"} disabled={busy || !ready} onClick={() => save(!enabled)}>{busy ? "Saving…" : enabled ? "Turn off" : "Turn on"}</button>
+      <div><strong>Member video posting</strong><p>{ready ? (enabled ? "Enabled in backend. Posting UI remains subject to the video upload and moderation pipeline." : "Disabled. Secure video publishing is still being built; members cannot publish videos.") : "Social settings could not be loaded."}</p></div>
+      <button type="button" className={enabled && ready ? "button button-green" : "button button-outline"} disabled={busy || !ready || !enabled} onClick={() => save(false)}>{busy ? "Saving…" : enabled ? "Turn off" : "Unavailable"}</button>
     </div>
     {error && <p className="promotion-message" role="alert">{error}</p>}
     {notice && <p className="promotion-message" role="status">{notice}</p>}
-    <small className="fine-print">This switch controls the server-side feature flag. Enabling it does not publish a video composer until the upload, scanning, storage and moderation workflow is deployed.</small>
+    <small className="fine-print">Video publishing is locked off until secure uploads, malware scanning, quarantine, storage verification and Super Admin moderation are deployed and tested. The backend also rejects attempts to enable it prematurely.</small>
   </section>;
 }
