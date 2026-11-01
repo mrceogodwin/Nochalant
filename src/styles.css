@@ -1389,3 +1389,56 @@ body.navigation-drawer-open{overflow:hidden}
 
 .member-player-reopen{bottom:108px;z-index:76;right:14px}
 @media(max-width:600px){.member-player-reopen{bottom:108px;right:12px}}
+
+/* Dedicated signed-in Music destination */
+.music-hub{padding-top:42px;padding-bottom:150px;min-height:70vh}
+.music-hub-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:34px 0 38px;border-bottom:1px solid #343a2b}
+.music-hub-hero h1{margin:13px 0;font:800 clamp(42px,8vw,76px)/.98 'Space Grotesk',sans-serif;letter-spacing:-3px}
+.music-hub-hero h1 em,.music-hub-section h2 em{font-style:normal;color:var(--lime)}
+.music-hub-hero p{max-width:470px;color:#a9ad9e;font-size:14px;line-height:1.7}
+.music-hub-mark{width:116px;height:116px;flex:none;display:grid;place-items:center;border:1px solid #56613b;border-radius:28px;background:linear-gradient(145deg,#242b18,#10130d);color:var(--lime);font-size:64px}
+.music-hub-tabs{display:flex;gap:8px;overflow-x:auto;padding:20px 0 14px;scrollbar-width:none}
+.music-hub-tabs button,.music-genre-pills button{flex:none;padding:11px 15px;border:1px solid #343a2b;border-radius:8px;background:#141711;color:#c7cabb;font-size:11px;font-weight:800;white-space:nowrap}
+.music-hub-tabs button.active,.music-genre-pills button.active{background:var(--lime);border-color:var(--lime);color:#11140c}
+.music-hub-search{display:flex;align-items:center;gap:10px;max-width:540px;margin:8px 0 34px;padding:0 14px;border:1px solid #343a2b;border-radius:9px;background:#11140f;color:var(--lime)}
+.music-hub-search input{width:100%;padding:14px 0;border:0;outline:0;background:transparent;color:#f2f3e9;font:inherit;font-size:13px}
+.music-hub-section{margin:34px 0 48px}
+.music-hub-section-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:20px}
+.music-hub-section-heading h2{margin:8px 0;font:800 clamp(27px,4vw,42px)/1.05 'Space Grotesk',sans-serif;letter-spacing:-1.5px}
+.music-hub-section-heading p{margin:0;color:#9fa494;font-size:12px;line-height:1.6}
+.music-hub-section-heading>span{flex:none;color:var(--lime);font-size:9px;font-weight:800;letter-spacing:.1em}
+.music-release-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.music-release-card{min-width:0;padding:10px;border:1px solid #2f3528;border-radius:12px;background:#12150f}
+.music-release-art{position:relative;width:100%;aspect-ratio:1;display:grid;place-items:center;overflow:hidden;border:0;border-radius:8px;background:#202719;color:var(--lime);font-size:48px}
+.music-release-art img{width:100%;height:100%;object-fit:cover}
+.music-release-art i{position:absolute;right:10px;bottom:10px;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;background:var(--lime);color:#10130b;font-style:normal;font-size:12px}
+.music-release-art:disabled i{opacity:.4}
+.music-release-meta{display:flex;justify-content:space-between;gap:8px;margin:12px 0 7px;color:#9da58b;font-size:9px}
+.music-release-meta b{color:var(--lime)}
+.music-release-card>strong{display:block;overflow:hidden;color:#f1f2e9;font:750 14px 'Space Grotesk',sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.music-artist-link{display:block;max-width:100%;overflow:hidden;margin:5px 0;border:0;background:none;color:#aeb39f;text-overflow:ellipsis;white-space:nowrap;font-size:11px;text-align:left}
+.music-release-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;color:#909887;font-size:9px}
+.music-release-foot button{padding:7px 9px;border:1px solid #4c5934;border-radius:5px;background:#151a10;color:var(--lime);font-size:9px;font-weight:900}
+.music-release-foot button:disabled{opacity:.4}
+.music-hub-empty{padding:28px 20px;border:1px dashed #424a34;border-radius:10px;color:#a4a995;font-size:12px;line-height:1.7;text-align:center}
+.music-genre-grid,.music-playlist-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.music-genre-grid button,.music-playlist-grid article{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:104px;padding:18px;border:1px solid #343a2b;border-radius:10px;background:linear-gradient(145deg,#1b2115,#10130e);color:#f0f1e8;text-align:left;font:750 15px 'Space Grotesk',sans-serif}
+.music-genre-grid button span,.music-playlist-grid small{color:#a2aa8e;font:500 10px 'DM Sans',sans-serif}
+.music-playlist-grid article>span{color:var(--lime);font-size:10px}
+.music-playlist-grid article>b{font:750 15px 'Space Grotesk',sans-serif}
+.music-genre-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.music-chart-list{border-top:1px solid #343a2b}
+.music-chart-row{display:grid;grid-template-columns:34px 48px minmax(0,1fr) auto 36px;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid #2b3025}
+.music-chart-rank{color:var(--lime);font:800 15px 'Space Grotesk',sans-serif}
+.music-chart-row img,.music-chart-placeholder{width:48px;height:48px;display:grid;place-items:center;object-fit:cover;border-radius:6px;background:#202719;color:var(--lime)}
+.music-chart-row>div{display:grid;gap:4px;min-width:0}
+.music-chart-row>div strong{overflow:hidden;color:#f0f1e8;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.music-chart-row>div small,.music-chart-plays{color:#9da58e;font-size:9px}
+.music-chart-row>button{width:34px;height:34px;border:1px solid #4d5937;border-radius:50%;background:#151a10;color:var(--lime)}
+.music-chart-row>button:disabled{opacity:.4}
+.music-artist-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.music-artist-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border:1px solid #303628;border-radius:10px;background:#12150f;color:#f0f1e8}
+.music-artist-card img,.music-artist-placeholder{width:88px;height:88px;display:grid;place-items:center;object-fit:cover;border-radius:50%;background:#252c19;color:var(--lime);font-size:30px}
+.music-artist-card b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.music-artist-card small{color:#a0a690;font-size:9px}
+@media(max-width:700px){.music-hub{padding-top:20px}.music-hub-hero{padding:24px 0 27px}.music-hub-mark{width:76px;height:76px;border-radius:18px;font-size:42px}.music-hub-hero h1{font-size:48px;letter-spacing:-2px}.music-hub-hero p{font-size:12px}.music-hub-tabs{margin-right:-16px}.music-release-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.music-release-card{padding:7px}.music-genre-grid,.music-playlist-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.music-artist-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.music-artist-card img,.music-artist-placeholder{width:68px;height:68px}.music-chart-row{grid-template-columns:25px 42px minmax(0,1fr) 32px;gap:8px}.music-chart-row img,.music-chart-placeholder{width:42px;height:42px}.music-chart-plays{display:none}.music-hub-section-heading>span{font-size:8px}}
