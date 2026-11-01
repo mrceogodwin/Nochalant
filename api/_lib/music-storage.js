@@ -14,7 +14,7 @@ function getMusicStorage() {
 
 function assertSafeObjectKey(objectKey) {
   if (typeof objectKey !== "string" || objectKey.length < 8 || objectKey.length > 1024 ||
-      objectKey.startsWith("/") || objectKey.includes("\\") || objectKey.includes("\\0") ||
+      objectKey.startsWith("/") || objectKey.includes("\\") || objectKey.includes("\0") ||
       !/^(artists|promotions)\/[A-Za-z0-9._/-]+$/.test(objectKey)) {
     throw new Error("Invalid Neon Storage object reference.");
   }
