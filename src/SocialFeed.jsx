@@ -1,50 +1,157 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getAuthToken } from "./auth.js";
 
-export default function SocialFeed({ currentUser, onJoin, onLogin, onShare }) {
-  const [items, setItems] = useState([]);
+async function socialRequest({ method = "GET", query = "", body, signal }) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Your session has expired. Please sign in again.");
+  const response = await fetch("/api/social" + query, {
+    method,
+    signal,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      Authorization: "Bearer " + token,
+      ...(body ? { "Content-Type": "application/json" } : {})
+    },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.ok) throw new Error(data.error || "Nochalant Social is temporarily unavailable.");
+  return data;
+}
+
+function initials(name) {
+  return String(name || "N").trim().split(/\s+/).slice(0, 2).map(part => part[0] || "").join("").toUpperCase() || "N";
+}
+
+function timeAgo(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Just now";
+  const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return minutes + "m";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + "h";
+  const days = Math.floor(hours / 24);
+  return days < 7 ? days + "d" : date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+export default function SocialFeed({ currentUser, onJoin, onLogin }) {
+  const [feed, setFeed] = useState("for-you");
+  const [posts, setPosts] = useState([]);
+  const [suggestedMembers, setSuggestedMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [visibility, setVisibility] = useState("public");
+  const [posting, setPosting] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [expandedComments, setExpandedComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [busyAction, setBusyAction] = useState("");
 
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-
-    if (!currentUser?.id) {
-      setItems([]);
-      setError("");
-      setLoading(false);
-      return () => { active = false; controller.abort(); };
-    }
-
+  const loadFeed = useCallback(async (signal) => {
     setLoading(true);
     setError("");
-    (async () => {
-      try {
-        const token = await getAuthToken();
-        if (!token) throw new Error("Your session has expired. Please sign in again.");
-        const response = await fetch("/api/social/feed", {
-          signal: controller.signal,
-          headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-          cache: "no-store"
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok) throw new Error(data.error || "The social feed is temporarily unavailable.");
-        if (active) setItems(Array.isArray(data.posts) ? data.posts : []);
-      } catch (err) {
-        if (active && err?.name !== "AbortError") setError(err.message || "Could not load Nochalant Social.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
+    try {
+      const data = await socialRequest({ query: "?feed=" + feed, signal });
+      setPosts(Array.isArray(data.posts) ? data.posts : []);
+      setSuggestedMembers(Array.isArray(data.suggestedMembers) ? data.suggestedMembers : []);
+    } catch (err) {
+      if (err?.name !== "AbortError") setError(err.message || "Could not load Nochalant Social.");
+    } finally {
+      setLoading(false);
+    }
+  }, [feed]);
 
-    return () => { active = false; controller.abort(); };
-  }, [currentUser?.id]);
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setPosts([]);
+      setSuggestedMembers([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    loadFeed(controller.signal);
+    return () => controller.abort();
+  }, [currentUser?.id, loadFeed]);
+
+  const createPost = async (event) => {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body || posting) return;
+    setPosting(true);
+    setNotice("");
+    try {
+      await socialRequest({ method: "POST", body: { action: "create_post", body, visibility } });
+      setDraft("");
+      setComposerOpen(false);
+      setFeed("for-you");
+      await loadFeed();
+      setNotice("Your post is live.");
+    } catch (err) {
+      setNotice(err.message || "Your post could not be published.");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const toggleLike = async (post) => {
+    const key = "like:" + post.id;
+    if (busyAction) return;
+    setBusyAction(key);
+    try {
+      const data = await socialRequest({ method: "POST", body: { action: "toggle_like", postId: post.id } });
+      setPosts(items => items.map(item => item.id === post.id
+        ? { ...item, viewer_liked: data.liked, like_count: Math.max(0, Number(item.like_count || 0) + (data.liked ? 1 : -1)) }
+        : item));
+    } catch (err) { setNotice(err.message); }
+    finally { setBusyAction(""); }
+  };
+
+  const toggleComments = async (post) => {
+    const opening = !expandedComments[post.id];
+    setExpandedComments(value => ({ ...value, [post.id]: opening }));
+    if (opening && !comments[post.id]) {
+      try {
+        const data = await socialRequest({ query: "?commentsFor=" + encodeURIComponent(post.id) });
+        setComments(value => ({ ...value, [post.id]: data.comments || [] }));
+      } catch (err) { setNotice(err.message); }
+    }
+  };
+
+  const submitComment = async (event, post) => {
+    event.preventDefault();
+    const body = String(commentDrafts[post.id] || "").trim();
+    if (!body || busyAction) return;
+    setBusyAction("comment:" + post.id);
+    try {
+      const data = await socialRequest({ method: "POST", body: { action: "comment", postId: post.id, body } });
+      setComments(value => ({ ...value, [post.id]: [...(value[post.id] || []), data.comment] }));
+      setCommentDrafts(value => ({ ...value, [post.id]: "" }));
+      setPosts(items => items.map(item => item.id === post.id ? { ...item, comment_count: Number(item.comment_count || 0) + 1 } : item));
+    } catch (err) { setNotice(err.message); }
+    finally { setBusyAction(""); }
+  };
+
+  const toggleFollow = async (member) => {
+    if (busyAction) return;
+    const key = "follow:" + member.id;
+    setBusyAction(key);
+    try {
+      await socialRequest({ method: "POST", body: { action: "follow", targetUserId: member.id } });
+      setSuggestedMembers(items => items.filter(item => item.id !== member.id));
+      setPosts(items => items.map(item => item.author_id === member.id ? { ...item, viewer_follows_author: true } : item));
+      setNotice("You're now following " + member.display_name + ".");
+    } catch (err) { setNotice(err.message); }
+    finally { setBusyAction(""); }
+  };
 
   if (!currentUser?.id) {
     return <div className="social-feed-shell social-member-gate">
       <div className="social-feed-heading">
-        <div><span className="eyebrow">NOCHALANT · MEMBERS ONLY</span><h2 id="social-title">Your people. <em>Your space.</em></h2><p>Nochalant Social is a private community for registered members.</p></div>
+        <div><span className="eyebrow">NOCHALANT · MEMBERS ONLY</span><h2 id="social-title">Your people. <em>Your space.</em></h2><p>A home for the voices, creators and conversations shaping culture.</p></div>
         <span className="social-aside-mark" aria-hidden="true">N<span>.</span></span>
       </div>
       <div className="social-feed-state"><strong>Come inside the culture.</strong><p>Create a free Nochalant account or sign in to discover people, share your perspective and join conversations.</p><div className="social-member-gate-actions"><button className="button button-green" type="button" onClick={onJoin}>Create your account</button><button className="button button-outline" type="button" onClick={onLogin}>Sign in</button></div></div>
@@ -52,19 +159,64 @@ export default function SocialFeed({ currentUser, onJoin, onLogin, onShare }) {
   }
 
   return <div className="social-feed-shell">
-    <div className="social-feed-heading">
-      <div><span className="eyebrow">THE PEOPLE · THE CONVERSATION</span><h2 id="social-title">Nochalant <em>Social.</em></h2><p>Community takes on music, entertainment, lifestyle and the culture.</p></div>
-      <button className="button button-green" type="button" onClick={onShare}>＋ Share your take</button>
-    </div>
-    <div className="social-feed-layout">
-      <div className="social-feed-list">
-        {loading ? <div className="social-feed-state">Loading your community conversation…</div> : error ? <div className="social-feed-state" role="status">{error}</div> : items.length ? items.map(item => <article className="social-post" key={item.id}>
-          <div className="social-post-top"><span className="social-avatar">{(item.author_name || "N").trim().slice(0,1).toUpperCase()}</span><div><strong>{item.author_name || "Nochalant member"}</strong><small>{item.topic || "Culture"} · Community opinion</small></div><span className="social-post-brand">NOCHALANT</span></div>
-          <p className="social-post-body">{item.body}</p>
-          <div className="social-post-foot"><span>Published community opinion</span><span>Respect the conversation</span></div>
-        </article>) : <div className="social-feed-state"><strong>The conversation starts here.</strong><p>Approved community opinions will appear here once members start sharing.</p><button className="button button-outline" type="button" onClick={onShare}>Be the first to share</button></div>}
+    <header className="social-network-header">
+      <div><span className="eyebrow">THE PEOPLE · THE CULTURE</span><h1 id="social-title">Nochalant <em>Social.</em></h1><p>What's happening in your world?</p></div>
+      <button className="social-create-top" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋ <span>Create post</span></button>
+    </header>
+
+    {suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
+      <div className="social-rail-heading"><div><span className="eyebrow">FIND YOUR PEOPLE</span><h2>Creators & community</h2></div><span>MEMBERS TO DISCOVER</span></div>
+      <div className="social-people-list">
+        {suggestedMembers.map(member => <article className="social-person" key={member.id}>
+          <span className="social-person-avatar">{initials(member.display_name)}</span>
+          <strong title={member.display_name}>{member.display_name}</strong>
+          <small>{String(member.account_type || "fan").replaceAll("_", " ")}</small>
+          <button type="button" onClick={() => toggleFollow(member)} disabled={busyAction === "follow:" + member.id}>＋ Follow</button>
+        </article>)}
       </div>
-      <aside className="social-feed-aside"><span className="social-aside-mark">N<span>.</span></span><h3>Your voice belongs in the culture.</h3><p>Share your perspective. Keep it respectful. Help shape the conversation.</p><button className="button button-outline full-width" type="button" onClick={onShare}>Write an opinion</button></aside>
+    </section>}
+
+    <div className="social-feed-toolbar">
+      <div className="social-feed-tabs" role="tablist" aria-label="Choose your feed">
+        <button type="button" role="tab" aria-selected={feed === "for-you"} className={feed === "for-you" ? "active" : ""} onClick={() => setFeed("for-you")}>For you</button>
+        <button type="button" role="tab" aria-selected={feed === "following"} className={feed === "following" ? "active" : ""} onClick={() => setFeed("following")}>Following</button>
+      </div>
+      <span className="social-feed-live"><i/> COMMUNITY FEED</span>
     </div>
+
+    {notice && <div className="social-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
+
+    {composerOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !posting) setComposerOpen(false); }}>
+      <form className="social-composer" onSubmit={createPost} aria-label="Create a post">
+        <div className="social-composer-head"><div><span className="eyebrow">START A CONVERSATION</span><h2>Create a post</h2></div><button type="button" onClick={() => setComposerOpen(false)} aria-label="Close composer">×</button></div>
+        <div className="social-composer-author"><span className="social-avatar">{initials(currentUser.name || currentUser.displayName || currentUser.email)}</span><div><strong>{currentUser.name || currentUser.displayName || "You"}</strong><small>Posting to Nochalant Social</small></div></div>
+        <textarea value={draft} onChange={event => setDraft(event.target.value)} maxLength={10000} rows={6} placeholder="What's happening in the culture? Share your take…" autoFocus required/>
+        <div className="social-composer-bottom"><label>Audience <select value={visibility} onChange={event => setVisibility(event.target.value)}><option value="public">Everyone</option><option value="followers">Followers only</option></select></label><span>{draft.length.toLocaleString()} / 10,000</span><button className="button button-green" type="submit" disabled={!draft.trim() || posting}>{posting ? "Publishing…" : "Publish post"}</button></div>
+      </form>
+    </div>}
+
+    <div className="social-network-layout">
+      <main className="social-network-posts">
+        {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? posts.map(post => <article className="social-network-post" key={post.id}>
+          <div className="social-network-post-head"><span className="social-avatar">{initials(post.author_name)}</span><div className="social-author-copy"><strong>{post.author_name || "Nochalant member"}</strong><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== currentUser.id && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
+          <p className="social-network-post-body">{post.body}</p>
+          <div className="social-network-post-actions">
+            <button type="button" className={post.viewer_liked ? "liked" : ""} onClick={() => toggleLike(post)} disabled={busyAction === "like:" + post.id} aria-label={post.viewer_liked ? "Unlike post" : "Like post"}><span>{post.viewer_liked ? "♥" : "♡"}</span>{Number(post.like_count || 0).toLocaleString()} <small>Likes</small></button>
+            <button type="button" onClick={() => toggleComments(post)} aria-expanded={!!expandedComments[post.id]}><span>▢</span>{Number(post.comment_count || 0).toLocaleString()} <small>Comments</small></button>
+            <span className="social-post-visibility">{post.visibility === "followers" ? "FOLLOWERS" : "PUBLIC"}</span>
+          </div>
+          {expandedComments[post.id] && <section className="social-comments">
+            {(comments[post.id] || []).map(comment => <article className="social-comment" key={comment.id}><span className="social-comment-avatar">{initials(comment.author_name)}</span><div><strong>{comment.author_name}</strong><p>{comment.body}</p><small>{timeAgo(comment.created_at)}</small></div></article>)}
+            <form onSubmit={event => submitComment(event, post)} className="social-comment-form"><input value={commentDrafts[post.id] || ""} onChange={event => setCommentDrafts(value => ({ ...value, [post.id]: event.target.value }))} maxLength={4000} placeholder="Write a reply…" aria-label="Write a reply"/><button type="submit" disabled={!(commentDrafts[post.id] || "").trim() || busyAction === "comment:" + post.id}>Reply</button></form>
+          </section>}
+        </article>) : <div className="social-feed-state"><strong>{feed === "following" ? "Your Following feed is quiet." : "The conversation starts here."}</strong><p>{feed === "following" ? "Follow creators and members to see their posts here." : "Be among the first to share what's happening in your world."}</p><button className="button button-green" type="button" onClick={() => setComposerOpen(true)}>＋ Create your first post</button></div>}
+      </main>
+      <aside className="social-network-aside">
+        <div className="social-aside-card"><span className="social-aside-mark">N<span>.</span></span><span className="eyebrow">NOCHALANT SOCIAL</span><h2>Your voice moves culture.</h2><p>Connect with creators, artists and people shaping entertainment, music and everyday life.</p><button type="button" className="button button-outline full-width" onClick={() => setComposerOpen(true)}>Start a conversation</button></div>
+        <div className="social-aside-note"><strong>Keep it respectful.</strong><p>Build the culture. Credit creators. Make room for different voices.</p></div>
+      </aside>
+    </div>
+
+    <button className="social-floating-create" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋</button>
   </div>;
 }
