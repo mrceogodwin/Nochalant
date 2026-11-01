@@ -1060,3 +1060,9 @@ body.navigation-drawer-open{overflow:hidden}
   .skin-light .main-nav,.skin-light .main-nav.open{background:#fff!important;border-color:#ddd!important}
   .skin-light .drawer-preferences{background:#fff!important}
 }
+
+@media(max-width:760px){
+  .site-header:has(.main-nav.open){backdrop-filter:none;-webkit-backdrop-filter:none}
+  .drawer-backdrop{top:101px}
+  .main-nav,.main-nav.open{top:101px;height:calc(100dvh - 101px)}
+}
