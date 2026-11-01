@@ -39,6 +39,7 @@ function timeAgo(value) {
 export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [feed, setFeed] = useState("for-you");
   const [posts, setPosts] = useState([]);
+  const [viewerProfileId, setViewerProfileId] = useState("");
   const [suggestedMembers, setSuggestedMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +58,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     setError("");
     try {
       const data = await socialRequest({ query: "?feed=" + feed, signal });
+      setViewerProfileId(data.viewerProfileId || "");
       setPosts(Array.isArray(data.posts) ? data.posts : []);
       setSuggestedMembers(Array.isArray(data.suggestedMembers) ? data.suggestedMembers : []);
     } catch (err) {
@@ -198,7 +200,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     <div className="social-network-layout">
       <main className="social-network-posts">
         {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? posts.map(post => <article className="social-network-post" key={post.id}>
-          <div className="social-network-post-head"><span className="social-avatar">{initials(post.author_name)}</span><div className="social-author-copy"><strong>{post.author_name || "Nochalant member"}</strong><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== currentUser.id && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
+          <div className="social-network-post-head"><span className="social-avatar">{initials(post.author_name)}</span><div className="social-author-copy"><strong>{post.author_name || "Nochalant member"}</strong><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
           <p className="social-network-post-body">{post.body}</p>
           <div className="social-network-post-actions">
             <button type="button" className={post.viewer_liked ? "liked" : ""} onClick={() => toggleLike(post)} disabled={busyAction === "like:" + post.id} aria-label={post.viewer_liked ? "Unlike post" : "Like post"}><span>{post.viewer_liked ? "♥" : "♡"}</span>{Number(post.like_count || 0).toLocaleString()} <small>Likes</small></button>
