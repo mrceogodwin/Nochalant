@@ -113,7 +113,7 @@ export default async function handler(req, res) {
       const currentOrder = await sql`SELECT status FROM payment_orders WHERE id = ${order.id} LIMIT 1`;
       const currentCampaign = await sql`SELECT payment_status FROM promotion_campaigns WHERE id = ${order.campaign_id} LIMIT 1`;
       if (currentOrder[0]?.status !== 'successful' || currentCampaign[0]?.payment_status !== 'paid') {
-        await sql`UPDATE payment_webhook_events SET error_message = 'Payment order or campaign could not be fully reconciled; awaiting retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status <> 'processed'`;
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Payment order or campaign could not be fully reconciled; awaiting retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
         return res.status(409).json({ received: false, error: "Payment could not be fully reconciled. Provider retry is required." });
       }
       await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
@@ -128,7 +128,7 @@ export default async function handler(req, res) {
       }
       const orders = await sql`SELECT id, campaign_id, provider_reference FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
       if (!orders.length) {
-        await sql`UPDATE payment_webhook_events SET error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status <> 'processed'`;
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
         return res.status(503).json({ received: false, retry: true });
       }
       await sql.transaction([
