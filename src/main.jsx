@@ -850,46 +850,62 @@ function App() {
       setAuthMessage("Authentication is not configured yet. Please try again later.");
       return;
     }
-    const form = event.currentTarget;
-    const formData = new FormData(form);
+    const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim();
-    const accountType = modal === "signup" ? String(formData.get("accountType") || "fan") : "";
+    const isSignup = modal === "signup";
+    const accountType = isSignup ? String(formData.get("accountType") || "fan") : "";
     setAuthBusy(true);
     setAuthMessage("");
     try {
-      const result = modal === "signup"
+      const result = isSignup
         ? await authClient.signUp.email({ name, email, password })
         : await authClient.signIn.email({ email, password });
       if (result?.error) throw new Error(result.error.message || "Authentication failed.");
+
+      if (isSignup) window.localStorage.setItem("nochalant_pending_account_type", accountType);
       const sessionResult = await authClient.getSession();
-      if (sessionResult?.data?.user) setCurrentUser(sessionResult.data.user);
-      if (modal === "signup") {
-        window.localStorage.setItem("nochalant_pending_account_type", accountType);
+      const signedInUser = sessionResult?.data?.user || null;
+
+      if (!signedInUser && isSignup) {
+        setAuthMessage("Your account was created. Verify your email if requested, then sign in to activate your selected workspace. Your selection has been saved on this device.");
+        return;
       }
-      const pendingAccountType = modal === "signup" ? accountType : window.localStorage.getItem("nochalant_pending_account_type");
-      if (pendingAccountType && sessionResult?.data?.user) {
+      if (signedInUser) setCurrentUser(signedInUser);
+
+      const pendingAccountType = isSignup
+        ? accountType
+        : window.localStorage.getItem("nochalant_pending_account_type");
+      if (pendingAccountType && signedInUser) {
         try {
           const token = await getAuthToken();
-          if (token) {
-            const profileResponse = await fetch("/api/account/type", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ accountType: pendingAccountType })
-            });
-            const profileData = await profileResponse.json().catch(() => ({}));
-            if (!profileResponse.ok || !profileData.ok) throw new Error(profileData.error || "Account type could not be saved.");
-            window.localStorage.removeItem("nochalant_pending_account_type");
-            setAccountProfileRefresh(value => value + 1);
+          if (!token) throw new Error("A secure session token was not available.");
+          const profileResponse = await fetch("/api/account/type", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ accountType: pendingAccountType }),
+            cache: "no-store"
+          });
+          const profileData = await profileResponse.json().catch(() => ({}));
+          if (!profileResponse.ok || !profileData.ok) {
+            throw new Error(profileData.error || "Your selected workspace could not be activated.");
           }
+          window.localStorage.removeItem("nochalant_pending_account_type");
+          setAccountProfileRefresh(value => value + 1);
         } catch (profileError) {
-          console.warn("Account type will be retried after sign-in:", profileError?.message || profileError);
+          console.error("Nochalant workspace activation failed:", profileError?.message || profileError);
+          try { await authClient.signOut(); } catch {}
+          clearRememberedAuthSession();
+          setCurrentUser(null);
+          setAuthMessage(`Your account exists, but the ${ACCOUNT_TYPE_LABELS[pendingAccountType] || pendingAccountType} workspace was not activated. Your selection is saved. Please try signing in again shortly. ${profileError?.message || ""}`.trim());
+          return;
         }
       }
-      setAuthMessage(modal === "signup" ? "Account created. Your selected account type will be activated when your profile is ready." : "You are signed in.");
-      notify(modal === "signup" ? "Your Nochalant account was created." : "Welcome back to Nochalant.");
-      if (sessionResult?.data?.user) setActiveScreen("dashboard");
+
+      setAuthMessage(isSignup ? "Your account and selected workspace are ready." : "You are signed in.");
+      notify(isSignup ? "Your Nochalant account and workspace are ready." : "Welcome back to Nochalant.");
+      if (signedInUser) setActiveScreen("dashboard");
       closeModal();
     } catch (error) {
       setAuthMessage(error?.message || "We couldn't complete that request. Please try again.");
