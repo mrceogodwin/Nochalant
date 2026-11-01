@@ -83,6 +83,7 @@ function App() {
   const [audioQueueIndex, setAudioQueueIndex] = useState(0);
   const [activeAudioTrack, setActiveAudioTrack] = useState(null);
   const trackedPlaysRef = useRef(new Set());
+  const playbackTicketRef = useRef({ trackId: null, ticket: null, issuing: false });
   const artistRailRef = useRef(null);
   const [artistRailPaused, setArtistRailPaused] = useState(false);
   const [opinions, setOpinions] = useState([]);
@@ -191,7 +192,23 @@ function App() {
     audio.volume = audioVolume;
     const updateTime = () => setAudioCurrent(audio.currentTime || 0);
     const updateDuration = () => setAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-    const onPlay = () => { setAudioPlaying(true); setAudioError(false); };
+    const onPlay = () => {
+      setAudioPlaying(true);
+      setAudioError(false);
+      const trackId = activeAudioTrack?.id;
+      if (!trackId || trackedPlaysRef.current.has(trackId) || playbackTicketRef.current.trackId === trackId || playbackTicketRef.current.issuing) return;
+      playbackTicketRef.current = { trackId, ticket: null, issuing: true };
+      fetch("/api/artists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "issue_playback_ticket", trackId })
+      }).then(response => response.json()).then(data => {
+        if (playbackTicketRef.current.trackId !== trackId || !data?.ok || typeof data.ticket !== "string") return;
+        playbackTicketRef.current = { trackId, ticket: data.ticket, issuing: false };
+      }).catch(() => {
+        if (playbackTicketRef.current.trackId === trackId) playbackTicketRef.current = { trackId: null, ticket: null, issuing: false };
+      });
+    };
     const onPause = () => setAudioPlaying(false);
     const onEnded = () => setAudioPlaying(false);
     const onError = () => { setAudioPlaying(false); setAudioError(true); };
@@ -215,28 +232,26 @@ function App() {
 
   useEffect(() => {
     if (!activeAudioTrack?.id) return;
+    const trackId = activeAudioTrack.id;
     const duration = Number(activeAudioTrack.duration_seconds || audioDuration || 0);
     const threshold = duration > 0 && duration < 30 ? Math.ceil(duration * 0.8) : 30;
-    if (audioCurrent < threshold || trackedPlaysRef.current.has(activeAudioTrack.id)) return;
-    trackedPlaysRef.current.add(activeAudioTrack.id);
-    try {
-      let sessionId = window.sessionStorage.getItem("nochalant-audio-session");
-      if (!sessionId) {
-        sessionId = window.crypto.randomUUID();
-        window.sessionStorage.setItem("nochalant-audio-session", sessionId);
-      }
-      fetch("/api/artists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackId: activeAudioTrack.id, sessionId, listenedSeconds: Math.floor(audioCurrent) })
-      }).then(response => response.json()).then(data => {
-        if (!data?.ok || !data.counted) return;
-        setArtists(current => current.map(artist => ({
-          ...artist,
-          tracks: (artist.tracks || []).map(track => track.id === activeAudioTrack.id ? { ...track, plays_count: data.plays_count } : track)
-        })));
-      }).catch(() => {});
-    } catch {}
+    const ticketState = playbackTicketRef.current;
+    if (audioCurrent < threshold || trackedPlaysRef.current.has(trackId) ||
+        ticketState.trackId !== trackId || !ticketState.ticket) return;
+    trackedPlaysRef.current.add(trackId);
+    const ticket = ticketState.ticket;
+    playbackTicketRef.current = { trackId, ticket: null, issuing: false };
+    fetch("/api/artists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "redeem_playback_ticket", trackId, ticket })
+    }).then(response => response.json()).then(data => {
+      if (!data?.ok || !data.counted) return;
+      setArtists(current => current.map(artist => ({
+        ...artist,
+        tracks: (artist.tracks || []).map(track => track.id === trackId ? { ...track, plays_count: data.plays_count } : track)
+      })));
+    }).catch(() => {});
   }, [audioCurrent, audioDuration, activeAudioTrack]);
 
   const filtered = useMemo(() => demoStories.slice(1).filter(item =>
