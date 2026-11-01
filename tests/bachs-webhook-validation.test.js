@@ -26,8 +26,8 @@ test("accepts only bounded string checkout identifiers", () => {
 });
 
 test("matches successful payment only when amount, currency and status agree", () => {
-  const order = { amount_minor: 12500 };
-  assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00", status: "SUCCEEDED" }, order), true);
+  const order = { amount_minor: 12500, currency: "NGN" };
+  assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00", currency: "NGN", status: "SUCCEEDED" }, order), true);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "124.99", currency: "NGN", status: "SUCCEEDED" }, order), false);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "125.001", currency: "NGN", status: "SUCCEEDED" }, order), false);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00.0", currency: "NGN", status: "SUCCEEDED" }, order), false);
