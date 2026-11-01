@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
-import { isValidBachsEventEnvelope, getBachsCheckoutId, matchesBachsSuccessfulPayment } from "./_lib/bachs-webhook-validation.js";
+import { isValidBachsEventEnvelope, getBachsCheckoutId, matchesBachsSuccessfulPayment, parseBachsRefundEvent } from "./_lib/bachs-webhook-validation.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -98,38 +98,34 @@ export default async function handler(req, res) {
     }
 
     if (event.type === "refund.created" || event.type === "refund.paid" || event.type === "refund.failed") {
-      const data = event.data || {};
-      const reference = typeof data.reference === "string" ? data.reference.trim() : "";
-      const refundId = typeof data.refund_id === "string" ? data.refund_id.trim() : "";
-      const chargeId = typeof data.charge_id === "string" ? data.charge_id.trim() : "";
-      const requestedAmount = typeof data.requested_amount === "string" ? data.requested_amount : "";
-      const settledAmount = typeof data.refunded_amount === "string" ? data.refunded_amount : "";
-      const amountText = event.type === "refund.paid" ? settledAmount : requestedAmount;
-      const amountMatch = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(amountText);
-      const amountMinor = amountMatch ? Number(amountMatch[1]) * 100 + Number((amountMatch[2] || "").padEnd(2, "0")) : NaN;
-      if (!reference || reference.length > 128 || !refundId || refundId.length > 200 || !chargeId || !Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+      const refundEvent = parseBachsRefundEvent(event);
+      if (!refundEvent) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Invalid refund event fields' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Invalid refund event");
       }
-      const refunds = await sql`SELECT r.id, r.payment_order_id, r.amount_minor, r.provider_refund_id, o.amount_minor AS order_amount_minor, o.metadata FROM payment_refunds r JOIN payment_orders o ON o.id = r.payment_order_id WHERE r.provider_reference = ${reference} AND o.provider = 'bachs' LIMIT 1`;
+      const refunds = await sql`SELECT r.id, r.payment_order_id, r.amount_minor, r.provider_refund_id, o.amount_minor AS order_amount_minor, o.currency AS order_currency, o.metadata FROM payment_refunds r JOIN payment_orders o ON o.id = r.payment_order_id WHERE r.provider_reference = ${refundEvent.reference} AND o.provider = 'bachs' LIMIT 1`;
       const refund = refunds[0];
       if (!refund) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Refund reference not mapped yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
         return res.status(503).json({ received: false, retry: true });
       }
       const expectedChargeId = typeof refund.metadata?.charge_id === "string" ? refund.metadata.charge_id : "";
-      if (expectedChargeId !== chargeId || (event.type !== "refund.paid" && Number(refund.amount_minor) !== amountMinor) || (event.type === "refund.paid" && amountMinor > Number(refund.amount_minor)) || (refund.provider_refund_id && refund.provider_refund_id !== refundId)) {
-        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Refund reference, charge or amount mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+      const expectedCurrency = String(refund.order_currency || "").trim().toUpperCase();
+      if (expectedChargeId !== refundEvent.chargeId || expectedCurrency !== refundEvent.currency ||
+          (event.type !== "refund.paid" && Number(refund.amount_minor) !== refundEvent.amountMinor) ||
+          (event.type === "refund.paid" && refundEvent.amountMinor > Number(refund.amount_minor)) ||
+          (refund.provider_refund_id && refund.provider_refund_id !== refundEvent.refundId)) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Refund reference, charge, currency or amount mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Refund details did not match the recorded request");
       }
-      const nextStatus = event.type === "refund.paid" ? "successful" : event.type === "refund.failed" ? "failed" : "pending";
       await sql.transaction([
         sql`SELECT id FROM payment_orders WHERE id = ${refund.payment_order_id} FOR UPDATE`,
-        sql`UPDATE payment_refunds SET status = CASE WHEN status = 'successful' THEN 'successful' ELSE ${nextStatus} END, provider_refund_id = ${refundId}, refunded_amount_minor = CASE WHEN ${event.type === "refund.paid"} THEN ${amountMinor} ELSE refunded_amount_minor END, updated_at = now() WHERE id = ${refund.id} AND status IN ('requested','pending','successful')`,
+        sql`UPDATE payment_refunds SET status = CASE WHEN status = 'successful' THEN 'successful' ELSE ${refundEvent.status} END, provider_refund_id = ${refundEvent.refundId}, refunded_amount_minor = CASE WHEN ${event.type === "refund.paid"} THEN ${refundEvent.amountMinor} ELSE refunded_amount_minor END, updated_at = now() WHERE id = ${refund.id} AND status IN ('requested','pending','successful')`,
         sql`UPDATE payment_orders SET status = CASE WHEN COALESCE((SELECT SUM(refunded_amount_minor) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful'),0) >= amount_minor THEN 'refunded' WHEN COALESCE((SELECT SUM(refunded_amount_minor) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful'),0) > 0 THEN 'partially_refunded' ELSE status END, updated_at = now() WHERE id = ${refund.payment_order_id} AND status IN ('successful','partially_refunded','refunded')`,
+        sql`UPDATE promotion_campaigns SET payment_status = 'refunded', status = 'paused' WHERE id = (SELECT campaign_id FROM payment_orders WHERE id = ${refund.payment_order_id}) AND payment_status = 'paid' AND status IN ('pending_review','approved','active','paused') AND (SELECT COALESCE(SUM(refunded_amount_minor),0) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful') >= ${refund.order_amount_minor}`
       ]);
       await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
-      return res.status(200).json({ received: true, refundStatus: nextStatus });
+      return res.status(200).json({ received: true, refundStatus: refundEvent.status });
     }
     if (event.type === "collection.succeeded") {
       const checkoutId = getBachsCheckoutId(event.data);
