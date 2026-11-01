@@ -102,6 +102,7 @@ function App() {
   const [podcastCatalogueLoading, setPodcastCatalogueLoading] = useState(false);
   const [selectedPodcastHost, setSelectedPodcastHost] = useState(null);
   const [memberDockHidden, setMemberDockHidden] = useState(false);
+  const [memberDockTab, setMemberDockTab] = useState("home");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const podcastLibraryItems = [
@@ -380,11 +381,11 @@ function App() {
   }, [currentUser?.id]);
 
   const navigateMemberDock = destination => {
-    if (destination === "home") { setActiveScreen("home"); window.scrollTo({top:0,behavior:"smooth"}); }
-    else if (destination === "music") { setActiveScreen("home"); window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth",block:"start"}),80); }
-    else if (destination === "socials") { setActiveScreen("social"); window.scrollTo({top:0,behavior:"smooth"}); }
+    if (destination === "home") { setMemberDockTab("home"); setActiveScreen("home"); window.scrollTo({top:0,behavior:"smooth"}); }
+    else if (destination === "music") { setMemberDockTab("music"); setActiveScreen("home"); window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth",block:"start"}),80); }
+    else if (destination === "socials") { setMemberDockTab("socials"); setActiveScreen("social"); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "create") { setModal("submit"); }
-    else if (destination === "more") { setMobileMenu(true); window.scrollTo({top:0,behavior:"smooth"}); }
+    else if (destination === "more") { setMemberDockTab("more"); setMobileMenu(true); window.scrollTo({top:0,behavior:"smooth"}); }
   };
 
   useEffect(() => {
@@ -1054,11 +1055,11 @@ function App() {
     </div> : <button className="player-reopen" onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
 
     {currentUser?.id && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
-      <button type="button" className={activeScreen==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
-      <button type="button" className={activeScreen==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
+      <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
+      <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-      <button type="button" className={activeScreen==="social"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
-      <button type="button" onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></svg><span>MORE</span></button>
+      <button type="button" className={memberDockTab==="socials"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
+      <button type="button" className={memberDockTab==="more"?"active":""} onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></svg><span>MORE</span></button>
     </nav>}
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "artist-profile" && <div className="artist-profile-modal">
