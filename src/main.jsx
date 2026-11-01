@@ -1356,7 +1356,7 @@ function App() {
         {selectedPodcastHost && <div className="podcast-host-profile-backdrop" role="presentation" onClick={event=>{if(event.target===event.currentTarget)setSelectedPodcastHost(null);}}><section className="podcast-host-profile-modal" role="dialog" aria-modal="true" aria-label={selectedPodcastHost.host_name+" profile"}><button type="button" className="podcast-host-profile-close" onClick={()=>setSelectedPodcastHost(null)} aria-label="Close profile">×</button><div className="podcast-host-profile-hero">{selectedPodcastHost.host_image_url?<img src={selectedPodcastHost.host_image_url} alt={selectedPodcastHost.host_name}/>:<span className="podcast-host-avatar">N.</span>}<div><span className="eyebrow">NOCHALANT PODCAST · HOST PROFILE</span><h2>{selectedPodcastHost.host_name}</h2><p>{selectedPodcastHost.host_role}</p><span className="podcast-host-location">BENIN CITY · EDO STATE, NIGERIA</span></div></div><div className="podcast-host-profile-body"><span className="eyebrow">ABOUT THE HOST</span><p>{selectedPodcastHost.host_bio}</p><h3>Music catalogue</h3><ul><li><strong>Do Or Die</strong><span>Hunter Of Africa, Gasky & Marvis LA · 9 October 2022</span></li><li><strong>Hunter We Wanna Party</strong></li><li><strong>My Friend & Brother</strong></li></ul><h3>Follow Hunter</h3><div className="podcast-host-socials">{selectedPodcastHost.host_instagram_url&&<a href={selectedPodcastHost.host_instagram_url} target="_blank" rel="noreferrer">Instagram ↗</a>}{selectedPodcastHost.host_tiktok_url&&<a href={selectedPodcastHost.host_tiktok_url} target="_blank" rel="noreferrer">TikTok ↗</a>}</div><small>Music catalogue and professional details are presented from supplied editorial information; further career milestones remain subject to verification.</small></div></section></div>}
         <div className="podcast-library-feature">
           <div className="podcast-library-screen podcast-player-stage">
-            {activePodcastEpisode?.video_url ? <video className="podcast-video" src={activePodcastEpisode.video_url} poster={activePodcastEpisode.thumbnail_url || ""} controls playsInline preload="metadata" /> : <><span className="podcast-screen-mark">N.</span><strong>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(0,1).join(" ")}<br/>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(1).join(" ")}</strong><span>FULL EPISODES · CLIPS · SESSIONS</span></>}
+            {activePodcastEpisode?.video_url ? <video className="podcast-video" src={activePodcastEpisode.video_url} poster={activePodcastEpisode.thumbnail_url || ""} controls playsInline preload="metadata" /> : <><div className="podcast-stage-play" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="M26 19.5 46 32 26 44.5Z"/></svg></div><strong>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(0,1).join(" ")}<br/>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(1).join(" ")}</strong><span>FULL EPISODES · CLIPS · SESSIONS</span></>}
           </div>
           <div className="podcast-library-copy"><span className="eyebrow">{activePodcastEpisode ? "NOW PLAYING" : `SERIES · ${String(selectedPodcastIndex+1).padStart(2,"0")} / ${String(podcastDisplayItems.length).padStart(2,"0")}`}</span><h2>{activePodcastEpisode?.title || podcastDisplayItems[selectedPodcastIndex].title} <em>on Nochalant.</em></h2><p>{activePodcastEpisode?.description || podcastDisplayItems[selectedPodcastIndex].description}</p><span className="podcast-status">{activePodcastEpisode ? "OFFICIAL NOCHALANT EPISODE" : "NEW EPISODES WILL APPEAR HERE"}</span>{activePodcastEpisode && <button className="podcast-clear-selection" type="button" onClick={() => setActivePodcastEpisode(null)}>Back to series</button>}</div>
         </div>
@@ -1417,14 +1417,13 @@ function App() {
             <span>{formatAudioTime(audioDuration)}</span>
           </div>
         </div>
+        <div className="player-inline-queue" aria-label="Track navigation">
+          <button type="button" onClick={() => moveAudioQueue(-1)} disabled={!audioQueue.length} aria-label="Previous track">‹</button>
+          <button type="button" onClick={() => moveAudioQueue(1)} disabled={!audioQueue.length} aria-label="Next track">›</button>
+        </div>
         <button className="player-toggle" onClick={toggleAudio} aria-label={audioPlaying ? "Pause audio" : "Play audio"}><span className={audioPlaying ? "player-pause-symbol" : "player-play-symbol"} aria-hidden="true"/></button>
         <button className="player-close" onClick={() => setAudioPlayerVisible(false)} aria-label="Close player" title="Close player">×</button>
       </section>
-      <div className="player-queue-controls" aria-label="Track navigation">
-        <button type="button" onClick={() => moveAudioQueue(-1)} disabled={!audioQueue.length} aria-label="Previous track">‹ <span>PREVIOUS</span></button>
-        <span>{audioQueue.length ? (audioQueueIndex + 1) + " / " + audioQueue.length : "NO TRACK QUEUE"}</span>
-        <button type="button" onClick={() => moveAudioQueue(1)} disabled={!audioQueue.length} aria-label="Next track"><span>NEXT</span> ›</button>
-      </div>
     </div> : <button type="button" className={"player-reopen"+(currentUser?.id?" member-player-reopen":"")}
       style={playerButtonPosition ? {left:playerButtonPosition.left+"px",top:playerButtonPosition.top+"px",right:"auto",bottom:"auto"} : undefined}
       onPointerDown={handlePlayerButtonPointerDown} onPointerMove={handlePlayerButtonPointerMove}
