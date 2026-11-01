@@ -105,6 +105,152 @@ async function handleTrackDownload(req, res) {
 }
 
 
+
+async function handleSocialNetwork(req, res) {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  res.setHeader("Vary", "Authorization");
+  const auth = await requireActiveUser(req);
+  if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  try {
+    if (req.method === "GET") {
+      const commentsFor = String(req.query?.commentsFor || "");
+      if (commentsFor) {
+        if (!uuidPattern.test(commentsFor)) return res.status(400).json({ ok: false, error: "Invalid post." });
+        const accessible = await auth.sql\`
+          SELECT p.id FROM community_posts p
+          WHERE p.id = \${commentsFor} AND p.status = 'published'
+            AND (p.visibility = 'public' OR p.author_id = \${auth.profile.id}
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+          LIMIT 1
+        \`;
+        if (!accessible.length) return res.status(404).json({ ok: false, error: "Post not found." });
+        const comments = await auth.sql\`
+          SELECT c.id, c.body, c.created_at, u.id AS author_id, u.display_name AS author_name, u.account_type
+          FROM community_comments c JOIN user_profiles u ON u.id = c.author_id
+          WHERE c.post_id = \${commentsFor} AND c.status = 'published' AND u.account_status = 'active'
+          ORDER BY c.created_at ASC LIMIT 100
+        \`;
+        return res.status(200).json({ ok: true, comments });
+      }
+      const feed = req.query?.feed === "following" ? "following" : "for-you";
+      const posts = await auth.sql\`
+        SELECT p.id, p.author_id, p.body, p.visibility, p.created_at,
+          u.display_name AS author_name, u.account_type,
+          (SELECT COUNT(*)::int FROM community_reactions r WHERE r.post_id = p.id AND r.reaction = 'like') AS like_count,
+          (SELECT COUNT(*)::int FROM community_comments c WHERE c.post_id = p.id AND c.status = 'published') AS comment_count,
+          EXISTS (SELECT 1 FROM community_reactions r WHERE r.post_id = p.id AND r.user_id = \${auth.profile.id} AND r.reaction = 'like') AS viewer_liked,
+          (p.author_id <> \${auth.profile.id} AND EXISTS (
+            SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id
+          )) AS viewer_follows_author
+        FROM community_posts p JOIN user_profiles u ON u.id = p.author_id
+        WHERE p.status = 'published' AND u.account_status = 'active'
+          AND (p.author_id = \${auth.profile.id} OR p.visibility = 'public'
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+          AND (\${feed} <> 'following' OR p.author_id = \${auth.profile.id}
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+        ORDER BY p.created_at DESC LIMIT 40
+      \`;
+      const suggestedMembers = await auth.sql\`
+        SELECT u.id, u.display_name, u.account_type
+        FROM user_profiles u
+        WHERE u.id <> \${auth.profile.id} AND u.account_status = 'active'
+          AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = u.id)
+        ORDER BY u.created_at DESC LIMIT 8
+      \`;
+      return res.status(200).json({ ok: true, feed, posts, suggestedMembers });
+    }
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "GET, POST");
+      return res.status(405).json({ ok: false, error: "Method not allowed." });
+    }
+    const action = String(req.body?.action || "");
+    if (action === "create_post") {
+      const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+      const visibility = req.body?.visibility === "followers" ? "followers" : "public";
+      if (!body || body.length > 10000) return res.status(400).json({ ok: false, error: "Write a post of up to 10,000 characters." });
+      const rows = await auth.sql\`
+        INSERT INTO community_posts (author_id, body, visibility, status)
+        VALUES (\${auth.profile.id}, \${body}, \${visibility}, 'published')
+        RETURNING id, author_id, body, visibility, created_at
+      \`;
+      return res.status(201).json({ ok: true, post: { ...rows[0], author_name: auth.profile.display_name, account_type: auth.profile.account_type, like_count: 0, comment_count: 0, viewer_liked: false, viewer_follows_author: false } });
+    }
+    if (action === "comment") {
+      const postId = String(req.body?.postId || "");
+      const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+      if (!uuidPattern.test(postId) || !body || body.length > 4000) return res.status(400).json({ ok: false, error: "A valid post and comment of up to 4,000 characters are required." });
+      const target = await auth.sql\`
+        SELECT p.author_id FROM community_posts p
+        WHERE p.id = \${postId} AND p.status = 'published'
+          AND (p.visibility = 'public' OR p.author_id = \${auth.profile.id}
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+        LIMIT 1
+      \`;
+      if (!target.length) return res.status(404).json({ ok: false, error: "Post not found." });
+      const rows = await auth.sql\`
+        INSERT INTO community_comments (post_id, author_id, body, status)
+        VALUES (\${postId}, \${auth.profile.id}, \${body}, 'published')
+        RETURNING id, post_id, body, created_at
+      \`;
+      if (target[0].author_id !== auth.profile.id) {
+        await auth.sql\`
+          INSERT INTO user_notifications (user_id, notification_type, title, body, target_path)
+          VALUES (\${target[0].author_id}, 'comment', 'New comment', \${auth.profile.display_name + " commented on your post."}, \${"/social?post=" + postId})
+        \`;
+      }
+      return res.status(201).json({ ok: true, comment: { ...rows[0], author_id: auth.profile.id, author_name: auth.profile.display_name, account_type: auth.profile.account_type } });
+    }
+    if (action === "toggle_like") {
+      const postId = String(req.body?.postId || "");
+      if (!uuidPattern.test(postId)) return res.status(400).json({ ok: false, error: "Invalid post." });
+      const target = await auth.sql\`
+        SELECT p.author_id FROM community_posts p
+        WHERE p.id = \${postId} AND p.status = 'published'
+          AND (p.visibility = 'public' OR p.author_id = \${auth.profile.id}
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+        LIMIT 1
+      \`;
+      if (!target.length) return res.status(404).json({ ok: false, error: "Post not found." });
+      const inserted = await auth.sql\`
+        INSERT INTO community_reactions (user_id, post_id, reaction)
+        VALUES (\${auth.profile.id}, \${postId}, 'like')
+        ON CONFLICT (user_id, post_id, reaction) WHERE post_id IS NOT NULL DO NOTHING
+        RETURNING id
+      \`;
+      const liked = inserted.length > 0;
+      if (!liked) await auth.sql\`DELETE FROM community_reactions WHERE user_id = \${auth.profile.id} AND post_id = \${postId} AND reaction = 'like'\`;
+      return res.status(200).json({ ok: true, liked });
+    }
+    if (action === "follow" || action === "unfollow") {
+      const targetUserId = String(req.body?.targetUserId || "");
+      if (!uuidPattern.test(targetUserId) || targetUserId === auth.profile.id) return res.status(400).json({ ok: false, error: "Choose another valid member to follow." });
+      const target = await auth.sql\`SELECT id FROM user_profiles WHERE id = \${targetUserId} AND account_status = 'active' LIMIT 1\`;
+      if (!target.length) return res.status(404).json({ ok: false, error: "Member not found." });
+      if (action === "follow") {
+        const inserted = await auth.sql\`
+          INSERT INTO user_follows (follower_id, followed_user_id)
+          VALUES (\${auth.profile.id}, \${targetUserId})
+          ON CONFLICT (follower_id, followed_user_id) DO NOTHING RETURNING follower_id
+        \`;
+        if (inserted.length) {
+          await auth.sql\`
+            INSERT INTO user_notifications (user_id, notification_type, title, body, target_path)
+            VALUES (\${targetUserId}, 'follow', 'New follower', \${auth.profile.display_name + " started following you."}, '/social')
+          \`;
+        }
+        return res.status(200).json({ ok: true, following: true });
+      }
+      await auth.sql\`DELETE FROM user_follows WHERE follower_id = \${auth.profile.id} AND followed_user_id = \${targetUserId}\`;
+      return res.status(200).json({ ok: true, following: false });
+    }
+    return res.status(400).json({ ok: false, error: "Unsupported social action." });
+  } catch (error) {
+    console.error("Nochalant Social request failed:", error?.message || error);
+    return res.status(503).json({ ok: false, error: "Nochalant Social is temporarily unavailable." });
+  }
+}
+
 async function handleSocialFeed(req, res) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
   res.setHeader("Vary", "Authorization");
@@ -159,6 +305,7 @@ const opinionStatuses = { approve: "published", reject: "removed", hide: "hidden
 const accountActions = ["suspend","unsuspend","ban","unban"];
 
 export default async function handler(req, res) {
+  if (req.query?.socialRoute) return handleSocialNetwork(req, res);
   if (req.query?.socialFeedRoute) return handleSocialFeed(req, res);
   if (req.query?.socialSettingsRoute) return handleSocialSettings(req, res);
   if (req.query?.downloadRoute) return handleTrackDownload(req, res);
