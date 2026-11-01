@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Invalid refund event fields' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Invalid refund event");
       }
-      const refunds = await sql`SELECT r.id, r.payment_order_id, r.amount_minor, r.currency AS refund_currency, r.provider_refund_id, o.amount_minor AS order_amount_minor, o.currency AS order_currency, o.metadata FROM payment_refunds r JOIN payment_orders o ON o.id = r.payment_order_id WHERE r.provider_reference = ${refundEvent.reference} AND o.provider = 'bachs' LIMIT 1`;
+      const refunds = await sql`SELECT r.id, r.payment_order_id, r.amount_minor, r.status AS refund_status, r.refunded_amount_minor, r.currency AS refund_currency, r.provider_refund_id, o.amount_minor AS order_amount_minor, o.currency AS order_currency, o.metadata FROM payment_refunds r JOIN payment_orders o ON o.id = r.payment_order_id WHERE r.provider_reference = ${refundEvent.reference} AND o.provider = 'bachs' LIMIT 1`;
       const refund = refunds[0];
       if (!refund) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Refund reference not mapped yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
@@ -115,6 +115,7 @@ export default async function handler(req, res) {
       if (expectedChargeId !== refundEvent.chargeId || expectedCurrency !== recordedRefundCurrency ||
           (event.type !== "refund.paid" && Number(refund.amount_minor) !== refundEvent.amountMinor) ||
           (event.type === "refund.paid" && refundEvent.amountMinor > Number(refund.amount_minor)) ||
+          (event.type === "refund.paid" && refund.refund_status === "successful" && Number(refund.refunded_amount_minor) !== refundEvent.amountMinor) ||
           (refund.provider_refund_id && refund.provider_refund_id !== refundEvent.refundId)) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Refund reference, charge, currency or amount mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Refund details did not match the recorded request");
