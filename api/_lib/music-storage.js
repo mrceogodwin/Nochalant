@@ -12,7 +12,21 @@ function getMusicStorage() {
   return { endpoint, bucket: process.env.NEON_STORAGE_BUCKET, region: process.env.AWS_REGION, accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY };
 }
 
+function assertSafeObjectKey(objectKey) {
+  if (typeof objectKey !== "string" || objectKey.length < 8 || objectKey.length > 1024 ||
+      objectKey.startsWith("/") || objectKey.includes("\\\\") || objectKey.includes("\\0") ||
+      !/^(artists|promotions)\\/[A-Za-z0-9._/-]+$/.test(objectKey)) {
+    throw new Error("Invalid Neon Storage object reference.");
+  }
+  const segments = objectKey.split("/");
+  if (segments.some(segment => !segment || segment === "." || segment === "..")) {
+    throw new Error("Invalid Neon Storage object reference.");
+  }
+  return objectKey;
+}
+
 function createPresignedUrl(method, objectKey, expiresIn = 3600) {
+  assertSafeObjectKey(objectKey);
   const { endpoint, bucket, region, accessKey, secretKey } = getMusicStorage();
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
@@ -59,6 +73,8 @@ async function readObjectPrefix(objectKey, byteCount = 32) {
   const url = createPresignedUrl("GET", objectKey, 60);
   const response = await fetch(url, { method: "GET", headers: { Range: `bytes=0-${byteCount - 1}` } });
   if (response.status !== 206) throw new Error("Storage could not provide a bounded file-signature check.");
+  const contentRange = response.headers.get("content-range") || "";
+  if (!/^bytes 0-\\d+\\/\\d+$/.test(contentRange)) throw new Error("Storage returned an invalid bounded file range.");
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (!bytes.length || bytes.length > byteCount) throw new Error("Uploaded file signature could not be verified.");
   return bytes;
