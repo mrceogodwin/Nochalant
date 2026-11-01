@@ -228,7 +228,7 @@ function App() {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
-  }, [audioVolume]);
+  }, [audioVolume, activeAudioTrack]);
 
   useEffect(() => {
     if (!activeAudioTrack?.id) return;
