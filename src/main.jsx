@@ -948,7 +948,7 @@ function App() {
           <a href="#artists" onClick={() => setMobileMenu(false)}>Bookings <span>08</span></a>
           <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>09</span></button>
         </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
-        {currentUser?.id && <section className="drawer-preferences" aria-label="App preferences">
+        <section className="drawer-preferences" aria-label="App preferences">
           <span className="drawer-kicker">YOUR APP EXPERIENCE</span>
           <div className="drawer-preference-row"><div><strong>App appearance</strong><small>Choose your Nochalant skin</small></div><div className="skin-switch" role="group" aria-label="App appearance"><button type="button" className={appSkin==="dark"?"active":""} onClick={()=>setAppSkin("dark")}>Dark</button><button type="button" className={appSkin==="light"?"active":""} onClick={()=>setAppSkin("light")}>Light</button></div></div>
           <label className="drawer-preference-toggle"><span><strong>Sticky header</strong><small>Keep navigation at the top</small></span><input type="checkbox" checked={stickyHeaderEnabled} onChange={e=>setStickyHeaderEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
