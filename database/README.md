@@ -26,19 +26,28 @@ After adding or changing environment variables, redeploy the project so the depl
 
 ## 3. Apply migrations in order
 
-Open the SQL Editor for the Nochalant Neon project and select the `production` branch. Execute each complete file in this exact order, waiting for success before proceeding:
+The numbered SQL files are committed to GitHub; that does **not** mean they have been executed in Neon. Apply each file once, in this explicit dependency order, on a non-production Neon branch first. The duplicate numeric prefixes are intentional legacy filenames, so use the full filenames below rather than sorting by filename.
 
-1. `database/migrations/001_initial_schema.sql`
-2. `database/migrations/002_platform_expansion.sql`
-3. `database/migrations/003_article_views.sql`
-4. `database/migrations/004_nochalant_faces.sql`
-5. `database/migrations/005_nochalant_opinions_moderation.sql`
-6. `database/migrations/006_editorial_artists.sql`
-7. `database/migrations/007_artist_download_counts.sql`
-8. `database/migrations/008_account_types.sql`
-9. `database/migrations/009_podcast_publishing.sql`
+1. `001_initial_schema.sql`
+2. `002_platform_expansion.sql`
+3. `003_article_views.sql`
+4. `004_nochalant_faces.sql`
+5. `005_nochalant_opinions_moderation.sql`
+6. `006_editorial_artists.sql`
+7. `006_artists_spotlight.sql`
+8. `006_hot_or_trash_voting.sql`
+9. `007_artist_download_counts.sql`
+10. `008_account_types.sql`
+11. `009_podcast_publishing.sql`
+12. `010_paid_artist_verification.sql`
+13. `011_promotions_marketplace.sql`
+14. `012_podcast_host_profiles.sql`
+15. `013_social_video_feature_flag.sql`
+16. `013_text_promotion_design.sql`
+17. `014_podcast_host_social_links.sql`
+18. `015_multi_workspace_accounts.sql`
 
-Do not skip a failed migration or run a later migration first. If a script errors, stop and inspect the error before retrying. These files are intended to be re-runnable in most respects, but do not assume a partially failed script completed.
+The new workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Do not run it on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
 ## 4. Verify the schema
 
@@ -104,3 +113,10 @@ Migration 009 creates the editorial podcast catalogue:
 - `podcast_clips`: short-form clips linked to full episodes, including optional clip in/out points.
 
 The schema stores media references only. A public catalogue API and Super Admin management API have been added in code, but they are not live until the pending Vercel deployment succeeds. A media bucket, secure upload workflow, transcoding pipeline and actual playback delivery still need to be implemented and tested before real episodes can be published.
+
+
+## 11. Multi-workspace accounts and Podcast team access
+
+Migration 015 creates member workspace memberships, member profile details and the initial Podcast staff account table. This is a schema foundation, not a complete invitation or permission system. Podcast team invitations, per-show assignments, granular action permissions and staff dashboard workflows remain pending application work and must be tested before production. Do not grant Podcast or staff access through a public account-type selector.
+
+The workspace and profile APIs depend on migration 015. Until it is applied to the target Neon branch, those APIs may return a controlled "not ready" response. Never apply this migration directly to production as a shortcut.
