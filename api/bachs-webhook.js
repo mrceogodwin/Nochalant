@@ -89,9 +89,11 @@ export default async function handler(req, res) {
         sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status IN ('pending','failed') AND payment_reference = ${order.provider_reference} RETURNING id`,
         sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`
       ]);
-      if (!applied[1]?.length) {
-        const current = await sql`SELECT status FROM payment_orders WHERE id = ${order.id} LIMIT 1`;
-        if (current[0]?.status !== 'successful') return res.status(409).json({ received: false, error: "Payment order could not be reconciled." });
+      const currentOrder = await sql`SELECT status FROM payment_orders WHERE id = ${order.id} LIMIT 1`;
+      const currentCampaign = await sql`SELECT payment_status FROM promotion_campaigns WHERE id = ${order.campaign_id} LIMIT 1`;
+      if (currentOrder[0]?.status !== 'successful' || currentCampaign[0]?.payment_status !== 'paid') {
+        await sql`UPDATE payment_webhook_events SET error_message = 'Payment order or campaign could not be fully reconciled; awaiting retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status <> 'processed'`;
+        return res.status(409).json({ received: false, error: "Payment could not be fully reconciled. Provider retry is required." });
       }
       return res.status(200).json({ received: true, paid: true });
     }
