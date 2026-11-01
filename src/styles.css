@@ -967,3 +967,133 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .skin-light .button-outline{border-color:#9bad70;color:#627b25}
 .skin-light .social-feed-aside,.skin-light .podcast-empty,.skin-light .card,.skin-light .panel{background-color:var(--surface);color:var(--ink)}
 @media(max-width:760px){.skin-light .main-nav{background:#f7f5eefc;border-color:var(--line)}}
+
+
+/* 2026 member navigation: true left-side mobile drawer */
+.drawer-top{display:none}
+.drawer-backdrop{display:none}
+@media(max-width:760px){
+  .site-header{z-index:120}
+  .drawer-backdrop{display:block;position:fixed;inset:0;z-index:121;background:rgba(0,0,0,.66);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,visibility .24s ease;backdrop-filter:blur(3px)}
+  .drawer-backdrop.is-open{opacity:1;visibility:visible;pointer-events:auto}
+  .site-header .main-nav{
+    position:fixed!important;z-index:122!important;top:0!important;left:0!important;right:auto!important;bottom:0!important;
+    width:min(88vw,390px)!important;height:100dvh!important;max-height:100dvh!important;
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:18px!important;
+    padding:calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 28px)!important;
+    overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;
+    background:#11130f!important;border:0!important;border-right:1px solid #34392c!important;
+    box-shadow:22px 0 65px rgba(0,0,0,.35)!important;
+    transform:translateX(-105%);visibility:hidden;pointer-events:none;
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility .28s ease;
+    -webkit-overflow-scrolling:touch;
+  }
+  .site-header .main-nav.open{transform:translateX(0);visibility:visible;pointer-events:auto}
+  .drawer-top{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px;padding-bottom:14px;border-bottom:1px solid #34392c}
+  .drawer-top strong{font:800 19px 'Space Grotesk',sans-serif;letter-spacing:-.04em;color:#f4f4ec}
+  .drawer-top strong span{color:var(--lime)}
+  .drawer-top button{width:40px;height:40px;border:1px solid #414735;border-radius:10px;background:#1b1e18;color:#f4f4ec;font-size:25px;line-height:1}
+  .drawer-flagship{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;padding:0 0 17px!important;margin:0!important;border-bottom:1px solid #34392c!important}
+  .drawer-flagship .drawer-kicker,.drawer-quick .drawer-kicker{margin:0 0 5px!important}
+  .drawer-flagship>a,.drawer-flagship>button,.drawer-quick>a,.drawer-quick>button{
+    min-height:48px!important;padding:0 14px!important;border:1px solid #303529!important;border-radius:9px!important;
+    background:#191c16!important;color:#f0f1e9!important;font-size:13px!important;
+  }
+  .drawer-flagship>a span,.drawer-flagship>button span{color:#a5aa97!important}
+  .drawer-quick{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;padding:0 0 17px!important;margin:0!important;border-bottom:1px solid #34392c!important}
+  .drawer-quick .drawer-kicker{grid-column:1/-1}
+  .drawer-quick>a,.drawer-quick>button{font-size:11px!important}
+  .drawer-preferences{margin-top:0!important;padding:16px!important;border-radius:12px!important}
+  .site-header .main-nav .nav-auth-menu{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:10px!important;width:100%!important;margin:0!important;padding:14px 0 0!important;border-top:1px solid #34392c!important}
+  .site-header .main-nav .nav-auth-menu button{min-height:42px!important;padding:0 13px!important;border:1px solid #303529!important;border-radius:8px!important;background:#191c16!important;color:#f0f1e9!important}
+  body:has(.site-header .main-nav.open){overflow:hidden}
+}
+@media(min-width:761px){.drawer-backdrop,.drawer-top{display:none!important}}
+
+/* Light skin is intentionally monochrome: white canvas, black identity, neutral greys. */
+:root:has(.skin-light){color-scheme:light;--bg:#fff;--surface:#fff;--surface-2:#f4f4f4;--ink:#111;--muted:#666;--line:#dedede;--lime:#111;--orange:#555;--gold:#555;background:#fff;color:#111}
+body:has(.skin-light){background:#fff!important;color:#111!important}
+.skin-light{--bg:#fff;--surface:#fff;--surface-2:#f4f4f4;--ink:#111;--muted:#666;--line:#dedede;--lime:#111;--orange:#555;--gold:#555;background:#fff!important;color:#111!important}
+.skin-light.site-shell{background:#fff!important;color:#111!important}
+.skin-light .ticker{background:#fff!important;color:#111!important;border-bottom:1px solid #e5e5e5}
+.skin-light .ticker-label{background:#111!important;color:#fff!important}
+.skin-light .site-header{background:rgba(255,255,255,.96)!important;border-color:#dedede!important}
+.skin-light .brand,.skin-light .header-brand,.skin-light .main-nav,.skin-light .main-nav a,.skin-light .main-nav button,.skin-light .nav-login,.skin-light .text-button{color:#111!important}
+.skin-light .brand:before{background:#111!important;color:#fff!important}
+.skin-light .brand>span{color:#111!important}
+.skin-light .nav-spill,.skin-light .nav-join,.skin-light .button-green,.skin-light .hero-actions .button-green{background:#111!important;border-color:#111!important;color:#fff!important;box-shadow:none!important}
+.skin-light .button-outline,.skin-light .nav-spill{border-color:#222!important;color:#111!important;background:#fff!important}
+.skin-light .button-green{background:#111!important;color:#fff!important}
+.skin-light .lead-copy>p,.skin-light .podcast-heading p,.skin-light .section-heading p,.skin-light .footer p{color:#555!important}
+.skin-light .eyebrow,.skin-light .live-dot+span,.skin-light .feature-nav-link.active,.skin-light .feature-nav-link:hover,
+.skin-light .article-byline span+span,.skin-light .story-byline span:last-child,.skin-light .home-podcast-head h2 em,
+.skin-light .podcast-library-copy h2 em,.skin-light .artist-studio-heading h2 em{color:#111!important}
+.skin-light .live-dot{background:#111!important;box-shadow:0 0 0 7px #11111112!important}
+.skin-light .lead-story{border-color:#ddd!important;box-shadow:12px 12px 0 #1111110b!important}
+.skin-light .member-app-dock{background:rgba(255,255,255,.97)!important;border-color:#222!important;box-shadow:0 12px 42px #0002!important}
+.skin-light .member-app-dock button{color:#222!important}
+.skin-light .member-app-dock button.active{color:#111!important}
+.skin-light .member-app-dock button.active span:after{background:#111!important}
+.skin-light .member-app-dock .dock-create{background:#111!important;color:#fff!important;box-shadow:0 0 0 5px #11111112,0 6px 20px #0002!important}
+.skin-light .drawer-preferences,.skin-light .main-nav{background:#fff!important;color:#111!important}
+.skin-light .drawer-preferences{border-color:#ddd!important}
+.skin-light .drawer-kicker,.skin-light .drawer-preference-row strong,.skin-light .drawer-preference-toggle strong{color:#111!important}
+.skin-light .drawer-preference-row small,.skin-light .drawer-preference-toggle small{color:#666!important}
+.skin-light .drawer-preference-row,.skin-light .drawer-preference-toggle{border-color:#e5e5e5!important}
+.skin-light .skin-switch{background:#f1f1f1!important;border-color:#ddd!important}
+.skin-light .skin-switch button{color:#555!important}
+.skin-light .skin-switch button.active{background:#111!important;color:#fff!important}
+.skin-light .drawer-flagship>a,.skin-light .drawer-flagship>button,.skin-light .drawer-quick>a,.skin-light .drawer-quick>button{background:#f5f5f5!important;border-color:#ddd!important;color:#111!important}
+.skin-light .drawer-top{border-color:#ddd!important}
+.skin-light .drawer-top strong,.skin-light .drawer-top strong span{color:#111!important}
+.skin-light .drawer-top button{background:#f5f5f5!important;border-color:#ddd!important;color:#111!important}
+.skin-light .drawer-backdrop{background:rgba(0,0,0,.35)!important}
+.skin-light .account-dashboard-head,.skin-light .artist-studio-tools{border-color:#ddd!important}
+.skin-light .account-dashboard-head h1,.skin-light .account-dashboard-head h1 span{color:#111!important}
+.skin-light .account-dashboard-head p,.skin-light .account-dashboard-loading{color:#666!important}
+.skin-light .account-type-chip{border-color:#bbb!important;color:#111!important}
+.skin-light .account-dashboard-card,.skin-light .account-dashboard-primary,.skin-light .artist-studio-form,.skin-light .artist-release-list{
+  background:#fff!important;border:1px solid #ddd!important;color:#111!important;box-shadow:none!important
+}
+.skin-light .account-dashboard-card h2,.skin-light .account-dashboard-card h3,.skin-light .account-dashboard-card p,
+.skin-light .artist-studio-form h3,.skin-light .artist-studio-form label,.skin-light .artist-release-list h3,
+.skin-light .artist-release-row strong{color:#111!important}
+.skin-light .artist-studio-form input,.skin-light .artist-studio-form select,.skin-light .artist-studio-form textarea{
+  background:#fff!important;border-color:#ccc!important;color:#111!important
+}
+.skin-light .artist-studio-form .fine-print,.skin-light .artist-release-row small{color:#666!important}
+.skin-light .dashboard-status{color:#111!important}
+.skin-light .social-feed-shell,.skin-light .social-feed-aside,.skin-light .social-post,.skin-light .social-feed-state,
+.skin-light .podcast-feature-player,.skin-light .podcast-library-feature,.skin-light .podcast-episode-card,
+.skin-light .podcast-library-card,.skin-light .promotion-admin-panel,.skin-light .promotion-live-card,
+.skin-light .my-promotion-row,.skin-light .promotion-admin-row,.skin-light .panel,.skin-light .card{
+  background:#fff!important;border-color:#ddd!important;color:#111!important;box-shadow:none!important
+}
+.skin-light .social-feed-shell h2,.skin-light .social-feed-shell h3,.skin-light .social-post strong,
+.skin-light .social-post-body,.skin-light .social-feed-state strong,.skin-light .podcast-feature-player h3,
+.skin-light .podcast-library-card strong,.skin-light .podcast-episode-card strong,.skin-light .promotion-admin-panel h2{
+  color:#111!important
+}
+.skin-light .social-feed-shell p,.skin-light .social-post small,.skin-light .social-post-foot,
+.skin-light .social-feed-aside p,.skin-light .podcast-player-meta p,.skin-light .podcast-library-card p,
+.skin-light .podcast-episode-card p,.skin-light .promotion-admin-panel p{color:#555!important}
+.skin-light .opinion-chip,.skin-light .opinion-detail blockquote,.skin-light .opinion-status-item,
+.skin-light .opinion-compose select,.skin-light .opinion-compose textarea,.skin-light .opinions-panel form select,
+.skin-light .opinions-panel form textarea,.skin-light .opinion-admin-actions button,.skin-light .opinion-panel-tabs button{
+  background:#f7f7f7!important;border-color:#ddd!important;color:#111!important
+}
+.skin-light .opinion-quote,.skin-light .opinion-author,.skin-light .opinion-status-item p,
+.skin-light .opinion-list-heading h3,.skin-light .opinion-dashboard-list h3,.skin-light .opinion-compose label,
+.skin-light .opinions-panel form label{color:#111!important}
+.skin-light .modal-card{background:#fff!important;border-color:#ddd!important;color:#111!important}
+.skin-light .modal-card h2,.skin-light .modal-card label,.skin-light .modal-card p{color:#111!important}
+.skin-light .modal-card input,.skin-light .modal-card textarea,.skin-light .modal-card select{background:#fff!important;border-color:#ccc!important;color:#111!important}
+.skin-light .modal-close{background:#f2f2f2!important;color:#111!important}
+.skin-light .footer,.skin-light .footer-main,.skin-light .footer-bottom{background:#fff!important;color:#111!important;border-color:#ddd!important}
+.skin-light .footer a,.skin-light .footer h3,.skin-light .footer strong{color:#111!important}
+.skin-light .podcast-screen,.skin-light .podcast-library-screen{background:#f2f2f2!important;color:#111!important}
+.skin-light .podcast-screen-brand,.skin-light .podcast-screen-status,.skin-light .podcast-library-screen strong{color:#111!important;text-shadow:none!important}
+.skin-light .podcast-screen:before,.skin-light .podcast-library-screen:before{border-color:#ccc!important}
+.skin-light .podcast-library-art,.skin-light .podcast-mini-art{filter:grayscale(1)}
+.skin-light .toast{background:#111!important;color:#fff!important}
+.skin-light button:focus-visible,.skin-light a:focus-visible,.skin-light input:focus-visible,.skin-light textarea:focus-visible,.skin-light select:focus-visible{outline-color:#111!important}
