@@ -1292,3 +1292,157 @@ body.navigation-drawer-open{overflow:hidden}
 .social-public-profile-posts article{padding:12px 0;border-top:1px solid var(--line)}
 .social-public-profile-posts article p{margin:0 0 7px;color:#e6e7dc;font-size:11px;line-height:1.7;white-space:pre-wrap}
 .social-public-profile-posts article small{color:var(--muted);font-size:8px}
+
+
+/* Refined warm light appearance: softer surfaces, quieter borders, restrained accents. */
+.skin-light{
+  --bg:#f1f0e9;
+  --surface:#f8f7f1;
+  --surface-2:#eae9e1;
+  --ink:#292b25;
+  --muted:#74766d;
+  --line:#ddddd3;
+  --lime:#81964b;
+  --orange:#c87556;
+  --gold:#a98a4d;
+  color-scheme:light;
+  color:var(--ink);
+  background:var(--bg)!important;
+}
+.skin-light .site-header,
+.skin-light .main-nav,
+.skin-light .drawer-preferences,
+.skin-light .social-feed-aside,
+.skin-light .podcast-empty,
+.skin-light .card,
+.skin-light .panel,
+.skin-light .modal-card,
+.skin-light .member-profile-editor{
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  border-color:var(--line)!important;
+}
+.skin-light .site-header{background:#f8f7f1f2!important}
+.skin-light .ticker{background:#e3e6d7!important;color:#424a32!important}
+.skin-light .ticker-label{background:#596b3b!important;color:#f8f7f1!important}
+.skin-light .brand:before{background:#81964b!important;color:#fff!important}
+.skin-light .brand span,
+.skin-light .main-nav a:hover,
+.skin-light .footer-links a:hover,
+.skin-light .feature-nav-link.active,
+.skin-light .feature-nav-link:hover{color:#687d3d!important}
+.skin-light .main-nav,
+.skin-light .main-nav button,
+.skin-light .main-nav a,
+.skin-light .nav-login,
+.skin-light .text-button{color:#45483f!important}
+.skin-light .nav-spill,
+.skin-light .menu-toggle,
+.skin-light .skin-switch,
+.skin-light .workspace-choice,
+.skin-light .workspace-switcher select,
+.skin-light .dashboard-workspace-control select{
+  background:var(--surface-2)!important;
+  border-color:var(--line)!important;
+  color:var(--ink)!important;
+  box-shadow:none!important;
+}
+.skin-light .nav-join,
+.skin-light .button-green,
+.skin-light .skin-switch button.active,
+.skin-light .member-app-dock .dock-create{
+  background:#81964b!important;
+  border-color:#81964b!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.skin-light .button-outline{background:transparent!important;border-color:#9da98a!important;color:#596b3b!important}
+.skin-light .lead-story{border-color:var(--line)!important;box-shadow:10px 10px 0 #87936a12!important}
+.skin-light .feature-nav-link{color:#74766d!important}
+.skin-light .feature-nav-link.active:after{background:#81964b!important}
+.skin-light .member-app-dock{
+  background:#f8f7f1f2!important;
+  border:1px solid var(--line)!important;
+  box-shadow:0 8px 28px #34372a12!important;
+}
+.skin-light .member-app-dock button{color:#55584e!important}
+.skin-light .member-app-dock button.active{color:#687d3d!important}
+.skin-light .member-app-dock button.active span:after{background:#81964b!important}
+.skin-light .drawer-flagship>a,
+.skin-light .drawer-flagship>button,
+.skin-light .drawer-quick>a,
+.skin-light .drawer-quick>button,
+.skin-light .drawer-account-dashboard,
+.skin-light .drawer-account-logout{
+  background:var(--surface-2)!important;
+  color:var(--ink)!important;
+  border-color:var(--line)!important;
+}
+.skin-light .drawer-account-dashboard small,
+.skin-light .drawer-flagship>a span,
+.skin-light .drawer-flagship>button span{color:var(--muted)!important}
+.skin-light .account-dashboard-card,
+.skin-light .artist-studio-form,
+.skin-light .social-post,
+.skin-light .promotion-admin-panel,
+.skin-light .workspace-choice.active{
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  border-color:var(--line)!important;
+}
+.skin-light .workspace-choice.active{box-shadow:inset 3px 0 #81964b}
+.skin-light .account-dashboard-card p,
+.skin-light .artist-studio-form label,
+.skin-light .social-post-body,
+.skin-light .social-post-foot,
+.skin-light .drawer-preference-row strong,
+.skin-light .drawer-preference-toggle strong,
+.skin-light .drawer-preference-row small,
+.skin-light .drawer-preference-toggle small,
+.skin-light .modal-card form label,
+.skin-light .modal-intro,
+.skin-light .modal-card>p{color:var(--muted)!important}
+.skin-light .modal-card input,
+.skin-light .modal-card textarea,
+.skin-light .modal-card select,
+.skin-light .member-profile-editor input,
+.skin-light .member-profile-editor textarea{
+  background:#f1f0e9!important;
+  color:var(--ink)!important;
+  border-color:var(--line)!important;
+}
+.skin-light .skin-switch button{color:var(--muted)!important}
+.skin-light .skin-switch button.active{color:#fff!important}
+.skin-light .drawer-preference-toggle i{background:#c4c5ba!important}
+.skin-light .drawer-preference-toggle input:checked+i{background:#81964b!important}
+.skin-light .drawer-backdrop{background:#25271f66!important}
+.skin-light .lead-copy>p,
+.skin-light .podcast-heading p{color:#686b60!important}
+.skin-light .lead-story h2{color:#fff!important}
+.skin-light .lead-story-bottom>p{color:#e4e4dc!important}
+.skin-light .lead-story .story-meta{color:#c7d89b!important}
+.skin-light .social-feed-state,
+.skin-light .social-network-post,
+.skin-light .social-composer,
+.skin-light .social-story-card,
+.skin-light .social-profile-viewer{
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  border-color:var(--line)!important;
+}
+.skin-light .social-network-post-body,
+.skin-light .social-public-profile-bio,
+.skin-light .social-comments{color:var(--ink)!important}
+.skin-light .social-network-post small,
+.skin-light .social-network-post-actions small,
+.skin-light .social-public-profile-meta,
+.skin-light .social-profile-stats small{color:var(--muted)!important}
+.skin-light .social-network-post-actions,
+.skin-light .social-comments,
+.skin-light .social-public-profile-posts article{border-color:var(--line)!important}
+.skin-light .social-story-card>p{color:var(--ink)!important}
+@media(max-width:760px){
+  .skin-light .main-nav,
+  .skin-light .main-nav.open{background:var(--surface)!important;border-color:var(--line)!important}
+  .skin-light .drawer-preferences{background:var(--surface)!important}
+}
