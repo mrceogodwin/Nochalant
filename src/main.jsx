@@ -91,7 +91,8 @@ function App() {
   const [accountProfile, setAccountProfile] = useState(null);
   const [accountProfileLoading, setAccountProfileLoading] = useState(false);
   const [accountProfileRefresh, setAccountProfileRefresh] = useState(0);
-  const [accountProfileError, setAccountProfileError] = useState("");\n  const [workspaceBusy, setWorkspaceBusy] = useState(false);
+  const [accountProfileError, setAccountProfileError] = useState("");
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
   const [artistStudio, setArtistStudio] = useState(null);
   const [artistStudioError, setArtistStudioError] = useState("");
   const [artistStudioBusy, setArtistStudioBusy] = useState(false);
