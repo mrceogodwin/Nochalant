@@ -187,7 +187,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     <header className="social-network-header">
       <div><span className="eyebrow">THE PEOPLE · THE CULTURE</span><h1 id="social-title">Nochalant <em>Social.</em></h1><p>What's happening in your world?</p></div>
       <button className="social-create-top" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋ <span>Create post</span></button>
-      <button className="social-notification-toggle" type="button" onClick={openNotifications} aria-expanded={notificationsOpen} aria-label="Notifications">♧<span>Notifications</span></button>
+      <button className="social-notification-toggle" type="button" onClick={openNotifications} aria-expanded={notificationsOpen} aria-label="Notifications">🔔<span>Notifications</span></button>
     </header>
 
     {suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
