@@ -100,15 +100,21 @@ export default async function handler(req, res) {
 
     if (event.type === "collection.failed" || event.type === "collection.underpaid" || event.type === "checkout.expired") {
       const checkoutId = String(event.data.checkout_id || "");
-      if (checkoutId) {
-        const orders = await sql`SELECT id, campaign_id, provider_reference FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
-        if (orders.length) {
-          await sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ last_bachs_event: event.type })}::jsonb WHERE id = ${orders[0].id} AND status IN ('created','pending')`;
-          await sql`UPDATE promotion_campaigns SET payment_status = 'failed', status = 'pending_payment' WHERE id = ${orders[0].campaign_id} AND payment_status = 'pending' AND payment_reference = ${orders[0].provider_reference}`;
-        }
+      if (!checkoutId) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Missing checkout_id' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(400).send("Missing checkout ID");
       }
+      const orders = await sql`SELECT id, campaign_id, provider_reference FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
+      if (!orders.length) {
+        await sql`UPDATE payment_webhook_events SET error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status <> 'processed'`;
+        return res.status(503).json({ received: false, retry: true });
+      }
+      await sql.transaction([
+        sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ last_bachs_event: event.type })}::jsonb WHERE id = ${orders[0].id} AND status IN ('created','pending')`,
+        sql`UPDATE promotion_campaigns SET payment_status = 'failed', status = 'pending_payment' WHERE id = ${orders[0].campaign_id} AND payment_status = 'pending' AND payment_reference = ${orders[0].provider_reference}`
+      ]);
     }
-    await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now() WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+    await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
     return res.status(200).json({ received: true });
   } catch (error) {
     console.error("Bachs promotion webhook failed:", error?.message || error);
