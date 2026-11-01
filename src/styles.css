@@ -1442,3 +1442,113 @@ body.navigation-drawer-open{overflow:hidden}
 .music-artist-card b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
 .music-artist-card small{color:#a0a690;font-size:9px}
 @media(max-width:700px){.music-hub{padding-top:20px}.music-hub-hero{padding:24px 0 27px}.music-hub-mark{width:76px;height:76px;border-radius:18px;font-size:42px}.music-hub-hero h1{font-size:48px;letter-spacing:-2px}.music-hub-hero p{font-size:12px}.music-hub-tabs{margin-right:-16px}.music-release-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.music-release-card{padding:7px}.music-genre-grid,.music-playlist-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.music-artist-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.music-artist-card img,.music-artist-placeholder{width:68px;height:68px}.music-chart-row{grid-template-columns:25px 42px minmax(0,1fr) 32px;gap:8px}.music-chart-row img,.music-chart-placeholder{width:42px;height:42px}.music-chart-plays{display:none}.music-hub-section-heading>span{font-size:8px}}
+
+
+/* NOCHALANT MATERIAL SYSTEM — soft 3D / tactile dark surfaces */
+:root{
+  --bg:#111210;
+  --surface:#1a1c18;
+  --surface-2:#20231d;
+  --ink:#ecece4;
+  --muted:#a5a79b;
+  --line:#34372f;
+  --lime:#b8ce78;
+  --orange:#d28b62;
+  --gold:#c5a56b;
+}
+body{
+  background:
+    radial-gradient(ellipse at 50% -12%,rgba(119,132,91,.10),transparent 44%),
+    radial-gradient(ellipse at 100% 55%,rgba(255,255,255,.018),transparent 42%),
+    var(--bg);
+}
+button,.button,a{ -webkit-tap-highlight-color:transparent; }
+button:focus-visible,a:focus-visible,input:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--lime) 72%,white 28%);
+  outline-offset:3px;
+}
+.story-card,.social-post,.social-network-post,.music-release-card,
+.account-dashboard-card,.drawer-account,.podcast-card,.home-podcast-card{
+  border:1px solid rgba(255,255,255,.075)!important;
+  border-radius:17px!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.045),transparent 38%),
+    linear-gradient(160deg,#20221e,#171915 72%)!important;
+  box-shadow:
+    10px 12px 28px rgba(0,0,0,.30),
+    -5px -5px 16px rgba(255,255,255,.018),
+    inset 0 1px 0 rgba(255,255,255,.055)!important;
+}
+.story-card{overflow:hidden;transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s,border-color .24s}
+.story-card:hover{transform:translateY(-3px);box-shadow:12px 18px 34px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.06)!important}
+.story-image{border-radius:14px 14px 0 0;background:#20221d}
+.story-image img{filter:saturate(.82) contrast(.97)}
+.story-category{border-radius:7px;background:rgba(20,22,18,.88);backdrop-filter:blur(12px);border-color:rgba(184,206,120,.28);color:#c2d58c}
+.music-release-card{padding:11px}
+.music-release-art{border-radius:12px;background:linear-gradient(145deg,#292d26,#151713);box-shadow:inset 3px 3px 8px rgba(0,0,0,.28),inset -2px -2px 7px rgba(255,255,255,.035)}
+.music-release-art img{border-radius:11px}
+.music-release-art i{box-shadow:0 4px 12px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.32);background:linear-gradient(145deg,#d0df9a,#9eb45f);color:#1b2012}
+.music-hub-tabs button,.music-genre-pills button,.music-genre-grid button,.music-playlist-grid article{
+  border-radius:12px;
+  border-color:rgba(255,255,255,.08);
+  background:linear-gradient(145deg,#23261f,#171914);
+  box-shadow:5px 6px 13px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.045);
+}
+.music-hub-tabs button.active,.music-genre-pills button.active{
+  background:linear-gradient(145deg,#c4d78b,#a6bd69);
+  border-color:rgba(220,236,177,.5);
+  color:#202416;
+  box-shadow:0 5px 15px rgba(154,181,91,.19),inset 0 1px 0 rgba(255,255,255,.38);
+}
+.music-hub-search{
+  border-radius:15px;
+  background:linear-gradient(145deg,#20221d,#151713);
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.24),inset -2px -2px 7px rgba(255,255,255,.025);
+}
+.member-app-dock{
+  border:1px solid rgba(213,225,178,.20)!important;
+  border-radius:30px!important;
+  background:linear-gradient(145deg,rgba(37,40,32,.94),rgba(18,20,16,.97))!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.48),0 4px 14px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1px 0 rgba(0,0,0,.48)!important;
+  backdrop-filter:blur(26px) saturate(125%)!important;
+  -webkit-backdrop-filter:blur(26px) saturate(125%)!important;
+}
+.member-app-dock button{transition:transform .22s cubic-bezier(.2,.8,.2,1),background .22s,color .22s}
+.member-app-dock .dock-create{
+  background:linear-gradient(145deg,#d0df9b,#a9c16b)!important;
+  box-shadow:0 8px 20px rgba(139,166,78,.25),inset 0 2px 2px rgba(255,255,255,.5),inset 0 -3px 5px rgba(60,78,27,.18)!important;
+}
+.mini-player-dock{
+  filter:drop-shadow(0 16px 28px rgba(0,0,0,.42));
+}
+.mini-player-dock .mini-player{
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,rgba(42,45,39,.97),rgba(24,26,22,.98))!important;
+  box-shadow:8px 10px 24px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.09)!important;
+  backdrop-filter:blur(24px) saturate(125%)!important;
+}
+.player-reopen,.member-player-reopen{
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:50%!important;
+  background:linear-gradient(145deg,#292c25,#171914)!important;
+  box-shadow:6px 7px 16px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+.drawer-panel,.drawer-content,.account-dashboard-panel{
+  background:linear-gradient(145deg,#20221e,#151713)!important;
+  border-color:rgba(255,255,255,.075)!important;
+  box-shadow:18px 20px 48px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+.drawer-account-link,.account-dashboard-card{
+  border-radius:14px!important;
+}
+button:active:not(:disabled){transform:translateY(1px) scale(.985)}
+@media(max-width:760px){
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  .story-card{border-radius:15px!important}
+  .member-app-dock{bottom:max(9px,env(safe-area-inset-bottom))!important}
+  .member-player-dock{bottom:calc(108px + env(safe-area-inset-bottom))!important}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
