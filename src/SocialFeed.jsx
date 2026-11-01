@@ -48,6 +48,9 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [visibility, setVisibility] = useState("public");
   const [posting, setPosting] = useState(false);
   const [notice, setNotice] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [expandedComments, setExpandedComments] = useState({});
   const [comments, setComments] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
@@ -137,6 +140,26 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     finally { setBusyAction(""); }
   };
 
+  const openNotifications = async () => {
+    const opening = !notificationsOpen;
+    setNotificationsOpen(opening);
+    if (!opening) return;
+    setNotificationsLoading(true);
+    try {
+      const data = await socialRequest({ query: "?notifications=1" });
+      setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
+    } catch (err) { setNotice(err.message); }
+    finally { setNotificationsLoading(false); }
+  };
+
+  const markNotificationRead = async (notification) => {
+    if (notification.read_at) return;
+    try {
+      await socialRequest({ method: "POST", body: { action: "mark_notification_read", notificationId: notification.id } });
+      setNotifications(items => items.map(item => item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item));
+    } catch (err) { setNotice(err.message); }
+  };
+
   const toggleFollow = async (member) => {
     if (busyAction) return;
     const key = "follow:" + member.id;
@@ -164,6 +187,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     <header className="social-network-header">
       <div><span className="eyebrow">THE PEOPLE · THE CULTURE</span><h1 id="social-title">Nochalant <em>Social.</em></h1><p>What's happening in your world?</p></div>
       <button className="social-create-top" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋ <span>Create post</span></button>
+      <button className="social-notification-toggle" type="button" onClick={openNotifications} aria-expanded={notificationsOpen} aria-label="Notifications">♧<span>Notifications</span></button>
     </header>
 
     {suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
@@ -186,6 +210,12 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       <span className="social-feed-live"><i/> COMMUNITY FEED</span>
     </div>
 
+    {notificationsOpen && <section className="social-notification-panel" aria-label="Notifications">
+      <div className="social-notification-panel-head"><strong>Notifications</strong><button type="button" onClick={() => setNotificationsOpen(false)} aria-label="Close notifications">×</button></div>
+      {notificationsLoading ? <p className="social-notification-empty">Loading notifications…</p> : notifications.length ? notifications.map(item => <button type="button" className={"social-notification-item" + (item.read_at ? "" : " unread")} key={item.id} onClick={() => markNotificationRead(item)}>
+        <i/><span><strong>{item.title}</strong><small>{item.body}</small><em>{timeAgo(item.created_at)}</em></span>
+      </button>) : <p className="social-notification-empty">You're all caught up. New follows and replies will appear here.</p>}
+    </section>}
     {notice && <div className="social-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
 
     {composerOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !posting) setComposerOpen(false); }}>
