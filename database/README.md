@@ -46,6 +46,7 @@ The numbered SQL files are committed to GitHub; that does **not** mean they have
 16. `013_text_promotion_design.sql`
 17. `014_podcast_host_social_links.sql`
 18. `015_multi_workspace_accounts.sql`
+19. `016_unique_artist_profile_owner.sql`
 
 The new workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Do not run it on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
@@ -120,3 +121,17 @@ The schema stores media references only. A public catalogue API and Super Admin 
 Migration 015 creates member workspace memberships, member profile details and the initial Podcast staff account table. This is a schema foundation, not a complete invitation or permission system. Podcast team invitations, per-show assignments, granular action permissions and staff dashboard workflows remain pending application work and must be tested before production. Do not grant Podcast or staff access through a public account-type selector.
 
 The workspace and profile APIs depend on migration 015. Until it is applied to the target Neon branch, those APIs may return a controlled "not ready" response. Never apply this migration directly to production as a shortcut. The current validation branch is a separate preflight environment; successful checks there do not prove that Production is ready.
+
+
+## 12. Artist profile ownership integrity
+
+Migration 016 adds a unique index on `artist_profiles.owner_user_id`, enforcing one creator-owned Artist profile per member at the database level. Before applying it to any branch, inspect for duplicate owners:
+
+```sql
+SELECT owner_user_id, COUNT(*) AS profile_count
+FROM artist_profiles
+GROUP BY owner_user_id
+HAVING COUNT(*) > 1;
+```
+
+The migration intentionally fails if duplicates exist. Do not delete or merge profiles automatically; review and reconcile any duplicates first. The isolated preflight branch was checked and currently has no duplicate owners. This does not establish that Production is duplicate-free.
