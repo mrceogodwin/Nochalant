@@ -883,7 +883,7 @@ function App() {
       <a className="brand header-brand" href="#top">NOCHALANT<span>.</span></a>
       <button className="menu-toggle" aria-controls="nochalant-mobile-menu" aria-expanded={mobileMenu} onClick={() => setMobileMenu(!mobileMenu)} aria-label={mobileMenu ? "Close navigation" : "Open navigation"}>{mobileMenu ? "×" : "☰"}</button>
       {mobileMenu && <button className="drawer-backdrop" type="button" aria-label="Close navigation menu" onClick={() => setMobileMenu(false)} />}
-      <nav id="nochalant-mobile-menu" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation" aria-hidden={!mobileMenu}>
+      <nav id="nochalant-mobile-menu" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation">
         {currentUser?.id && <section className="drawer-account" aria-label="Member account">
           <span className="drawer-kicker">MY ACCOUNT</span>
           <button type="button" className="drawer-account-dashboard" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>
