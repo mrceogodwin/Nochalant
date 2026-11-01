@@ -109,6 +109,7 @@ export async function handlePromotions(req, res) {
       let orderId;
       let reference;
       let idempotencyKey;
+      let checkoutRequest = null;
       if (priorOrders[0]) {
         const prior = priorOrders[0];
         if (prior.status === 'pending' && prior.checkout_url) {
@@ -123,6 +124,10 @@ export async function handlePromotions(req, res) {
         orderId = prior.id;
         reference = prior.provider_reference;
         idempotencyKey = prior.idempotency_key;
+        checkoutRequest = prior.metadata?.checkout_request || null;
+        if (!checkoutRequest || typeof checkoutRequest !== "object" || Array.isArray(checkoutRequest)) {
+          return res.status(409).json({ ok: false, error: "This older checkout has no saved request snapshot. It needs reconciliation before it can be retried safely." });
+        }
       } else {
         reference = "NCH-PROMO-" + randomUUID().replaceAll("-", "").toUpperCase();
         idempotencyKey = reference;
@@ -150,18 +155,23 @@ export async function handlePromotions(req, res) {
           return res.status(409).json({ ok: false, error: "A checkout is already being prepared for this campaign. Please wait and refresh your campaign status." });
         }
       }
+      if (!checkoutRequest) {
+        checkoutRequest = {
+          pricing: { currency: campaign.currency, amount },
+          ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
+          reference,
+          metadata: { campaign_id: campaign.id, payment_order_id: orderId, order_type: "promotion" },
+          expires_in_minutes: 60
+        };
+        const snapshot = await auth.sql`UPDATE payment_orders SET metadata = metadata || ${JSON.stringify({ checkout_request: checkoutRequest })}::jsonb WHERE id = ${orderId} AND status = 'created' RETURNING id`;
+        if (!snapshot.length) return res.status(409).json({ ok: false, error: "Checkout request could not be saved safely. Please refresh before retrying." });
+      }
       let checkoutResponse;
       try {
         checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
           method: "POST",
           headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-          body: JSON.stringify({
-            pricing: { currency: campaign.currency, amount },
-            ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
-            reference,
-            metadata: { campaign_id: campaign.id, payment_order_id: orderId, order_type: "promotion" },
-            expires_in_minutes: 60
-          })
+          body: JSON.stringify(checkoutRequest)
         });
       } catch (networkError) {
         // The provider may have created the session even if our response was
