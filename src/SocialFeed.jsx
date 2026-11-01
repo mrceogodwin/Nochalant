@@ -24,6 +24,10 @@ function initials(name) {
   return String(name || "N").trim().split(/\s+/).slice(0, 2).map(part => part[0] || "").join("").toUpperCase() || "N";
 }
 
+function avatarContent(name, url) {
+  return url ? <img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" /> : initials(name);
+}
+
 function timeAgo(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Just now";
@@ -264,7 +268,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       <div className="social-rail-heading"><div><span className="eyebrow">FIND YOUR PEOPLE</span><h2>Creators & community</h2></div><span>MEMBERS TO DISCOVER</span></div>
       <div className="social-people-list">
         {suggestedMembers.map(member => <article className="social-person" key={member.id}>
-          <span className="social-person-avatar">{initials(member.display_name)}</span>
+          <span className="social-person-avatar">{avatarContent(member.display_name, member.avatar_url)}</span>
           <strong title={member.display_name}>{member.display_name}</strong>
           <small>{String(member.account_type || "fan").replaceAll("_", " ")}</small>
           <button type="button" onClick={() => toggleFollow(member)} disabled={busyAction === "follow:" + member.id}>＋ Follow</button>
@@ -277,7 +281,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
         <span className="social-story-avatar">＋</span><strong>Your story</strong>
       </button>
       {stories.map(story => <button type="button" className={"social-story-bubble" + (story.viewer_seen ? " seen" : "")} key={story.id} onClick={() => openStory(story)}>
-        <span className="social-story-avatar">{initials(story.author_name)}</span><strong>{story.author_name || "Member"}</strong>
+        <span className="social-story-avatar">{avatarContent(story.author_name, story.avatar_url)}</span><strong>{story.author_name || "Member"}</strong>
       </button>)}
     </section>
 
@@ -307,12 +311,13 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     </div>}
 
     {activeStory && <div className="social-composer-backdrop social-story-viewer" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setActiveStory(null); }}>
-      <article className="social-story-card"><div className="social-story-viewer-top"><span className="social-story-avatar">{initials(activeStory.author_name)}</span><div><strong>{activeStory.author_name}</strong><small>Expires {new Date(activeStory.expires_at).toLocaleString()}</small></div><button type="button" onClick={() => setActiveStory(null)} aria-label="Close story">×</button></div><p>{activeStory.body}</p><small>{Number(activeStory.view_count || 0).toLocaleString()} views</small></article>
+      <article className="social-story-card"><div className="social-story-viewer-top"><span className="social-story-avatar">{avatarContent(activeStory.author_name, activeStory.avatar_url)}</span><div><strong>{activeStory.author_name}</strong><small>Expires {new Date(activeStory.expires_at).toLocaleString()}</small></div><button type="button" onClick={() => setActiveStory(null)} aria-label="Close story">×</button></div><p>{activeStory.body}</p><small>{Number(activeStory.view_count || 0).toLocaleString()} views</small></article>
     </div>}
 
     {profileOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !profileSaving) setProfileOpen(false); }}>
       <form className="social-composer social-profile-editor" onSubmit={saveProfile}>
         <div className="social-composer-head"><div><span className="eyebrow">YOUR NOCHALANT IDENTITY</span><h2>Edit profile</h2></div><button type="button" onClick={() => setProfileOpen(false)} aria-label="Close profile editor">×</button></div>
+        {profile && <div className="social-profile-stats"><span><strong>{Number(profile.follower_count || 0).toLocaleString()}</strong><small>Followers</small></span><span><strong>{Number(profile.following_count || 0).toLocaleString()}</strong><small>Following</small></span><span><strong>{String(profile.account_type || "fan").replaceAll("_", " ")}</strong><small>Account</small></span></div>}
         <label>Display name<input value={profileDraft.displayName} onChange={event => setProfileDraft(v => ({ ...v, displayName: event.target.value }))} maxLength={80} required/></label>
         <label>Username<input value={profileDraft.username} onChange={event => setProfileDraft(v => ({ ...v, username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") }))} minLength={3} maxLength={24} pattern="[a-z0-9_]{3,24}" placeholder="yourname" required/><small>3–24 letters, numbers or underscores.</small></label>
         <label>Bio<textarea value={profileDraft.bio} onChange={event => setProfileDraft(v => ({ ...v, bio: event.target.value }))} maxLength={280} rows={3} placeholder="Tell people a little about yourself."/></label>
@@ -326,7 +331,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     {composerOpen && <div className="social-composer-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !posting) setComposerOpen(false); }}>
       <form className="social-composer" onSubmit={createPost} aria-label="Create a post">
         <div className="social-composer-head"><div><span className="eyebrow">START A CONVERSATION</span><h2>Create a post</h2></div><button type="button" onClick={() => setComposerOpen(false)} aria-label="Close composer">×</button></div>
-        <div className="social-composer-author"><span className="social-avatar">{initials(currentUser.name || currentUser.displayName || currentUser.email)}</span><div><strong>{currentUser.name || currentUser.displayName || "You"}</strong><small>Posting to Nochalant Social</small></div></div>
+        <div className="social-composer-author"><span className="social-avatar">{avatarContent(currentUser.name || currentUser.displayName || currentUser.email, profile?.avatar_url)}</span><div><strong>{currentUser.name || currentUser.displayName || "You"}</strong><small>Posting to Nochalant Social</small></div></div>
         <textarea value={draft} onChange={event => setDraft(event.target.value)} maxLength={10000} rows={6} placeholder="What's happening in the culture? Share your take…" autoFocus required/>
         <div className="social-composer-bottom"><label>Audience <select value={visibility} onChange={event => setVisibility(event.target.value)}><option value="public">Everyone</option><option value="followers">Followers only</option></select></label><span>{draft.length.toLocaleString()} / 10,000</span><button className="button button-green" type="submit" disabled={!draft.trim() || posting}>{posting ? "Publishing…" : "Publish post"}</button></div>
       </form>
@@ -335,7 +340,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     <div className="social-network-layout">
       <main className="social-network-posts">
         {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? posts.map(post => <article className="social-network-post" key={post.id}>
-          <div className="social-network-post-head"><span className="social-avatar">{initials(post.author_name)}</span><div className="social-author-copy"><strong>{post.author_name || "Nochalant member"}</strong><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
+          <div className="social-network-post-head"><span className="social-avatar">{avatarContent(post.author_name, post.avatar_url)}</span><div className="social-author-copy"><strong>{post.author_name || "Nochalant member"}</strong><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
           <p className="social-network-post-body">{post.body}</p>
           <div className="social-network-post-actions">
             <button type="button" className={post.viewer_liked ? "liked" : ""} onClick={() => toggleLike(post)} disabled={busyAction === "like:" + post.id} aria-label={post.viewer_liked ? "Unlike post" : "Like post"}><span>{post.viewer_liked ? "♥" : "♡"}</span>{Number(post.like_count || 0).toLocaleString()} <small>Likes</small></button>
@@ -343,7 +348,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
             <span className="social-post-visibility">{post.visibility === "followers" ? "FOLLOWERS" : "PUBLIC"}</span>
           </div>
           {expandedComments[post.id] && <section className="social-comments">
-            {(comments[post.id] || []).map(comment => <article className="social-comment" key={comment.id}><span className="social-comment-avatar">{initials(comment.author_name)}</span><div><strong>{comment.author_name}</strong><p>{comment.body}</p><small>{timeAgo(comment.created_at)}</small></div></article>)}
+            {(comments[post.id] || []).map(comment => <article className="social-comment" key={comment.id}><span className="social-comment-avatar">{avatarContent(comment.author_name, comment.avatar_url)}</span><div><strong>{comment.author_name}</strong><p>{comment.body}</p><small>{timeAgo(comment.created_at)}</small></div></article>)}
             <form onSubmit={event => submitComment(event, post)} className="social-comment-form"><input value={commentDrafts[post.id] || ""} onChange={event => setCommentDrafts(value => ({ ...value, [post.id]: event.target.value }))} maxLength={4000} placeholder="Write a reply…" aria-label="Write a reply"/><button type="submit" disabled={!(commentDrafts[post.id] || "").trim() || busyAction === "comment:" + post.id}>Reply</button></form>
           </section>}
         </article>) : <div className="social-feed-state"><strong>{feed === "following" ? "Your Following feed is quiet." : "The conversation starts here."}</strong><p>{feed === "following" ? "Follow creators and members to see their posts here." : "Be among the first to share what's happening in your world."}</p><button className="button button-green" type="button" onClick={() => setComposerOpen(true)}>＋ Create your first post</button></div>}
