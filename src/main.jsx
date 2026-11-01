@@ -101,6 +101,7 @@ function App() {
   const [podcastCatalogue, setPodcastCatalogue] = useState({ shows: [], seasons: [], episodes: [], clips: [] });
   const [podcastCatalogueLoading, setPodcastCatalogueLoading] = useState(false);
   const [selectedPodcastHost, setSelectedPodcastHost] = useState(null);
+  const [memberDockHidden, setMemberDockHidden] = useState(false);
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const podcastLibraryItems = [
@@ -356,6 +357,35 @@ function App() {
     });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!currentUser?.id) { setMemberDockHidden(false); return; }
+    let lastY = window.scrollY;
+    let lastDirectionChange = 0;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (Math.abs(delta) > 7) {
+        const now = Date.now();
+        if (now - lastDirectionChange > 35) {
+          if (y < 90) setMemberDockHidden(false);
+          else setMemberDockHidden(delta > 0);
+          lastDirectionChange = now;
+        }
+        lastY = y;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [currentUser?.id]);
+
+  const navigateMemberDock = destination => {
+    if (destination === "home") { setActiveScreen("home"); window.scrollTo({top:0,behavior:"smooth"}); }
+    else if (destination === "music") { setActiveScreen("home"); window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth",block:"start"}),80); }
+    else if (destination === "socials") { setActiveScreen("social"); window.scrollTo({top:0,behavior:"smooth"}); }
+    else if (destination === "create") { setModal("submit"); }
+    else if (destination === "more") { setMobileMenu(true); window.scrollTo({top:0,behavior:"smooth"}); }
+  };
 
   useEffect(() => {
     if (!currentUser || accountProfile?.profile?.account_type !== "artist") { setArtistStudio(null); return; }
@@ -999,10 +1029,10 @@ function App() {
         <button type="submit">Gimme Update</button>
       </form>
     </section>}
-    <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>
+    {!currentUser?.id && <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>
 
     <audio ref={audioRef} preload="metadata" />
-    {audioPlayerVisible ? <div className="mini-player-dock">
+    {audioPlayerVisible ? <div className={"mini-player-dock"+(currentUser?.id?" member-player-dock":"")}>
       <section className="mini-player" aria-label="Nochalant audio player">
         <img className="player-artwork" src={activeAudioTrack?.cover_art_url || demoStories[0].image} alt={activeAudioTrack ? activeAudioTrack.title + " cover art" : "Nochalant player artwork"}/>
         <div className="player-main">
@@ -1023,6 +1053,13 @@ function App() {
       </div>
     </div> : <button className="player-reopen" onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
 
+    {currentUser?.id && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
+      <button type="button" className={activeScreen==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
+      <button type="button" className={activeScreen==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
+      <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" className={activeScreen==="social"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
+      <button type="button" onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></svg><span>MORE</span></button>
+    </nav>}
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "artist-profile" && <div className="artist-profile-modal">
         {artistProfileLoading ? <p className="artist-profile-loading">Loading artist profile…</p> : artistProfileError ? <p className="artist-profile-loading" role="alert">{artistProfileError}</p> : selectedArtist && <>
