@@ -64,6 +64,17 @@ export default async function handler(req, res) {
       ON CONFLICT (provider, provider_event_id) DO NOTHING
       RETURNING id
     `;
+    const payloadMismatch = await sql`
+      SELECT id FROM payment_webhook_events
+      WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}
+        AND payload IS DISTINCT FROM ${JSON.stringify(event)}::jsonb
+      LIMIT 1
+    `;
+    if (payloadMismatch.length) {
+      // A provider event ID must always identify one immutable payload.
+      // Do not let a conflicting replay alter the original event or payment.
+      return res.status(409).send("Conflicting webhook event payload");
+    }
     // Atomically claim this event so concurrent duplicate deliveries cannot
     // process the same payment transition at the same time. A stale claim is
     // recoverable after five minutes if a serverless invocation was interrupted.
