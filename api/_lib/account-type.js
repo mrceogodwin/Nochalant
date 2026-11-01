@@ -33,6 +33,33 @@ export async function handleAccountType(req, res) {
       });
     }
 
+    if (req.body?.action === "switch_primary") {
+      const requestedType = String(req.body?.accountType || "");
+      if (!ACCOUNT_TYPES.has(requestedType)) {
+        return res.status(400).json({ ok: false, error: "Choose a valid workspace." });
+      }
+      const membership = await auth.sql`SELECT id FROM user_account_types
+        WHERE user_profile_id = ${auth.profile.id}
+          AND account_type = ${requestedType} AND status = 'active' LIMIT 1`;
+      if (!membership.length) {
+        return res.status(403).json({ ok: false, error: "That workspace is not active on your account yet." });
+      }
+      await auth.sql`UPDATE user_account_types SET is_primary = false, updated_at = now()
+        WHERE user_profile_id = ${auth.profile.id} AND is_primary = true`;
+      await auth.sql`UPDATE user_account_types SET is_primary = true, updated_at = now()
+        WHERE user_profile_id = ${auth.profile.id} AND account_type = ${requestedType} AND status = 'active'`;
+      await auth.sql`UPDATE user_profiles SET account_type = ${requestedType}, updated_at = now()
+        WHERE id = ${auth.profile.id}`;
+      const accountTypes = await auth.sql`SELECT account_type, status, is_primary, activated_at
+        FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+        ORDER BY is_primary DESC, activated_at ASC`;
+      return res.status(200).json({
+        ok: true,
+        profile: { ...auth.profile, account_type: requestedType },
+        accountTypes
+      });
+    }
+
     const accountType = String(req.body?.accountType || "");
     if (!ACCOUNT_TYPES.has(accountType)) {
       return res.status(400).json({ ok: false, error: "Choose a valid account type." });
