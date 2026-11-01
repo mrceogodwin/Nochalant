@@ -26,24 +26,30 @@ export async function requireActiveUser(req) {
       rows = await sql`INSERT INTO user_profiles (auth_user_id, display_name, email) VALUES (${payload.sub}, ${displayName}, ${email}) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = COALESCE(NULLIF(user_profiles.display_name, ''), EXCLUDED.display_name), email = COALESCE(user_profiles.email, EXCLUDED.email) RETURNING id, auth_user_id, display_name, email, role, account_type, account_status, suspended_until`;
       profile = rows[0];
     }
-    // One-time first-owner bootstrap: only this exact owner identity may claim
-    // Super Admin, and only while no Super Admin exists. The conditional UPDATE
-    // is atomic, so concurrent first logins cannot create multiple owners.
+    // One-time first-owner bootstrap. Neon Managed Auth's documented JWT
+    // payload does not include custom claims such as email_verified, so verify
+    // the canonical email and emailVerified flag against Neon Auth's own user
+    // record instead of trusting an unverified profile/JWT email claim.
     const firstOwnerEmail = "squadempireng@gmail.com";
     const accountEmail = String(email || profile.email || "").trim().toLowerCase();
-    // Email-based first-owner bootstrap is allowed only when the identity
-    // provider explicitly marks the email as verified in the signed JWT.
-    // Never infer verification from the presence of an email claim alone.
-    const emailVerified = payload.email_verified === true;
-    if (emailVerified && accountEmail === firstOwnerEmail && profile.role !== "super_admin") {
-      const promoted = await sql`UPDATE user_profiles
-        SET role = 'super_admin', email = COALESCE(email, ${email})
-        WHERE id = ${profile.id}
-          AND lower(COALESCE(email, ${email})) = ${firstOwnerEmail}
-          AND role <> 'super_admin'
-          AND NOT EXISTS (SELECT 1 FROM user_profiles WHERE role = 'super_admin')
-        RETURNING role`;
-      if (promoted.length) profile.role = promoted[0].role;
+    if (accountEmail === firstOwnerEmail && profile.role !== "super_admin") {
+      const authUsers = await sql`SELECT email, "emailVerified"
+        FROM neon_auth.user
+        WHERE id = ${payload.sub}
+        LIMIT 1`;
+      const authUser = authUsers[0];
+      const verifiedOwner = authUser?.emailVerified === true
+        && String(authUser.email || "").trim().toLowerCase() === firstOwnerEmail;
+      if (verifiedOwner) {
+        const promoted = await sql`UPDATE user_profiles
+          SET role = 'super_admin', email = ${authUser.email}
+          WHERE id = ${profile.id}
+            AND auth_user_id = ${payload.sub}
+            AND role <> 'super_admin'
+            AND NOT EXISTS (SELECT 1 FROM user_profiles WHERE role = 'super_admin')
+          RETURNING role`;
+        if (promoted.length) profile.role = promoted[0].role;
+      }
     }
     const suspensionExpired = profile.account_status === "suspended" && profile.suspended_until && new Date(profile.suspended_until) <= new Date();
     if (profile.account_status === "banned" || (profile.account_status === "suspended" && !suspensionExpired)) return { error: { status: 403, message: "Your account is restricted from posting and reporting." } };
