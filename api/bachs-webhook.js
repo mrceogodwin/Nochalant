@@ -112,7 +112,7 @@ export default async function handler(req, res) {
       const expectedChargeId = typeof refund.metadata?.charge_id === "string" ? refund.metadata.charge_id : "";
       const expectedCurrency = String(refund.order_currency || "").trim().toUpperCase();
       const recordedRefundCurrency = String(refund.refund_currency || "").trim().toUpperCase();
-      if (expectedChargeId !== refundEvent.chargeId || expectedCurrency !== recordedRefundCurrency ||
+      if (expectedChargeId !== refundEvent.chargeId || refundEvent.currency !== expectedCurrency || expectedCurrency !== recordedRefundCurrency ||
           (event.type !== "refund.paid" && Number(refund.amount_minor) !== refundEvent.amountMinor) ||
           (event.type === "refund.paid" && refundEvent.amountMinor > Number(refund.amount_minor)) ||
           (event.type === "refund.paid" && refund.refund_status === "successful" && Number(refund.refunded_amount_minor) !== refundEvent.amountMinor) ||
