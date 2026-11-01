@@ -1265,3 +1265,10 @@ body.navigation-drawer-open{overflow:hidden}
  .social-story-card{min-height:65vh}
  .social-stories-rail{gap:12px;margin-inline:-2px}
 }
+
+.social-person-avatar img,.social-story-avatar img,.social-avatar img,.social-comment-avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.social-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 17px;padding:13px;border:1px solid var(--line);border-radius:10px;background:#10120e}
+.social-profile-stats span{display:grid;gap:5px;min-width:0;text-align:center}
+.social-profile-stats strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--lime);font:700 16px 'Space Grotesk',sans-serif;text-transform:capitalize}
+.social-profile-stats small{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.social-profile-editor input,.social-profile-editor textarea{font-family:inherit;font-size:11px;line-height:1.5}
