@@ -103,15 +103,40 @@ export async function handleAccountType(req, res) {
       if (!membership.length) {
         return res.status(403).json({ ok: false, error: "That workspace is not active on your account yet." });
       }
-      await auth.sql`UPDATE user_account_types SET is_primary = false, updated_at = now()
-        WHERE user_profile_id = ${auth.profile.id} AND is_primary = true`;
-      await auth.sql`UPDATE user_account_types SET is_primary = true, updated_at = now()
-        WHERE user_profile_id = ${auth.profile.id} AND account_type = ${requestedType} AND status = 'active'`;
-      await auth.sql`UPDATE user_profiles SET account_type = ${requestedType}, updated_at = now()
-        WHERE id = ${auth.profile.id}`;
-      const accountTypes = await auth.sql`SELECT account_type, status, is_primary, activated_at
-        FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
-        ORDER BY is_primary DESC, activated_at ASC`;
+      // Serialize workspace switches per member and update the primary membership
+      // plus the legacy account_type mirror in one database transaction.
+      // The row lock prevents an administrator changing this membership mid-switch.
+      const transactionResults = await auth.sql.transaction([
+        auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
+        auth.sql`SELECT id FROM user_account_types
+          WHERE user_profile_id = ${auth.profile.id}
+            AND account_type = ${requestedType} AND status = 'active'
+          FOR UPDATE`,
+        auth.sql`UPDATE user_account_types SET is_primary = false, updated_at = now()
+          WHERE user_profile_id = ${auth.profile.id} AND is_primary = true
+            AND EXISTS (
+              SELECT 1 FROM user_account_types
+              WHERE user_profile_id = ${auth.profile.id}
+                AND account_type = ${requestedType} AND status = 'active'
+            )`,
+        auth.sql`UPDATE user_account_types SET is_primary = true, updated_at = now()
+          WHERE user_profile_id = ${auth.profile.id}
+            AND account_type = ${requestedType} AND status = 'active'`,
+        auth.sql`UPDATE user_profiles SET account_type = ${requestedType}, updated_at = now()
+          WHERE id = ${auth.profile.id}
+            AND EXISTS (
+              SELECT 1 FROM user_account_types
+              WHERE user_profile_id = ${auth.profile.id}
+                AND account_type = ${requestedType} AND status = 'active' AND is_primary = true
+            )`,
+        auth.sql`SELECT account_type, status, is_primary, activated_at
+          FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+          ORDER BY is_primary DESC, activated_at ASC`
+      ]);
+      const accountTypes = transactionResults[5] || [];
+      if (!accountTypes.some(item => item.account_type === requestedType && item.is_primary)) {
+        return res.status(403).json({ ok: false, error: "That workspace is no longer active. Refresh your account and try again." });
+      }
       return res.status(200).json({
         ok: true,
         profile: { ...auth.profile, account_type: requestedType },
