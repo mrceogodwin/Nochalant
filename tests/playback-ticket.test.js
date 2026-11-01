@@ -15,19 +15,19 @@ test("issues a signed ticket bound to a track and server timestamp", () => {
 });
 
 test("rejects tampered tickets and wrong-track redemption", () => {
-  const ticket = issuePlaybackTicket(trackId, 30, secret, now).ticket;
+  const ticket = issuePlaybackTicket(trackId, 30, secret, sessionHash, now).ticket;
   assert.equal(verifyPlaybackTicket(ticket + "x", trackId, secret, now + 30_000), null);
   assert.equal(verifyPlaybackTicket(ticket, "223e4567-e89b-12d3-a456-426614174000", secret, now + 30_000), null);
 });
 
 test("rejects early redemption and expired tickets", () => {
-  const ticket = issuePlaybackTicket(trackId, 30, secret, now).ticket;
+  const ticket = issuePlaybackTicket(trackId, 30, secret, sessionHash, now).ticket;
   assert.equal(verifyPlaybackTicket(ticket, trackId, secret, now + 29_000), null);
   assert.equal(verifyPlaybackTicket(ticket, trackId, secret, now + 15 * 60_000 + 1_000), null);
 });
 
 test("rejects missing or weak signing secrets", () => {
-  assert.throws(() => issuePlaybackTicket(trackId, 30, "weak", now));
-  const ticket = issuePlaybackTicket(trackId, 30, secret, now).ticket;
+  assert.throws(() => issuePlaybackTicket(trackId, 30, "weak", sessionHash, now));
+  const ticket = issuePlaybackTicket(trackId, 30, secret, sessionHash, now).ticket;
   assert.equal(verifyPlaybackTicket(ticket, trackId, "", now + 30_000), null);
 });
