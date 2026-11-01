@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createMusicUploadUrl, verifyArtworkUpload, resolveMusicAssetUrl } from "./music-storage.js";
 import { requireActiveUser } from "./neon-auth.js";
 
 const ACCOUNT_TYPES = new Set(["fan","artist","creator","event_organizer","business","media"]);
@@ -27,10 +29,22 @@ export async function handleAccountType(req, res) {
       return res.status(200).json({
         ok: true,
         profile: auth.profile,
-        profileDetails: details[0] || null,
+        profileDetails: details[0] ? { ...details[0], avatar_url: await resolveMusicAssetUrl(details[0].avatar_url) } : null,
         accountTypes: memberships,
         artistProfile: artistRows[0] || null
       });
+    }
+
+    if (req.body?.action === "create_profile_avatar_upload") {
+      const contentType = String(req.body?.contentType || "").toLowerCase();
+      const extension = { "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "image/avif":"avif" }[contentType];
+      const size = Number(req.body?.size);
+      if (!extension || !Number.isSafeInteger(size) || size < 1 || size > 5 * 1024 * 1024) {
+        return res.status(400).json({ ok: false, error: "Choose a JPEG, PNG, WebP or AVIF image under 5 MB." });
+      }
+      const objectKey = "members/" + auth.profile.id + "/avatar-" + randomUUID() + "." + extension;
+      const signed = await createMusicUploadUrl(objectKey, contentType);
+      return res.status(200).json({ ok: true, objectKey, ...signed });
     }
 
     if (req.body?.action === "save_profile") {
@@ -38,6 +52,11 @@ export async function handleAccountType(req, res) {
       const bio = String(req.body?.bio || "").trim();
       const website = String(req.body?.websiteUrl || "").trim();
       const location = String(req.body?.location || "").trim();
+      const avatarObjectKey = String(req.body?.avatarObjectKey || "").trim();
+      if (avatarObjectKey && (!avatarObjectKey.startsWith("members/" + auth.profile.id + "/avatar-") || avatarObjectKey.includes(".."))) {
+        return res.status(400).json({ ok: false, error: "Invalid profile photo reference." });
+      }
+      if (avatarObjectKey) await verifyArtworkUpload(avatarObjectKey);
       if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
         return res.status(400).json({ ok: false, error: "Username must be 3–24 characters using letters, numbers or underscores." });
       }
@@ -55,14 +74,15 @@ export async function handleAccountType(req, res) {
         }
       }
       const saved = await auth.sql`INSERT INTO user_profile_details
-        (user_profile_id, username, bio, website_url, location)
-        VALUES (${auth.profile.id}, ${username || null}, ${bio}, ${websiteUrl}, ${location})
+        (user_profile_id, username, bio, website_url, location, avatar_url)
+        VALUES (${auth.profile.id}, ${username || null}, ${bio}, ${websiteUrl}, ${location}, ${avatarObjectKey ? "neon-storage:" + avatarObjectKey : null})
         ON CONFLICT (user_profile_id) DO UPDATE SET
           username = EXCLUDED.username, bio = EXCLUDED.bio,
           website_url = EXCLUDED.website_url, location = EXCLUDED.location,
+          avatar_url = COALESCE(EXCLUDED.avatar_url, user_profile_details.avatar_url),
           updated_at = now()
         RETURNING username, avatar_url, bio, website_url, location`;
-      return res.status(200).json({ ok: true, profileDetails: saved[0] || null });
+      return res.status(200).json({ ok: true, profileDetails: saved[0] ? { ...saved[0], avatar_url: await resolveMusicAssetUrl(saved[0].avatar_url) } : null });
     }
 
     if (req.body?.action === "switch_primary") {
