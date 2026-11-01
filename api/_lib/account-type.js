@@ -152,6 +152,10 @@ export async function handleAccountType(req, res) {
     // Activation and primary selection share the same per-member advisory lock
     // as workspace switching, preventing concurrent requests from creating
     // conflicting primary workspaces.
+    const baseSlug = String(auth.profile.display_name || "artist").toLowerCase()
+      .normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
+    const artistSlug = baseSlug + "-" + randomUUID().slice(0, 8);
     const activationResults = await auth.sql.transaction([
       auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
       auth.sql`INSERT INTO user_account_types
@@ -187,28 +191,18 @@ export async function handleAccountType(req, res) {
       auth.sql`SELECT account_type, status, is_primary, activated_at
         FROM user_account_types
         WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
-        ORDER BY is_primary DESC, activated_at ASC`
+        ORDER BY is_primary DESC, activated_at ASC`,
+      auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status)
+        SELECT id, display_name, ${artistSlug}, 'unverified'
+        FROM user_profiles
+        WHERE id = ${auth.profile.id} AND ${accountType === "artist"}
+        ON CONFLICT DO NOTHING`,
+      auth.sql`SELECT id, stage_name, slug, verification_status
+        FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`
     ]);
     const primaryType = activationResults[2]?.[0]?.account_type || auth.profile.account_type || accountType;
     const accountTypes = activationResults[3] || [];
-
-    let artistProfile = null;
-    if (accountType === "artist") {
-      const existingArtist = await auth.sql`SELECT id, stage_name, slug, verification_status
-        FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`;
-      artistProfile = existingArtist[0] || null;
-      if (!artistProfile) {
-        const baseSlug = String(auth.profile.display_name || "artist").toLowerCase()
-          .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
-        const slug = baseSlug + "-" + randomUUID().slice(0, 8);
-        const created = await auth.sql`INSERT INTO artist_profiles
-          (owner_user_id, stage_name, slug, verification_status)
-          VALUES (${auth.profile.id}, ${auth.profile.display_name}, ${slug}, 'unverified')
-          RETURNING id, stage_name, slug, verification_status`;
-        artistProfile = created[0] || null;
-      }
-    }
+    const artistProfile = accountType === "artist" ? activationResults[5]?.[0] || null : null;
 
     return res.status(200).json({
       ok: true,
