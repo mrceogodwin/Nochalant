@@ -1,6 +1,7 @@
 import { requireActiveUser } from "./neon-auth.js";
 import { randomUUID } from "node:crypto";
 import { createMusicUploadUrl, createMusicDownloadUrl, verifyArtworkUpload, verifyPromotionVideoUpload } from "./music-storage.js";
+import { isWithinBachsIdempotencyWindow } from "./bachs-webhook-validation.js";
 
 const packages = {
   image_7d: { kind: "image", days: 7, NGN: 200000, USD: 199 },
@@ -101,7 +102,7 @@ export async function handlePromotions(req, res) {
       // Recover an earlier uncertain attempt using its original reference and
       // idempotency key. Never mint a replacement operation just because a
       // previous network response was lost.
-      const priorOrders = await auth.sql`SELECT id, provider_reference, idempotency_key, status, checkout_url, metadata
+      const priorOrders = await auth.sql`SELECT id, provider_reference, idempotency_key, status, checkout_url, metadata, created_at
         FROM payment_orders WHERE campaign_id = ${campaign.id} AND user_id = ${auth.profile.id}
           AND provider = 'bachs' AND order_type = 'promotion' AND status IN ('created','pending')
         ORDER BY created_at DESC LIMIT 1`;
@@ -115,6 +116,9 @@ export async function handlePromotions(req, res) {
         }
         if (prior.status !== 'created' || !prior.provider_reference || !prior.idempotency_key) {
           return res.status(409).json({ ok: false, error: "An earlier checkout needs reconciliation before another attempt can be created." });
+        }
+        if (!isWithinBachsIdempotencyWindow(prior.created_at)) {
+          return res.status(409).json({ ok: false, error: "This checkout attempt is older than the provider's 24-hour idempotency window. It must be reconciled before retrying to avoid a duplicate payment session." });
         }
         orderId = prior.id;
         reference = prior.provider_reference;
