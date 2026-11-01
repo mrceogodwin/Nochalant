@@ -153,7 +153,7 @@ export async function handleAccountType(req, res) {
     // as workspace switching, preventing concurrent requests from creating
     // conflicting primary workspaces.
     const baseSlug = String(auth.profile.display_name || "artist").toLowerCase()
-      .normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "")
+      .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
     const artistSlug = baseSlug + "-" + randomUUID().slice(0, 8);
     const activationResults = await auth.sql.transaction([
