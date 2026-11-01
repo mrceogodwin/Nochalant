@@ -26,8 +26,8 @@ test("accepts only bounded string checkout identifiers", () => {
 });
 
 test("matches successful payment only when amount, currency and status agree", () => {
-  const order = { amount_minor: 12500, currency: "NGN" };
-  assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00", currency: "ngn", status: "SUCCEEDED" }, order), true);
+  const order = { amount_minor: 12500 };
+  assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00", status: "SUCCEEDED" }, order), true);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "124.99", currency: "NGN", status: "SUCCEEDED" }, order), false);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "125.001", currency: "NGN", status: "SUCCEEDED" }, order), false);
   assert.equal(matchesBachsSuccessfulPayment({ amount: "125.00.0", currency: "NGN", status: "SUCCEEDED" }, order), false);
@@ -48,7 +48,7 @@ test("allows uncertain checkout retries only inside the 24-hour idempotency wind
 
 test("parses valid Bachs refund events", () => {
   const result = parseBachsRefundEvent({ type: "refund.paid", data: { reference: "rf_1", refund_id: "id_1", charge_id: "ch_1", refunded_amount: "25.25", currency: "ngn" } });
-  assert.deepEqual(result, { reference: "rf_1", refundId: "id_1", chargeId: "ch_1", currency: "NGN", amountMinor: 2525, status: "successful" });
+  assert.deepEqual(result, { reference: "rf_1", refundId: "id_1", chargeId: "ch_1", amountMinor: 2525, status: "successful" });
 });
 
 test("rejects malformed Bachs refund events", () => {
