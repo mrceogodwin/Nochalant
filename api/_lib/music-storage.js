@@ -84,9 +84,15 @@ async function readObjectPrefix(objectKey, byteCount = 32) {
   const response = await fetch(url, { method: "GET", headers: { Range: `bytes=0-${byteCount - 1}` } });
   if (response.status !== 206) throw new Error("Storage could not provide a bounded file-signature check.");
   const contentRange = response.headers.get("content-range") || "";
-  if (!/^bytes 0-\d+\/\d+$/.test(contentRange)) throw new Error("Storage returned an invalid bounded file range.");
+  const match = /^bytes 0-(\d+)\/(\d+)$/.exec(contentRange);
+  if (!match) throw new Error("Storage returned an invalid bounded file range.");
+  const end = Number(match[1]);
+  const total = Number(match[2]);
+  if (!Number.isSafeInteger(end) || !Number.isSafeInteger(total) || end < 0 || end >= byteCount || total <= end) {
+    throw new Error("Storage returned an invalid bounded file range.");
+  }
   const bytes = new Uint8Array(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > byteCount) throw new Error("Uploaded file signature could not be verified.");
+  if (bytes.length !== end + 1 || bytes.length > byteCount) throw new Error("Uploaded file signature could not be verified.");
   return bytes;
 }
 
