@@ -96,38 +96,58 @@ export async function handlePromotions(req, res) {
       if (!campaign) return res.status(404).json({ ok: false, error: "Campaign not found." });
       if (campaign.payment_status === "paid") return res.status(409).json({ ok: false, error: "This campaign has already been paid." });
       if (campaign.status !== "pending_payment") return res.status(409).json({ ok: false, error: "This campaign is not awaiting payment." });
-      const reference = "NCH-PROMO-" + randomUUID().replaceAll("-", "").toUpperCase();
       const amount = (Number(campaign.budget_minor) / 100).toFixed(2);
       const baseUrl = apiKey.startsWith("sk_sandbox_") ? "https://sandbox-api.bachs.io" : "https://api.bachs.io";
-      // Reserve the campaign's single active checkout under a row lock. Concurrent
-      // requests cannot create multiple provider sessions for the same campaign.
-      const reservation = await auth.sql.transaction([
-        auth.sql`SELECT id FROM promotion_campaigns WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id} FOR UPDATE`,
-        auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference}
-          WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id}
-            AND status = 'pending_payment' AND payment_status IN ('unpaid','failed')
-          RETURNING id`,
-        auth.sql`INSERT INTO payment_orders (user_id, campaign_id, order_type, provider, provider_reference, idempotency_key, amount_minor, currency, status, metadata)
-          SELECT ${auth.profile.id}, ${campaign.id}, 'promotion', 'bachs', ${reference}, ${reference},
-            ${campaign.budget_minor}, ${campaign.currency}, 'created',
-            ${JSON.stringify({ campaign_id: campaign.id, package_title: campaign.title })}::jsonb
-          WHERE EXISTS (SELECT 1 FROM promotion_campaigns WHERE id = ${campaign.id} AND payment_reference = ${reference})
-          RETURNING id`
-      ]);
-      const orderId = reservation[2]?.[0]?.id;
-      if (!orderId) {
-        const existing = await auth.sql`SELECT checkout_url FROM payment_orders
-          WHERE campaign_id = ${campaign.id} AND user_id = ${auth.profile.id}
-            AND provider = 'bachs' AND status = 'pending' AND checkout_url IS NOT NULL
-          ORDER BY created_at DESC LIMIT 1`;
-        if (existing[0]?.checkout_url) return res.status(200).json({ ok: true, checkoutUrl: existing[0].checkout_url, reused: true });
-        return res.status(409).json({ ok: false, error: "A checkout is already being prepared for this campaign. Please wait and refresh your campaign status." });
+      // Recover an earlier uncertain attempt using its original reference and
+      // idempotency key. Never mint a replacement operation just because a
+      // previous network response was lost.
+      const priorOrders = await auth.sql`SELECT id, provider_reference, idempotency_key, status, checkout_url, metadata
+        FROM payment_orders WHERE campaign_id = ${campaign.id} AND user_id = ${auth.profile.id}
+          AND provider = 'bachs' AND order_type = 'promotion' AND status IN ('created','pending')
+        ORDER BY created_at DESC LIMIT 1`;
+      let orderId;
+      let reference;
+      if (priorOrders[0]) {
+        const prior = priorOrders[0];
+        if (prior.status === 'pending' && prior.checkout_url) {
+          return res.status(200).json({ ok: true, checkoutUrl: prior.checkout_url, reused: true });
+        }
+        if (prior.status !== 'created' || !prior.provider_reference || !prior.idempotency_key) {
+          return res.status(409).json({ ok: false, error: "An earlier checkout needs reconciliation before another attempt can be created." });
+        }
+        orderId = prior.id;
+        reference = prior.provider_reference;
+      } else {
+        reference = "NCH-PROMO-" + randomUUID().replaceAll("-", "").toUpperCase();
+        // Reserve the campaign's single active checkout under a row lock.
+        const reservation = await auth.sql.transaction([
+          auth.sql`SELECT id FROM promotion_campaigns WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id} FOR UPDATE`,
+          auth.sql`UPDATE promotion_campaigns SET payment_status = 'pending', payment_reference = ${reference}
+            WHERE id = ${campaign.id} AND buyer_user_id = ${auth.profile.id}
+              AND status = 'pending_payment' AND payment_status IN ('unpaid','failed')
+            RETURNING id`,
+          auth.sql`INSERT INTO payment_orders (user_id, campaign_id, order_type, provider, provider_reference, idempotency_key, amount_minor, currency, status, metadata)
+            SELECT ${auth.profile.id}, ${campaign.id}, 'promotion', 'bachs', ${reference}, ${reference},
+              ${campaign.budget_minor}, ${campaign.currency}, 'created',
+              ${JSON.stringify({ campaign_id: campaign.id, package_title: campaign.title })}::jsonb
+            WHERE EXISTS (SELECT 1 FROM promotion_campaigns WHERE id = ${campaign.id} AND payment_reference = ${reference})
+            RETURNING id`
+        ]);
+        orderId = reservation[2]?.[0]?.id;
+        if (!orderId) {
+          const existing = await auth.sql`SELECT checkout_url FROM payment_orders
+            WHERE campaign_id = ${campaign.id} AND user_id = ${auth.profile.id}
+              AND provider = 'bachs' AND status = 'pending' AND checkout_url IS NOT NULL
+            ORDER BY created_at DESC LIMIT 1`;
+          if (existing[0]?.checkout_url) return res.status(200).json({ ok: true, checkoutUrl: existing[0].checkout_url, reused: true });
+          return res.status(409).json({ ok: false, error: "A checkout is already being prepared for this campaign. Please wait and refresh your campaign status." });
+        }
       }
       let checkoutResponse;
       try {
         checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
           method: "POST",
-          headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+          headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json", "Idempotency-Key": reference },
           body: JSON.stringify({
             pricing: { currency: campaign.currency, amount },
             ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
@@ -137,11 +157,10 @@ export async function handlePromotions(req, res) {
           })
         });
       } catch (networkError) {
-        await auth.sql.transaction([
-          auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: "Provider network request failed" })}::jsonb WHERE id = ${orderId}`,
-          auth.sql`UPDATE promotion_campaigns SET payment_status = 'failed' WHERE id = ${campaign.id} AND payment_reference = ${reference} AND payment_status = 'pending'`
-        ]);
-        return res.status(502).json({ ok: false, error: "Bachs could not be reached. Please try again." });
+        // The provider may have created the session even if our response was
+        // lost. Keep the order in 'created' and retry with the same body/key.
+        await auth.sql`UPDATE payment_orders SET metadata = metadata || ${JSON.stringify({ checkout_error: "Provider response was not received; outcome uncertain" })}::jsonb WHERE id = ${orderId} AND status = 'created'`;
+        return res.status(502).json({ ok: false, retry: true, error: "Bachs did not return a response. You can safely retry this checkout; the same idempotency key will be reused." });
       }
       const checkout = await checkoutResponse.json().catch(() => ({}));
       let checkoutUrl = null;
