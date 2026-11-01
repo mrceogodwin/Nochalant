@@ -115,32 +115,32 @@ async function handleSocialNetwork(req, res) {
   try {
     if (req.method === "GET") {
       if (req.query?.stories === "1") {
-        const stories = await auth.sql\`
+        const stories = await auth.sql`
           SELECT s.id, s.author_id, s.body, s.visibility, s.created_at, s.expires_at,
             u.display_name AS author_name, u.account_type,
             d.username, d.avatar_url,
             (SELECT COUNT(*)::int FROM social_story_views v WHERE v.story_id = s.id) AS view_count,
-            EXISTS (SELECT 1 FROM social_story_views v WHERE v.story_id = s.id AND v.viewer_id = \${auth.profile.id}) AS viewer_seen
+            EXISTS (SELECT 1 FROM social_story_views v WHERE v.story_id = s.id AND v.viewer_id = ${auth.profile.id}) AS viewer_seen
           FROM social_stories s
           JOIN user_profiles u ON u.id = s.author_id AND u.account_status = 'active'
           LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
           WHERE s.status = 'published' AND s.expires_at > now()
-            AND (s.author_id = \${auth.profile.id} OR s.visibility = 'public'
-              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = s.author_id))
+            AND (s.author_id = ${auth.profile.id} OR s.visibility = 'public'
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = s.author_id))
           ORDER BY s.created_at DESC
           LIMIT 100
-        \`;
+        `;
         return res.status(200).json({ ok: true, stories });
       }
       if (req.query?.profile === "1") {
-        const rows = await auth.sql\`
+        const rows = await auth.sql`
           SELECT u.id, u.display_name, u.email, u.account_type, d.username, d.avatar_url,
             COALESCE(d.bio, '') AS bio, d.website_url, d.location,
             (SELECT COUNT(*)::int FROM user_follows f WHERE f.followed_user_id = u.id) AS follower_count,
             (SELECT COUNT(*)::int FROM user_follows f WHERE f.follower_id = u.id) AS following_count
           FROM user_profiles u LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
-          WHERE u.id = \${auth.profile.id} LIMIT 1
-        \`;
+          WHERE u.id = ${auth.profile.id} LIMIT 1
+        `;
         return res.status(200).json({ ok: true, profile: rows[0] || null });
       }
       if (req.query?.notifications === "1") {
@@ -155,47 +155,47 @@ async function handleSocialNetwork(req, res) {
       const commentsFor = String(req.query?.commentsFor || "");
       if (commentsFor) {
         if (!uuidPattern.test(commentsFor)) return res.status(400).json({ ok: false, error: "Invalid post." });
-        const accessible = await auth.sql\`
+        const accessible = await auth.sql`
           SELECT p.id FROM community_posts p
-          WHERE p.id = \${commentsFor} AND p.status = 'published'
-            AND (p.visibility = 'public' OR p.author_id = \${auth.profile.id}
-              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+          WHERE p.id = ${commentsFor} AND p.status = 'published'
+            AND (p.visibility = 'public' OR p.author_id = ${auth.profile.id}
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
           LIMIT 1
-        \`;
+        `;
         if (!accessible.length) return res.status(404).json({ ok: false, error: "Post not found." });
-        const comments = await auth.sql\`
+        const comments = await auth.sql`
           SELECT c.id, c.body, c.created_at, u.id AS author_id, u.display_name AS author_name, u.account_type
           FROM community_comments c JOIN user_profiles u ON u.id = c.author_id
-          WHERE c.post_id = \${commentsFor} AND c.status = 'published' AND u.account_status = 'active'
+          WHERE c.post_id = ${commentsFor} AND c.status = 'published' AND u.account_status = 'active'
           ORDER BY c.created_at ASC LIMIT 100
-        \`;
+        `;
         return res.status(200).json({ ok: true, comments });
       }
       const feed = req.query?.feed === "following" ? "following" : "for-you";
-      const posts = await auth.sql\`
+      const posts = await auth.sql`
         SELECT p.id, p.author_id, p.body, p.visibility, p.created_at,
           u.display_name AS author_name, u.account_type,
           (SELECT COUNT(*)::int FROM community_reactions r WHERE r.post_id = p.id AND r.reaction = 'like') AS like_count,
           (SELECT COUNT(*)::int FROM community_comments c WHERE c.post_id = p.id AND c.status = 'published') AS comment_count,
-          EXISTS (SELECT 1 FROM community_reactions r WHERE r.post_id = p.id AND r.user_id = \${auth.profile.id} AND r.reaction = 'like') AS viewer_liked,
-          (p.author_id <> \${auth.profile.id} AND EXISTS (
-            SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id
+          EXISTS (SELECT 1 FROM community_reactions r WHERE r.post_id = p.id AND r.user_id = ${auth.profile.id} AND r.reaction = 'like') AS viewer_liked,
+          (p.author_id <> ${auth.profile.id} AND EXISTS (
+            SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id
           )) AS viewer_follows_author
         FROM community_posts p JOIN user_profiles u ON u.id = p.author_id
         WHERE p.status = 'published' AND u.account_status = 'active'
-          AND (p.author_id = \${auth.profile.id} OR p.visibility = 'public'
-            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
-          AND (\${feed} <> 'following' OR p.author_id = \${auth.profile.id}
-            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+          AND (p.author_id = ${auth.profile.id} OR p.visibility = 'public'
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
+          AND (${feed} <> 'following' OR p.author_id = ${auth.profile.id}
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
         ORDER BY p.created_at DESC LIMIT 40
-      \`;
-      const suggestedMembers = await auth.sql\`
+      `;
+      const suggestedMembers = await auth.sql`
         SELECT u.id, u.display_name, u.account_type
         FROM user_profiles u
-        WHERE u.id <> \${auth.profile.id} AND u.account_status = 'active'
-          AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = u.id)
+        WHERE u.id <> ${auth.profile.id} AND u.account_status = 'active'
+          AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = u.id)
         ORDER BY u.created_at DESC LIMIT 8
-      \`;
+      `;
       return res.status(200).json({ ok: true, feed, viewerProfileId: auth.profile.id, posts, suggestedMembers });
     }
     if (req.method !== "POST") {
@@ -207,33 +207,33 @@ async function handleSocialNetwork(req, res) {
       const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
       const visibility = req.body?.visibility === "followers" ? "followers" : "public";
       if (!body || body.length > 500) return res.status(400).json({ ok: false, error: "Stories must contain 1–500 characters." });
-      const rows = await auth.sql\`
+      const rows = await auth.sql`
         INSERT INTO social_stories (author_id, body, visibility, expires_at)
-        VALUES (\${auth.profile.id}, \${body}, \${visibility}, now() + interval '24 hours')
+        VALUES (${auth.profile.id}, ${body}, ${visibility}, now() + interval '24 hours')
         RETURNING id, author_id, body, visibility, created_at, expires_at
-      \`;
+      `;
       return res.status(201).json({ ok: true, story: { ...rows[0], author_name: auth.profile.display_name, account_type: auth.profile.account_type, view_count: 0, viewer_seen: true } });
     }
     if (action === "view_story") {
       const storyId = String(req.body?.storyId || "");
       if (!uuidPattern.test(storyId)) return res.status(400).json({ ok: false, error: "Invalid story." });
-      const rows = await auth.sql\`
+      const rows = await auth.sql`
         INSERT INTO social_story_views (story_id, viewer_id)
-        SELECT s.id, \${auth.profile.id} FROM social_stories s
-        WHERE s.id = \${storyId} AND s.status = 'published' AND s.expires_at > now()
-          AND (s.author_id = \${auth.profile.id} OR s.visibility = 'public'
-            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = s.author_id))
+        SELECT s.id, ${auth.profile.id} FROM social_stories s
+        WHERE s.id = ${storyId} AND s.status = 'published' AND s.expires_at > now()
+          AND (s.author_id = ${auth.profile.id} OR s.visibility = 'public'
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = s.author_id))
         ON CONFLICT (story_id, viewer_id) DO NOTHING
         RETURNING story_id
-      \`;
+      `;
       if (!rows.length) {
-        const exists = await auth.sql\`
+        const exists = await auth.sql`
           SELECT id FROM social_stories
-          WHERE id = \${storyId} AND status = 'published' AND expires_at > now()
-            AND (author_id = \${auth.profile.id} OR visibility = 'public'
-              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = author_id))
+          WHERE id = ${storyId} AND status = 'published' AND expires_at > now()
+            AND (author_id = ${auth.profile.id} OR visibility = 'public'
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = author_id))
           LIMIT 1
-        \`;
+        `;
         if (!exists.length) return res.status(404).json({ ok: false, error: "Story not found or expired." });
       }
       return res.status(200).json({ ok: true, viewed: true });
@@ -256,22 +256,22 @@ async function handleSocialNetwork(req, res) {
       const safeAvatar = safeUrl(avatarUrl);
       if ((websiteUrl && !safeWebsite) || (avatarUrl && !safeAvatar)) return res.status(400).json({ ok: false, error: "Website and avatar links must use HTTPS." });
       try {
-        await auth.sql\`
+        await auth.sql`
           INSERT INTO user_profile_details (user_profile_id, username, avatar_url, bio, website_url, location)
-          VALUES (\${auth.profile.id}, \${username}, \${safeAvatar}, \${bio}, \${safeWebsite}, \${location || null})
+          VALUES (${auth.profile.id}, ${username}, ${safeAvatar}, ${bio}, ${safeWebsite}, ${location || null})
           ON CONFLICT (user_profile_id) DO UPDATE SET
             username = EXCLUDED.username, avatar_url = EXCLUDED.avatar_url, bio = EXCLUDED.bio,
             website_url = EXCLUDED.website_url, location = EXCLUDED.location, updated_at = now()
-        \`;
+        `;
       } catch (error) {
         if (error?.code === "23505") return res.status(409).json({ ok: false, error: "That username is already taken." });
         throw error;
       }
-      const updated = await auth.sql\`
-        UPDATE user_profiles SET display_name = \${displayName}
-        WHERE id = \${auth.profile.id}
+      const updated = await auth.sql`
+        UPDATE user_profiles SET display_name = ${displayName}
+        WHERE id = ${auth.profile.id}
         RETURNING id, display_name, account_type
-      \`;
+      `;
       return res.status(200).json({ ok: true, profile: { ...updated[0], username, avatar_url: safeAvatar, bio, website_url: safeWebsite, location: location || null } });
     }
     if (action === "mark_notification_read") {
@@ -289,79 +289,79 @@ async function handleSocialNetwork(req, res) {
       const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
       const visibility = req.body?.visibility === "followers" ? "followers" : "public";
       if (!body || body.length > 10000) return res.status(400).json({ ok: false, error: "Write a post of up to 10,000 characters." });
-      const rows = await auth.sql\`
+      const rows = await auth.sql`
         INSERT INTO community_posts (author_id, body, visibility, status)
-        VALUES (\${auth.profile.id}, \${body}, \${visibility}, 'published')
+        VALUES (${auth.profile.id}, ${body}, ${visibility}, 'published')
         RETURNING id, author_id, body, visibility, created_at
-      \`;
+      `;
       return res.status(201).json({ ok: true, post: { ...rows[0], author_name: auth.profile.display_name, account_type: auth.profile.account_type, like_count: 0, comment_count: 0, viewer_liked: false, viewer_follows_author: false } });
     }
     if (action === "comment") {
       const postId = String(req.body?.postId || "");
       const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
       if (!uuidPattern.test(postId) || !body || body.length > 4000) return res.status(400).json({ ok: false, error: "A valid post and comment of up to 4,000 characters are required." });
-      const target = await auth.sql\`
+      const target = await auth.sql`
         SELECT p.author_id FROM community_posts p
-        WHERE p.id = \${postId} AND p.status = 'published'
-          AND (p.visibility = 'public' OR p.author_id = \${auth.profile.id}
-            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+        WHERE p.id = ${postId} AND p.status = 'published'
+          AND (p.visibility = 'public' OR p.author_id = ${auth.profile.id}
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
         LIMIT 1
-      \`;
+      `;
       if (!target.length) return res.status(404).json({ ok: false, error: "Post not found." });
-      const rows = await auth.sql\`
+      const rows = await auth.sql`
         INSERT INTO community_comments (post_id, author_id, body, status)
-        VALUES (\${postId}, \${auth.profile.id}, \${body}, 'published')
+        VALUES (${postId}, ${auth.profile.id}, ${body}, 'published')
         RETURNING id, post_id, body, created_at
-      \`;
+      `;
       if (target[0].author_id !== auth.profile.id) {
-        await auth.sql\`
+        await auth.sql`
           INSERT INTO user_notifications (user_id, notification_type, title, body, target_path)
-          VALUES (\${target[0].author_id}, 'comment', 'New comment', \${auth.profile.display_name + " commented on your post."}, \${"/social?post=" + postId})
-        \`;
+          VALUES (${target[0].author_id}, 'comment', 'New comment', ${auth.profile.display_name + " commented on your post."}, ${"/social?post=" + postId})
+        `;
       }
       return res.status(201).json({ ok: true, comment: { ...rows[0], author_id: auth.profile.id, author_name: auth.profile.display_name, account_type: auth.profile.account_type } });
     }
     if (action === "toggle_like") {
       const postId = String(req.body?.postId || "");
       if (!uuidPattern.test(postId)) return res.status(400).json({ ok: false, error: "Invalid post." });
-      const target = await auth.sql\`
+      const target = await auth.sql`
         SELECT p.author_id FROM community_posts p
-        WHERE p.id = \${postId} AND p.status = 'published'
-          AND (p.visibility = 'public' OR p.author_id = \${auth.profile.id}
-            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+        WHERE p.id = ${postId} AND p.status = 'published'
+          AND (p.visibility = 'public' OR p.author_id = ${auth.profile.id}
+            OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
         LIMIT 1
-      \`;
+      `;
       if (!target.length) return res.status(404).json({ ok: false, error: "Post not found." });
-      const inserted = await auth.sql\`
+      const inserted = await auth.sql`
         INSERT INTO community_reactions (user_id, post_id, reaction)
-        VALUES (\${auth.profile.id}, \${postId}, 'like')
+        VALUES (${auth.profile.id}, ${postId}, 'like')
         ON CONFLICT (user_id, post_id, reaction) WHERE post_id IS NOT NULL DO NOTHING
         RETURNING id
-      \`;
+      `;
       const liked = inserted.length > 0;
-      if (!liked) await auth.sql\`DELETE FROM community_reactions WHERE user_id = \${auth.profile.id} AND post_id = \${postId} AND reaction = 'like'\`;
+      if (!liked) await auth.sql`DELETE FROM community_reactions WHERE user_id = ${auth.profile.id} AND post_id = ${postId} AND reaction = 'like'`;
       return res.status(200).json({ ok: true, liked });
     }
     if (action === "follow" || action === "unfollow") {
       const targetUserId = String(req.body?.targetUserId || "");
       if (!uuidPattern.test(targetUserId) || targetUserId === auth.profile.id) return res.status(400).json({ ok: false, error: "Choose another valid member to follow." });
-      const target = await auth.sql\`SELECT id FROM user_profiles WHERE id = \${targetUserId} AND account_status = 'active' LIMIT 1\`;
+      const target = await auth.sql`SELECT id FROM user_profiles WHERE id = ${targetUserId} AND account_status = 'active' LIMIT 1`;
       if (!target.length) return res.status(404).json({ ok: false, error: "Member not found." });
       if (action === "follow") {
-        const inserted = await auth.sql\`
+        const inserted = await auth.sql`
           INSERT INTO user_follows (follower_id, followed_user_id)
-          VALUES (\${auth.profile.id}, \${targetUserId})
+          VALUES (${auth.profile.id}, ${targetUserId})
           ON CONFLICT (follower_id, followed_user_id) DO NOTHING RETURNING follower_id
-        \`;
+        `;
         if (inserted.length) {
-          await auth.sql\`
+          await auth.sql`
             INSERT INTO user_notifications (user_id, notification_type, title, body, target_path)
-            VALUES (\${targetUserId}, 'follow', 'New follower', \${auth.profile.display_name + " started following you."}, '/social')
-          \`;
+            VALUES (${targetUserId}, 'follow', 'New follower', ${auth.profile.display_name + " started following you."}, '/social')
+          `;
         }
         return res.status(200).json({ ok: true, following: true });
       }
-      await auth.sql\`DELETE FROM user_follows WHERE follower_id = \${auth.profile.id} AND followed_user_id = \${targetUserId}\`;
+      await auth.sql`DELETE FROM user_follows WHERE follower_id = ${auth.profile.id} AND followed_user_id = ${targetUserId}`;
       return res.status(200).json({ ok: true, following: false });
     }
     return res.status(400).json({ ok: false, error: "Unsupported social action." });
