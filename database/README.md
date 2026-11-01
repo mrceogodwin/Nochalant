@@ -47,6 +47,8 @@ The numbered SQL files are committed to GitHub; that does **not** mean they have
 17. `014_podcast_host_social_links.sql`
 18. `015_multi_workspace_accounts.sql`
 19. `016_unique_artist_profile_owner.sql`
+20. `017_payment_webhook_processing_claim.sql`
+21. `018_bachs_refund_reconciliation.sql`
 
 The new workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Do not run it on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
@@ -60,10 +62,11 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 37`
+- `present_tables: 44`
+- `missing_columns: []`
 - `missing_tables: []`
 
-If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, apply or repair the listed migrations in order.
+If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, inspect both `missing_tables` and `missing_columns`, then apply or repair the listed migrations in order. The health endpoint checks the Bachs refund reconciliation columns added by migration 018 and the webhook processing schema required by migration 017.
 
 ## 5. Verify Nochalant Faces
 
