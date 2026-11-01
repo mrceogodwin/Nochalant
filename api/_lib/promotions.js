@@ -115,18 +115,34 @@ export async function handlePromotions(req, res) {
           RETURNING id`
       ]);
       const orderId = reservation[2]?.[0]?.id;
-      if (!orderId) return res.status(409).json({ ok: false, error: "A checkout is already being prepared for this campaign. Please wait and refresh your campaign status." });
-      const checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pricing: { currency: campaign.currency, amount },
-          ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
-          reference,
-          metadata: { campaign_id: campaign.id, payment_order_id: orderId, order_type: "promotion" },
-          expires_in_minutes: 60
-        })
-      });
+      if (!orderId) {
+        const existing = await auth.sql`SELECT checkout_url FROM payment_orders
+          WHERE campaign_id = ${campaign.id} AND user_id = ${auth.profile.id}
+            AND provider = 'bachs' AND status = 'pending' AND checkout_url IS NOT NULL
+          ORDER BY created_at DESC LIMIT 1`;
+        if (existing[0]?.checkout_url) return res.status(200).json({ ok: true, checkoutUrl: existing[0].checkout_url, reused: true });
+        return res.status(409).json({ ok: false, error: "A checkout is already being prepared for this campaign. Please wait and refresh your campaign status." });
+      }
+      let checkoutResponse;
+      try {
+        checkoutResponse = await fetch(baseUrl + "/v1/checkout-sessions", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pricing: { currency: campaign.currency, amount },
+            ...(auth.profile.email ? { customer: { email: auth.profile.email, ...(auth.profile.display_name ? { name: auth.profile.display_name } : {}) } } : {}),
+            reference,
+            metadata: { campaign_id: campaign.id, payment_order_id: orderId, order_type: "promotion" },
+            expires_in_minutes: 60
+          })
+        });
+      } catch (networkError) {
+        await auth.sql.transaction([
+          auth.sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ checkout_error: "Provider network request failed" })}::jsonb WHERE id = ${orderId}`,
+          auth.sql`UPDATE promotion_campaigns SET payment_status = 'failed' WHERE id = ${campaign.id} AND payment_reference = ${reference} AND payment_status = 'pending'`
+        ]);
+        return res.status(502).json({ ok: false, error: "Bachs could not be reached. Please try again." });
+      }
       const checkout = await checkoutResponse.json().catch(() => ({}));
       if (!checkoutResponse.ok || !checkout.checkout_url || !checkout.checkout_id) {
         await auth.sql.transaction([
