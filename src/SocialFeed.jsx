@@ -72,11 +72,11 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [busyAction, setBusyAction] = useState("");
 
-  const loadFeed = useCallback(async (signal) => {
+  const loadFeed = useCallback(async (signal, selectedFeed = feed) => {
     setLoading(true);
     setError("");
     try {
-      const data = await socialRequest({ query: "?feed=" + feed, signal });
+      const data = await socialRequest({ query: "?feed=" + selectedFeed, signal });
       setViewerProfileId(data.viewerProfileId || "");
       setPosts(Array.isArray(data.posts) ? data.posts : []);
       setSuggestedMembers(Array.isArray(data.suggestedMembers) ? data.suggestedMembers : []);
@@ -111,7 +111,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       setDraft("");
       setComposerOpen(false);
       setFeed("for-you");
-      await loadFeed();
+      await loadFeed(undefined, "for-you");
       setNotice("Your post is live.");
     } catch (err) {
       setNotice(err.message || "Your post could not be published.");
