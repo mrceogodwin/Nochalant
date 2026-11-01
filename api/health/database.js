@@ -37,7 +37,14 @@ const REQUIRED_TABLES = [
   "podcast_shows",
   "podcast_seasons",
   "podcast_episodes",
-  "podcast_clips"
+  "podcast_clips",
+  "hot_trash_polls",
+  "hot_trash_votes",
+  "artist_verification_payments",
+  "user_account_types",
+  "user_profile_details",
+  "podcast_staff_accounts",
+  "social_feature_settings"
 ];
 
 export default async function handler(req, res) {
@@ -66,13 +73,39 @@ export default async function handler(req, res) {
     `;
     const present = new Set(rows.map(row => row.table_name));
     const missing = REQUIRED_TABLES.filter(name => !present.has(name));
-    return res.status(missing.length ? 503 : 200).json({
-      ok: missing.length === 0,
+    const requiredColumns = [
+      ["payment_refunds", "provider_refund_id"],
+      ["payment_refunds", "refunded_amount_minor"],
+      ["user_account_types", "is_primary"],
+      ["user_profile_details", "avatar_url"],
+      ["social_feature_settings", "video_posts_enabled"]
+    ];
+    const columnRows = await sql`
+      SELECT table_name, column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND (table_name, column_name) IN (
+          ('payment_refunds', 'provider_refund_id'),
+          ('payment_refunds', 'refunded_amount_minor'),
+          ('user_account_types', 'is_primary'),
+          ('user_profile_details', 'avatar_url'),
+          ('social_feature_settings', 'enabled')
+        )
+    `;
+    const presentColumns = new Set(columnRows.map(row => row.table_name + "." + row.column_name));
+    const missingColumns = requiredColumns
+      .map(([table, column]) => table + "." + column)
+      .filter(name => !presentColumns.has(name));
+    const complete = missing.length === 0 && missingColumns.length === 0;
+    return res.status(complete ? 200 : 503).json({
+      ok: complete,
       database: "connected",
-      schema: missing.length === 0 ? "complete" : "incomplete",
+      schema: complete ? "complete" : "incomplete",
       checked_tables: REQUIRED_TABLES.length,
       present_tables: REQUIRED_TABLES.length - missing.length,
-      missing_tables: missing
+      missing_tables: missing,
+      checked_columns: requiredColumns.length,
+      missing_columns: missingColumns
     });
   } catch (error) {
     console.error("Database health check failed:", error?.message || error);
