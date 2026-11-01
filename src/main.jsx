@@ -68,6 +68,44 @@ function App() {
   const [audioVolume, setAudioVolume] = useState(0.8);
   const [audioError, setAudioError] = useState(false);
   const [audioPlayerVisible, setAudioPlayerVisible] = useState(true);
+  const [playerButtonPosition, setPlayerButtonPosition] = useState(null);
+  const playerButtonDragRef = useRef(null);
+  const playerButtonDraggedRef = useRef(false);
+  const handlePlayerButtonPointerDown = event => {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    playerButtonDraggedRef.current = false;
+    playerButtonDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - (playerButtonPosition?.left ?? (window.innerWidth - 82)),
+      offsetY: event.clientY - (playerButtonPosition?.top ?? (window.innerHeight - 92))
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handlePlayerButtonPointerMove = event => {
+    const drag = playerButtonDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5 && !playerButtonDraggedRef.current) return;
+    playerButtonDraggedRef.current = true;
+    const size = 66;
+    setPlayerButtonPosition({
+      left: Math.max(8, Math.min(window.innerWidth - size - 8, event.clientX - drag.offsetX)),
+      top: Math.max(8, Math.min(window.innerHeight - size - 8, event.clientY - drag.offsetY))
+    });
+  };
+  const handlePlayerButtonPointerUp = event => {
+    if (playerButtonDragRef.current?.pointerId === event.pointerId) playerButtonDragRef.current = null;
+  };
+  useEffect(() => {
+    const clampPlayerButton = () => setPlayerButtonPosition(position => position ? ({
+      left: Math.max(8, Math.min(window.innerWidth - 74, position.left)),
+      top: Math.max(8, Math.min(window.innerHeight - 74, position.top))
+    }) : position);
+    window.addEventListener("resize", clampPlayerButton);
+    return () => window.removeEventListener("resize", clampPlayerButton);
+  }, []);
   const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
@@ -1143,7 +1181,7 @@ function App() {
         <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
       </section>
 
-      <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>{currentUser && opinions.length > 0 && <div className="opinion-rail" aria-label="Opinions from Nochalant users"><div className="opinion-rail-top"><span>THE PEOPLE HAVE SPOKEN</span><span>{opinions.length} COMMUNITY {opinions.length === 1 ? "TAKE" : "TAKES"}</span></div><div className="opinion-rail-window"><div className="opinion-rail-track">{[...opinions, ...opinions].map((item, index) => <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}><span className="opinion-topic">{item.topic}</span><span className="opinion-quote">“{item.body}”</span><span className="opinion-author">— {item.author_name}</span></button>)}</div></div></div>}<div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>{poll ? `COMMUNITY VOTES · ${poll.total_votes}` : "COMMUNITY VOTES"}</span><span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : pollLoading ? "LOADING" : "LIVE RESULTS"}</span></div><div className="vote-result-row"><span>🔥 Pure fire</span><b>{poll?.hot_percent ?? 0}%</b></div><div className="vote-bar"><i style={{width: `${poll?.hot_percent ?? 0}%`}}/></div><div className="vote-result-row"><span>✕ Off key</span><b>{poll?.trash_percent ?? 0}%</b></div><div className="vote-bar vote-bar-trash"><i style={{width: `${poll?.trash_percent ?? 0}%`}}/></div></div><small className="muted">{pollError || (pollLoading ? "Loading community results…" : vote ? "Your vote has been recorded. Thanks for having your say." : currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")}</small></div></section>
+      <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p><div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>{poll ? `COMMUNITY VOTES · ${poll.total_votes}` : "COMMUNITY VOTES"}</span><span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : pollLoading ? "LOADING" : "LIVE RESULTS"}</span></div><div className="vote-result-row"><span>🔥 Pure fire</span><b>{poll?.hot_percent ?? 0}%</b></div><div className="vote-bar"><i style={{width: `${poll?.hot_percent ?? 0}%`}}/></div><div className="vote-result-row"><span>✕ Off key</span><b>{poll?.trash_percent ?? 0}%</b></div><div className="vote-bar vote-bar-trash"><i style={{width: `${poll?.trash_percent ?? 0}%`}}/></div></div><div className="opinion-rail" aria-label="Opinions from Nochalant users"><div className="opinion-rail-top"><span>COMMUNITY TAKES</span><span>{opinions.length} COMMUNITY {opinions.length === 1 ? "TAKE" : "TAKES"}</span></div><div className="opinion-rail-window"><div className="opinion-rail-track">{[...opinions, ...opinions].map((item, index) => <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}><span className="opinion-topic">{item.topic}</span><span className="opinion-quote">“{item.body}”</span><span className="opinion-author">— {item.author_name}</span></button>)}</div></div></div>}<small className="muted">{pollError || (pollLoading ? "Loading community results…" : vote ? "Your vote has been recorded. Thanks for having your say." : currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")}</small></div></section>
 
       <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
         <div className="nochalant-faces">
@@ -1305,7 +1343,14 @@ function App() {
         <span>{audioQueue.length ? (audioQueueIndex + 1) + " / " + audioQueue.length : "NO TRACK QUEUE"}</span>
         <button type="button" onClick={() => moveAudioQueue(1)} disabled={!audioQueue.length} aria-label="Next track"><span>NEXT</span> ›</button>
       </div>
-    </div> : <button className={"player-reopen"+(currentUser?.id?" member-player-reopen":"")} onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
+    </div> : <button type="button" className={"player-reopen"+(currentUser?.id?" member-player-reopen":"")}
+      style={playerButtonPosition ? {left:playerButtonPosition.left+"px",top:playerButtonPosition.top+"px",right:"auto",bottom:"auto"} : undefined}
+      onPointerDown={handlePlayerButtonPointerDown} onPointerMove={handlePlayerButtonPointerMove}
+      onPointerUp={handlePlayerButtonPointerUp} onPointerCancel={handlePlayerButtonPointerUp}
+      onClick={() => {if (playerButtonDraggedRef.current) {playerButtonDraggedRef.current=false;return;} setAudioPlayerVisible(true);}}
+      aria-label="Open Nochalant audio player" title="Open Nochalant player">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14V10M8 18V6M12 15V9M16 19V5M20 14V10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+    </button>}
 
     {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
       <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
