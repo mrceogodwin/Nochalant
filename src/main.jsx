@@ -121,6 +121,9 @@ function App() {
   const [selectedPodcastHost, setSelectedPodcastHost] = useState(null);
   const [memberDockHidden, setMemberDockHidden] = useState(false);
   const [memberDockTab, setMemberDockTab] = useState("home");
+  const [musicTab, setMusicTab] = useState("discover");
+  const [musicGenre, setMusicGenre] = useState("All genres");
+  const [musicSearch, setMusicSearch] = useState("");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const podcastLibraryItems = [
@@ -515,7 +518,7 @@ function App() {
 
   const navigateMemberDock = destination => {
     if (destination === "home") { setMemberDockTab("home"); setActiveScreen("home"); window.scrollTo({top:0,behavior:"smooth"}); }
-    else if (destination === "music") { setMemberDockTab("music"); setActiveScreen("home"); window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth",block:"start"}),80); }
+    else if (destination === "music") { setMemberDockTab("music"); setActiveScreen("music"); setMobileMenu(false); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "socials") { setMemberDockTab("socials"); setActiveScreen("social"); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "create") { setModal("submit"); }
     else if (destination === "more") { setMemberDockTab("more"); setMobileMenu(true); window.scrollTo({top:0,behavior:"smooth"}); }
@@ -1028,7 +1031,56 @@ function App() {
     
 
     <main id="top">
-      {activeScreen === "home" ? <>
+      {activeScreen === "music" ? (() => {
+        const allMusicTracks = artists.flatMap(artist => (artist.tracks || []).map(track => ({
+          ...track,
+          artist_name: track.artist_name || artist.name,
+          artist_slug: track.artist_slug || artist.slug,
+          genre: track.genre || artist.genre || "Other"
+        })));
+        const searchableTracks = allMusicTracks.filter(track => {
+          const query = musicSearch.trim().toLowerCase();
+          const matchesSearch = !query || [track.title, track.artist_name, track.genre].some(value => String(value || "").toLowerCase().includes(query));
+          const matchesGenre = musicGenre === "All genres" || String(track.genre || "").toLowerCase() === musicGenre.toLowerCase();
+          return matchesSearch && matchesGenre;
+        });
+        const rankedTracks = [...searchableTracks].sort((a,b) => Number(b.plays_count || 0) - Number(a.plays_count || 0));
+        const genres = ["All genres", ...Array.from(new Set(allMusicTracks.map(track => String(track.genre || "").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
+        const playTrack = track => playArtistTrack(track, allMusicTracks);
+        const trackCard = (track, index) => <article className="music-release-card" key={track.id}>
+          <button className="music-release-art" type="button" onClick={() => playTrack(track)} disabled={!track.audio_url} aria-label={"Play " + track.title}>
+            {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy"/> : <span>♫</span>}
+            <i>▶</i>
+          </button>
+          <div className="music-release-meta"><b>{String(index + 1).padStart(2,"0")}</b><span>{track.genre || "No genre"}</span></div>
+          <strong>{track.title}</strong>
+          <button className="music-artist-link" type="button" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified && <span className="artist-silver-tick">✓</span>}</button>
+          <div className="music-release-foot"><span>{Number(track.plays_count || 0).toLocaleString()} plays</span><button type="button" onClick={() => playTrack(track)} disabled={!track.audio_url}>{track.audio_url ? "PLAY" : "COMING SOON"}</button></div>
+        </article>;
+        return <section className="music-hub container screen-page" aria-labelledby="music-hub-title">
+          <header className="music-hub-hero">
+            <div><span className="eyebrow">NOCHALANT MUSIC · THE SOUND OF THE CULTURE</span><h1 id="music-hub-title">Your sound.<br/><em>Your culture.</em></h1><p>Discover official releases from artists on Nochalant, explore genres and find your next repeat.</p></div>
+            <div className="music-hub-mark" aria-hidden="true">♫</div>
+          </header>
+          <div className="music-hub-tabs" role="tablist" aria-label="Music sections">
+            {[["discover","Discover"],["top100","Nochalant Top 100"],["genres","Genres"],["playlists","Playlists"],["artists","Artists"],["library","My library"]].map(([id,label])=><button type="button" role="tab" aria-selected={musicTab===id} className={musicTab===id?"active":""} onClick={()=>setMusicTab(id)} key={id}>{label}</button>)}
+          </div>
+          <label className="music-hub-search"><span>⌕</span><input value={musicSearch} onChange={event=>setMusicSearch(event.target.value)} placeholder="Search songs, artists or genres" aria-label="Search music"/></label>
+          {musicTab === "discover" && <>
+            <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">FRESH RELEASES</span><h2>New on <em>Nochalant.</em></h2><p>Official tracks published by Nochalant artists.</p></div><span>{allMusicTracks.length} RELEASES</span></div>
+              {artistsLoading ? <div className="music-hub-empty">Loading the artist catalogue…</div> : searchableTracks.length ? <div className="music-release-grid">{searchableTracks.slice(0,12).map(trackCard)}</div> : <div className="music-hub-empty">No matching published releases yet. Verified artist releases will appear here when approved and published.</div>}
+            </section>
+            <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">FIND YOUR SOUND</span><h2>Explore <em>genres.</em></h2></div></div><div className="music-genre-grid">{genres.slice(1).map(genre=><button type="button" key={genre} onClick={()=>{setMusicGenre(genre);setMusicTab("genres");}}>{genre}<span>Explore →</span></button>)}{genres.length===1&&<p className="music-hub-empty">Genre shelves will appear as artists publish releases with genre information.</p>}</div></section>
+          </>}
+          {musicTab === "top100" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE NOCHALANT CHART</span><h2>Nochalant <em>Top 100.</em></h2><p>Ranked by eligible plays recorded on Nochalant. Rankings update as verified plays are counted.</p></div><span>LIVE CATALOGUE DATA</span></div>
+            {rankedTracks.length ? <div className="music-chart-list">{rankedTracks.slice(0,100).map((track,index)=><div className="music-chart-row" key={track.id}><b className="music-chart-rank">{String(index+1).padStart(2,"0")}</b>{track.cover_art_url?<img src={track.cover_art_url} alt="" loading="lazy"/>:<span className="music-chart-placeholder">♫</span>}<div><strong>{track.title}</strong><small>{track.artist_name} · {track.genre || "Genre not set"}</small></div><span className="music-chart-plays">{Number(track.plays_count||0).toLocaleString()} plays</span><button type="button" onClick={()=>playTrack(track)} disabled={!track.audio_url} aria-label={"Play "+track.title}>▶</button></div>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading chart data…":"The chart will populate when approved releases have eligible play counts. No rankings are being fabricated."}</div>}
+          </section>}
+          {musicTab === "genres" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">EXPLORE BY SOUND</span><h2>Music <em>genres.</em></h2><p>Browse published releases by the genre selected by each artist.</p></div></div><div className="music-genre-pills">{genres.map(genre=><button type="button" className={musicGenre===genre?"active":""} key={genre} onClick={()=>setMusicGenre(genre)}>{genre}</button>)}</div>{searchableTracks.length?<div className="music-release-grid">{searchableTracks.map(trackCard)}</div>:<div className="music-hub-empty">No releases are listed in this genre yet.</div>}</section>}
+          {musicTab === "playlists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">CURATED FOR THE CULTURE</span><h2>Playlists <em>& moods.</em></h2><p>Editorial playlists will bring together official Nochalant releases by genre, mood and moment.</p></div></div><div className="music-playlist-grid"><article><span>01</span><b>Afrobeats Essentials</b><small>Curated Afrobeats releases</small></article><article><span>02</span><b>Naija Street & Energy</b><small>Street-pop and high-energy sounds</small></article><article><span>03</span><b>Late Night R&amp;B</b><small>Soul, R&amp;B and slow jams</small></article><article><span>04</span><b>New & Next</b><small>Fresh discoveries from the culture</small></article></div><div className="music-hub-empty">Playlist playback is not live yet. These are editorial playlist destinations, not populated playlists; tracks will appear when the playlist catalogue is connected.</div></section>}
+          {musicTab === "artists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE PEOPLE BEHIND THE SOUND</span><h2>Artists on <em>Nochalant.</em></h2></div><span>{artists.length} ARTISTS</span></div>{artists.length?<div className="music-artist-grid">{artists.map(artist=><button type="button" className="music-artist-card" key={artist.id || artist.slug} onClick={()=>openArtistProfile(artist.slug)}>{artist.image_url?<img src={artist.image_url} alt="" loading="lazy"/>:<span className="music-artist-placeholder">{String(artist.name||"N").slice(0,1)}</span>}<b>{artist.name}</b><small>{artist.genre || "Artist"}</small></button>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading artists…":"No artist profiles are published yet."}</div>}</section>}
+          {musicTab === "library" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">YOUR PERSONAL COLLECTION</span><h2>My <em>library.</em></h2></div></div><div className="music-hub-empty">Your saved songs, liked releases and followed artists will appear here when Music Library saving is enabled.</div></section>}
+        </section>;
+      })() : activeScreen === "home" ? <>
       <section className="container lead-layout">
         <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
           <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
