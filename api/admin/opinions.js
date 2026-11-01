@@ -132,6 +132,32 @@ async function handleSocialNetwork(req, res) {
         `;
         return res.status(200).json({ ok: true, stories });
       }
+      if (req.query?.member) {
+        const memberId = String(req.query.member);
+        if (!uuidPattern.test(memberId)) return res.status(400).json({ ok: false, error: "Invalid member profile." });
+        const members = await auth.sql\`
+          SELECT u.id, u.display_name, u.account_type, d.username, d.avatar_url,
+            COALESCE(d.bio, '') AS bio, d.website_url, d.location,
+            (SELECT COUNT(*)::int FROM user_follows f WHERE f.followed_user_id = u.id) AS follower_count,
+            (SELECT COUNT(*)::int FROM user_follows f WHERE f.follower_id = u.id) AS following_count,
+            EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = u.id) AS viewer_follows
+          FROM user_profiles u LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
+          WHERE u.id = \${memberId} AND u.account_status = 'active'
+          LIMIT 1
+        \`;
+        if (!members.length) return res.status(404).json({ ok: false, error: "Member profile not found." });
+        const memberPosts = await auth.sql\`
+          SELECT p.id, p.body, p.created_at,
+            (SELECT COUNT(*)::int FROM community_reactions r WHERE r.post_id = p.id AND r.reaction = 'like') AS like_count,
+            (SELECT COUNT(*)::int FROM community_comments c WHERE c.post_id = p.id AND c.status = 'published') AS comment_count
+          FROM community_posts p
+          WHERE p.author_id = \${memberId} AND p.status = 'published'
+            AND (p.visibility = 'public' OR \${auth.profile.id} = \${memberId}
+              OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = \${auth.profile.id} AND f.followed_user_id = p.author_id))
+          ORDER BY p.created_at DESC LIMIT 20
+        \`;
+        return res.status(200).json({ ok: true, profile: members[0], posts: memberPosts });
+      }
       if (req.query?.profile === "1") {
         const rows = await auth.sql`
           SELECT u.id, u.display_name, u.email, u.account_type, d.username, d.avatar_url,
