@@ -1272,3 +1272,23 @@ body.navigation-drawer-open{overflow:hidden}
 .social-profile-stats strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--lime);font:700 16px 'Space Grotesk',sans-serif;text-transform:capitalize}
 .social-profile-stats small{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
 .social-profile-editor input,.social-profile-editor textarea{font-family:inherit;font-size:11px;line-height:1.5}
+
+.social-person-name,.social-author-profile-link,.social-story-author-link{max-width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.social-person-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);font-size:10px;font-weight:800}
+.social-person-name:hover,.social-author-profile-link:hover,.social-story-author-link:hover{color:var(--lime)}
+.social-author-profile-link{color:var(--ink);font-size:12px;font-weight:800}
+.social-story-author-link{color:#fff;font-size:11px;font-weight:800}
+.social-profile-viewer{max-height:min(88vh,780px);overflow-y:auto}
+.social-public-profile-head{display:flex;align-items:center;gap:13px;margin:4px 0 15px}
+.social-public-profile-avatar{width:68px;height:68px;flex:none;display:grid;place-items:center;overflow:hidden;border:2px solid var(--lime);border-radius:22px 22px 22px 7px;background:#242b19;color:var(--lime);font:700 22px 'Space Grotesk',sans-serif}
+.social-public-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.social-public-profile-head h3{margin:0 0 5px;font-size:20px;letter-spacing:-.6px}
+.social-public-profile-head small{color:var(--muted);font-size:9px;text-transform:capitalize}
+.social-public-profile-bio{margin:0 0 15px;color:#d8dbce;font-size:11px;line-height:1.7;white-space:pre-wrap}
+.social-public-profile-meta{display:flex;flex-wrap:wrap;gap:13px;margin:12px 0 15px;color:var(--muted);font-size:9px}
+.social-public-profile-meta a{color:var(--lime)}
+.social-public-profile-posts{margin-top:20px}
+.social-public-profile-posts>h3{margin:0 0 10px;font-size:15px}
+.social-public-profile-posts article{padding:12px 0;border-top:1px solid var(--line)}
+.social-public-profile-posts article p{margin:0 0 7px;color:#e6e7dc;font-size:11px;line-height:1.7;white-space:pre-wrap}
+.social-public-profile-posts article small{color:var(--muted);font-size:8px}
