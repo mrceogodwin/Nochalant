@@ -62,9 +62,26 @@ export default async function handler(req, res) {
       ON CONFLICT (provider, provider_event_id) DO NOTHING
       RETURNING id
     `;
-    if (!inserted.length) {
+    // Atomically claim this event so concurrent duplicate deliveries cannot
+    // process the same payment transition at the same time. A stale claim is
+    // recoverable after five minutes if a serverless invocation was interrupted.
+    const claimed = await sql`
+      UPDATE payment_webhook_events
+      SET processing_status = 'processing', received_at = now(), error_message = NULL
+      WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}
+        AND (
+          processing_status IN ('received','failed')
+          OR (processing_status = 'processing' AND received_at < now() - interval '5 minutes')
+        )
+      RETURNING id
+    `;
+    if (!claimed.length) {
       const existing = await sql`SELECT processing_status FROM payment_webhook_events WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} LIMIT 1`;
-      if (existing[0]?.processing_status === "processed" || existing[0]?.processing_status === "ignored") return res.status(200).json({ received: true, duplicate: true });
+      return res.status(200).json({
+        received: true,
+        duplicate: existing[0]?.processing_status === "processed" || existing[0]?.processing_status === "ignored",
+        inProgress: existing[0]?.processing_status === "processing"
+      });
     }
 
     if (event.type === "collection.succeeded") {
@@ -79,7 +96,7 @@ export default async function handler(req, res) {
         // Checkout creation and webhook delivery can race: the provider may notify
         // us before checkout_id has been persisted on the order. Keep the event
         // retryable instead of permanently acknowledging it as an unknown payment.
-        await sql`UPDATE payment_webhook_events SET error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status <> 'processed'`;
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
         return res.status(503).json({ received: false, retry: true });
       }
       if (!matchesBachsSuccessfulPayment(event.data, order)) {
@@ -126,6 +143,15 @@ export default async function handler(req, res) {
     return res.status(200).json({ received: true });
   } catch (error) {
     console.error("Bachs promotion webhook failed:", error?.message || error);
+    try {
+      const sql = neon(databaseUrl);
+      await sql`UPDATE payment_webhook_events
+        SET processing_status = 'received', error_message = 'Webhook processing interrupted; awaiting provider retry'
+        WHERE provider = 'bachs' AND processing_status = 'processing'
+          AND received_at > now() - interval '5 minutes'`;
+    } catch (releaseError) {
+      console.error("Bachs webhook claim release failed:", releaseError?.message || releaseError);
+    }
     return res.status(500).send("Webhook processing failed");
   }
 }
