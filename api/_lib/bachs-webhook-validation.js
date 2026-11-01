@@ -64,10 +64,9 @@ export function parseBachsRefundEvent(event) {
   const match = /^(0|[1-9][0-9]*)(?:\.([0-9]{1,2}))?$/.exec(amountText);
   const amountMinor = match ? Number(match[1]) * 100 + Number((match[2] || "").padEnd(2, "0")) : NaN;
   if (!reference || reference.length > 128 || !refundId || refundId.length > 200 ||
-      !chargeId || chargeId.length > 200 || !/^[A-Z]{3}$/.test(currency) ||
-      !Number.isSafeInteger(amountMinor) || amountMinor <= 0) return null;
+      !chargeId || chargeId.length > 200 || !Number.isSafeInteger(amountMinor) || amountMinor <= 0) return null;
   return {
-    reference, refundId, chargeId, currency, amountMinor,
+    reference, refundId, chargeId, amountMinor,
     status: event.type === "refund.paid" ? "successful" : event.type === "refund.failed" ? "failed" : "pending"
   };
 }
