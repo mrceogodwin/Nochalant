@@ -58,7 +58,6 @@ export function parseBachsRefundEvent(event) {
   const reference = typeof data.reference === "string" ? data.reference.trim() : "";
   const refundId = typeof data.refund_id === "string" ? data.refund_id.trim() : "";
   const chargeId = typeof data.charge_id === "string" ? data.charge_id.trim() : "";
-  const currency = typeof data.currency === "string" ? data.currency.trim().toUpperCase() : "";
   const amountValue = event.type === "refund.paid" ? data.refunded_amount : data.requested_amount;
   const amountText = typeof amountValue === "string" ? amountValue.trim() : "";
   const match = /^(0|[1-9][0-9]*)(?:\.([0-9]{1,2}))?$/.exec(amountText);
