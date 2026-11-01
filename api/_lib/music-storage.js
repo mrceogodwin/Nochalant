@@ -82,6 +82,8 @@ function detectAudioType(bytes) {
   if (bytes.length >= 12 && ascii(bytes,0,4) === "RIFF" && ascii(bytes,8,4) === "WAVE") return "audio/wav";
   if (bytes.length >= 4 && ascii(bytes,0,4) === "fLaC") return "audio/flac";
   if (bytes.length >= 4 && ascii(bytes,0,4) === "OggS") return "audio/ogg";
+  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0) return "audio/aac";
+  if (bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return "audio/webm";
   if (bytes.length >= 12 && ascii(bytes,4,4) === "ftyp") return "audio/mp4";
   return null;
 }
@@ -100,7 +102,9 @@ export async function verifyMusicUpload(objectKey) {
     detected === "audio/wav" ? ["audio/wav","audio/x-wav"] :
     detected === "audio/flac" ? ["audio/flac"] :
     detected === "audio/ogg" ? ["audio/ogg"] :
-    detected === "audio/mp4" ? ["audio/mp4","audio/aac"] : [];
+    detected === "audio/aac" ? ["audio/aac"] :
+    detected === "audio/webm" ? ["audio/webm"] :
+    detected === "audio/mp4" ? ["audio/mp4"] : [];
   if (!detected || !compatible.includes(result.contentType)) throw new Error("The uploaded audio file content does not match its declared format.");
   return { ...result, detectedContentType: detected };
 }
