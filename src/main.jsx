@@ -69,6 +69,39 @@ function App() {
   const [audioError, setAudioError] = useState(false);
   const [audioPlayerVisible, setAudioPlayerVisible] = useState(true);
   const [playerButtonPosition, setPlayerButtonPosition] = useState(null);
+  const [playerDockPosition, setPlayerDockPosition] = useState(null);
+  const playerDockDragRef = useRef(null);
+  const handlePlayerDockPointerDown = event => {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (event.target.closest("button,input,a,select,textarea,.player-progress,.player-queue-controls")) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    playerDockDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      moved: false
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handlePlayerDockPointerMove = event => {
+    const drag = playerDockDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) return;
+    drag.moved = true;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    setPlayerDockPosition({
+      left: Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX - drag.offsetX)),
+      top: Math.max(8, Math.min(window.innerHeight - height - 8, event.clientY - drag.offsetY))
+    });
+  };
+  const handlePlayerDockPointerUp = event => {
+    if (playerDockDragRef.current?.pointerId === event.pointerId) playerDockDragRef.current = null;
+  };
+
   const playerButtonDragRef = useRef(null);
   const playerButtonDraggedRef = useRef(false);
   const handlePlayerButtonPointerDown = event => {
@@ -1324,7 +1357,7 @@ function App() {
     {!currentUser?.id && <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>}
 
     <audio ref={audioRef} preload="metadata" />
-    {audioPlayerVisible ? <div className={"mini-player-dock"+(currentUser?.id?" member-player-dock":"")}>
+    {audioPlayerVisible ? <div className={"mini-player-dock"+(currentUser?.id?" member-player-dock":"")+(playerDockDragRef.current?.moved?" is-dragging":"")} style={playerDockPosition ? {left:playerDockPosition.left+"px",top:playerDockPosition.top+"px",right:"auto",bottom:"auto"} : undefined} onPointerDown={handlePlayerDockPointerDown} onPointerMove={handlePlayerDockPointerMove} onPointerUp={handlePlayerDockPointerUp} onPointerCancel={handlePlayerDockPointerUp}>
       <section className="mini-player" aria-label="Nochalant audio player">
         <img className="player-artwork" src={activeAudioTrack?.cover_art_url || demoStories[0].image} alt={activeAudioTrack ? activeAudioTrack.title + " cover art" : "Nochalant player artwork"}/>
         <div className="player-main">
