@@ -27,9 +27,27 @@ async function proxyNeonAuth(req, res) {
     const value = req.headers[name];
     if (typeof value === "string") headers.set(name, value);
   }
-  const authOrigin = process.env.VERCEL_ENV === "production"
-    ? "https://nochalant.vercel.app"
-    : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+  // Preserve the exact first-party origin the browser is visiting. VERCEL_URL
+  // can be the deployment's canonical hostname even when the visitor uses a
+  // branch alias; using it here causes an origin mismatch in Safari.
+  const requestOrigin = typeof req.headers.origin === "string" ? req.headers.origin : "";
+  const requestHost = typeof req.headers.host === "string" ? req.headers.host.toLowerCase() : "";
+  let authOrigin = null;
+  if (requestOrigin) {
+    try {
+      const parsedOrigin = new URL(requestOrigin);
+      if (parsedOrigin.protocol === "https:" && parsedOrigin.host.toLowerCase() === requestHost) {
+        authOrigin = parsedOrigin.origin;
+      }
+    } catch {}
+    if (!authOrigin) {
+      return res.status(403).json({ message: "Authentication origin does not match this site." });
+    }
+  } else if (process.env.VERCEL_ENV === "production") {
+    authOrigin = "https://nochalant.vercel.app";
+  } else if (process.env.VERCEL_URL) {
+    authOrigin = `https://${process.env.VERCEL_URL}`;
+  }
   if (!authOrigin) {
     return res.status(503).json({ message: "Preview authentication origin is not configured." });
   }
