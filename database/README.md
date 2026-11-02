@@ -72,7 +72,7 @@ A successful response has:
 - `missing_indexes: []`
 - `missing_indexes: []`
 
-If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, inspect both `missing_tables` and `missing_columns`, then apply or repair the listed migrations in order. The health endpoint checks the Bachs refund reconciliation columns added by migration 018 and the webhook processing schema required by migration 017.
+If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, inspect both `missing_tables` and `missing_columns`, then apply or repair the listed migrations in order. The health endpoint checks the refund reconciliation columns and provider-refund idempotency index from migration 018, the webhook processing constraint from migration 017, the artist ownership index from migration 016, the account-type lock trigger from migration 020, and the Social Stories tables from migration 019.
 
 ## 5. Verify Nochalant Faces
 
