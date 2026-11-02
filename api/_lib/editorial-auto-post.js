@@ -155,7 +155,7 @@ export async function handleEditorialLatest(req,res) {
   const { neon } = await import("@neondatabase/serverless");
   try {
     const sql=neon(connection);
-    const rows=await sql`SELECT s.id,s.title,s.body,s.category,s.published_at,d.image_url,d.source_name,d.source_url,p.display_name AS author_name FROM submissions s JOIN editorial_discovered_items d ON d.submission_id=s.id JOIN user_profiles p ON p.id=s.author_id WHERE s.status='published' AND d.status='published' ORDER BY s.published_at DESC LIMIT 30`;
+    const rows=await sql`SELECT s.id,s.title,s.body,s.category,s.published_at,s.slug,s.canonical_url,s.seo_title,s.seo_description,s.is_indexable,d.image_url,d.source_name,d.source_url,p.display_name AS author_name FROM submissions s JOIN editorial_discovered_items d ON d.submission_id=s.id JOIN user_profiles p ON p.id=s.author_id WHERE s.status='published' AND d.status='published' AND s.is_indexable=true ORDER BY s.published_at DESC LIMIT 30`;
     return res.status(200).json({ok:true,stories:rows});
   } catch(error) {
     console.error("Editorial public feed failed:",error?.message||error);
