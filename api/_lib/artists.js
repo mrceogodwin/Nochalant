@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { issuePlaybackTicket, verifyPlaybackTicket } from "./_lib/playback-ticket.js";
+import { issuePlaybackTicket, verifyPlaybackTicket } from "./playback-ticket.js";
 import { neon } from "@neondatabase/serverless";
-import { createMusicDownloadUrl, resolveMusicAssetUrl } from "./_lib/music-storage.js";
+import { createMusicDownloadUrl, resolveMusicAssetUrl } from "./music-storage.js";
 
 const safeHttpsUrl = (value) => {
   if (!value) return null;
