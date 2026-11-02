@@ -40,7 +40,6 @@ function App() {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState("");
   const [story, setStory] = useState(demoStories[0]);
-  const [publishedStories, setPublishedStories] = useState([]);
   const [vote, setVote] = useState("");
   const [poll, setPoll] = useState(null);
   const [pollLoading, setPollLoading] = useState(true);
