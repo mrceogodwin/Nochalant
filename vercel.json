@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/story/:slug",
+      "destination": "/api/seo-story?slug=$1"
+    },
+    {
       "source": "/api/editorial/auto-post",
       "destination": "/api/admin/opinions?editorialAutoPostRoute=1"
     },
