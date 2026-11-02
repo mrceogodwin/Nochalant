@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/social",
+      "destination": "/api/admin/opinions?socialRoute=1"
+    },
+    {
       "source": "/api/social/feed",
       "destination": "/api/admin/opinions?socialFeedRoute=1"
     },

@@ -1,0 +1,139 @@
+/* Nochalant material system — brand green retained, brightness used with restraint. */
+:root{
+  --material-shadow:rgba(0,0,0,.48);
+  --material-highlight:rgba(255,255,255,.075);
+  --material-edge:rgba(255,255,255,.055);
+  --material-green-wash:color-mix(in srgb,var(--lime) 13%,transparent);
+  --material-green-line:color-mix(in srgb,var(--lime) 30%,#30352b);
+}
+html{background:var(--bg)}
+body{background:radial-gradient(ellipse at 50% -18%,#252a20 0,transparent 48%),#0b0c0b}
+.site-shell{background:radial-gradient(ellipse at 78% 5%,#29301c38 0,transparent 34%),linear-gradient(180deg,#10110f 0%,var(--bg) 42%)}
+button,.button,.nav-spill,.nav-join,.category-tab,.podcast-see-more,.podcast-selection-nav button,.drawer-flagship>a,.drawer-flagship>button{
+  transition:transform .22s cubic-bezier(.2,.75,.25,1),box-shadow .22s ease,border-color .22s ease,background-color .22s ease,filter .22s ease;
+}
+button:active:not(:disabled),.button:active:not(:disabled){transform:translateY(1px) scale(.985)}
+/* Shared app surfaces: soft raised graphite, never hard outlined boxes. */
+.story-card,.social-post,.social-feed-state,.social-feed-aside,.podcast-feature-player,
+.podcast-episode-card,.podcast-library-card,.podcast-library-feature,.account-dashboard-card,
+.artist-studio-form,.artist-release-list,.promotion-package,.promotion-submit-form,
+.promotion-live-card,.my-promotion-row,.promotion-admin-row,.modal-card,.drawer-preferences,
+.opinion-chip,.opinion-status-item,.artist-profile-hero,.podcast-host-card{
+  border:1px solid var(--material-edge);
+  border-radius:16px;
+  background:linear-gradient(145deg,#20221e 0%,#171916 48%,#121410 100%);
+  box-shadow:inset 1px 1px 0 var(--material-highlight),inset -1px -1px 0 rgba(0,0,0,.22),0 14px 34px var(--material-shadow);
+}
+.story-card:hover,.podcast-library-card:hover,.promotion-package:hover,.account-dashboard-card:hover{
+  border-color:var(--material-green-line);
+  box-shadow:inset 1px 1px 0 var(--material-highlight),0 18px 42px rgba(0,0,0,.52),0 0 0 1px var(--material-green-wash);
+}
+.story-card{overflow:hidden}
+.story-image{background:#20221e}
+.story-image img{filter:saturate(.72) contrast(1.02)}
+.story-category,.story-open{border-radius:8px;backdrop-filter:blur(12px)}
+.story-content{padding:18px}
+.story-foot{border-color:rgba(255,255,255,.07)}
+/* Calm the brand accent by reserving full-strength green for identity and primary actions. */
+.eyebrow,.story-foot b,.podcast-status,.artist-track-stats,.dashboard-status{color:color-mix(in srgb,var(--lime) 78%,#c9cfc0)}
+.button-green,.nav-join,.got-gist-cta,.newsletter-form button,.footer-anonymous{
+  box-shadow:0 5px 16px color-mix(in srgb,var(--lime) 15%,transparent),inset 0 1px 0 rgba(255,255,255,.22);
+}
+.button-outline,.button-dark,.nav-spill,.podcast-see-more,.podcast-selection-nav button,
+.artist-track-listen,.podcast-clear-selection{
+  border-radius:11px;
+  border-color:var(--material-green-line);
+  background:linear-gradient(145deg,#242820,#151812);
+  color:color-mix(in srgb,var(--lime) 78%,#e7e9df);
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.07),0 5px 14px rgba(0,0,0,.25);
+}
+.category-tab{border-radius:999px;background:linear-gradient(145deg,#20231d,#141612);border-color:#30352d}
+.category-tab.active{background:linear-gradient(145deg,color-mix(in srgb,var(--lime) 86%,#dce8b8),color-mix(in srgb,var(--lime) 72%,#7e9145));border-color:color-mix(in srgb,var(--lime) 60%,#78854a);box-shadow:inset 0 1px 0 #ffffff55,0 5px 14px color-mix(in srgb,var(--lime) 12%,transparent)}
+/* Music and listening surfaces */
+.artists-controls button,.artist-avatar,.artist-track-art,.artist-profile-track>img{
+  box-shadow:inset 2px 2px 5px rgba(255,255,255,.10),inset -3px -4px 8px rgba(0,0,0,.38),0 9px 24px rgba(0,0,0,.42);
+}
+.artist-avatar{border-color:color-mix(in srgb,var(--lime) 55%,#48513b);background:linear-gradient(145deg,#30352a,#11140f)}
+.artist-avatar>span{background:linear-gradient(145deg,color-mix(in srgb,var(--lime) 78%,#dce6bd),color-mix(in srgb,var(--lime) 56%,#505f35))}
+.artist-track-card .artist-track-art{border-radius:14px;overflow:hidden;background:linear-gradient(145deg,#252922,#10120f);box-shadow:inset 2px 2px 6px #ffffff12,inset -4px -5px 9px #0008,0 9px 22px #0007}
+.artist-track-art img{border-radius:10px}
+.artist-track-art .artist-track-play,.artist-profile-track>button{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--lime) 84%,#dfe9bf),color-mix(in srgb,var(--lime) 68%,#718044));
+  box-shadow:inset 1px 1px 0 #ffffff66,0 5px 14px #0008;
+}
+.artist-track-listen{border-radius:999px}
+.artist-profile-hero{background-color:#1c2019}
+.artist-profile-hero>img{box-shadow:0 7px 22px #0008}
+.artist-profile-track{border-color:rgba(255,255,255,.07)}
+/* Podcast screen: cinematic stage with a softly raised playback console. */
+.podcast-library-feature,.podcast-feature-player{overflow:hidden}
+.podcast-library-screen,.podcast-screen{background:radial-gradient(ellipse at 50% 100%,#303a22 0%,#1a1e16 34%,#0d0f0d 78%)}
+.podcast-screen:before,.podcast-library-screen:before{border-color:color-mix(in srgb,var(--lime) 20%,transparent);border-radius:14px}
+.podcast-player-meta{background:linear-gradient(145deg,#20231d,#141612);box-shadow:inset 0 1px 0 #ffffff0c}
+.podcast-brand-emblem{box-shadow:inset 1px 1px 0 #ffffff66,0 7px 18px #0008}
+.podcast-episode-card,.podcast-library-card{border-radius:15px}
+.podcast-episode-art,.podcast-mini-art,.podcast-library-art{filter:saturate(.78)}
+.podcast-library-tabs span{border-radius:999px;background:#191c17}
+.podcast-library-tabs span:first-child{background:color-mix(in srgb,var(--lime) 78%,#dce7b9);border-color:transparent;color:#15180e}
+/* Shared social and creator cards */
+.social-post,.social-feed-aside,.account-dashboard-card,.artist-studio-form,.artist-release-list{border-radius:17px}
+.social-avatar{box-shadow:inset 1px 1px 0 #ffffff66,0 5px 14px #0008}
+.account-dashboard-primary{background:linear-gradient(145deg,#252b1d,#151812);border-color:var(--material-green-line)}
+/* Player becomes a compact floating app control with a tactile play key. */
+.mini-player-dock{filter:drop-shadow(0 16px 32px #000b)}
+.mini-player-dock .mini-player{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:17px 17px 0 0;
+  background:linear-gradient(145deg,#282b25f5,#151713f7);
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.12),inset -1px -1px 0 rgba(0,0,0,.35);
+}
+.player-queue-controls{border:1px solid rgba(255,255,255,.08);border-top:0;border-radius:0 0 17px 17px;background:linear-gradient(145deg,#20231d,#11130f)}
+.player-queue-controls button{border-radius:999px;background:linear-gradient(145deg,#292d25,#151812);box-shadow:inset 1px 1px 0 #ffffff12,0 3px 9px #0008}
+.player-toggle,.member-app-dock .dock-create{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--lime) 86%,#e3edc8),color-mix(in srgb,var(--lime) 68%,#718346))!important;
+  box-shadow:inset 1px 1px 0 #ffffff77,inset -2px -3px 5px #52652b55,0 6px 16px #0008;
+}
+/* Floating member dock: glass over a raised graphite base. */
+.member-app-dock{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:25px;
+  background:linear-gradient(145deg,rgba(37,40,34,.94),rgba(15,17,14,.96));
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.11),inset -1px -1px 0 rgba(0,0,0,.35),0 18px 45px rgba(0,0,0,.62);
+  backdrop-filter:blur(24px) saturate(115%);
+}
+.member-app-dock button{border-radius:17px}
+.member-app-dock button.active{color:color-mix(in srgb,var(--lime) 82%,#dce5c7)}
+.member-app-dock button.active span:after{height:2px;background:color-mix(in srgb,var(--lime) 78%,#dce5c7)}
+/* Forms and overlays feel native without changing their information architecture. */
+.modal-backdrop{backdrop-filter:blur(16px) saturate(85%)}
+.modal-card{border-radius:22px;background:linear-gradient(145deg,#22251f,#131510);box-shadow:inset 1px 1px 0 #ffffff12,0 28px 90px #000c}
+.modal-close{border-radius:50%;box-shadow:inset 1px 1px 0 #ffffff18,0 5px 15px #0008}
+input,textarea,select{border-radius:10px}
+input[type=range]{accent-color:var(--lime)}
+/* App-level finish: remove brittle edges, add material grain without image assets. */
+.site-header{background:rgba(12,13,11,.90);backdrop-filter:blur(22px) saturate(115%);border-bottom-color:rgba(255,255,255,.07)}
+.drawer-preferences{border-radius:18px}
+.member-app-dock button:focus-visible,.mini-player button:focus-visible{outline-offset:4px}
+@media(max-width:760px){
+  .screen-page{padding-top:36px;padding-bottom:54px}
+  .member-app-dock{min-height:72px;padding:6px 9px}
+  .member-app-dock .dock-create{width:53px;height:53px;min-height:53px}
+  .mini-player-dock.member-player-dock{width:calc(100% - 22px)}
+  .story-card{border-radius:14px}
+}
+@media(prefers-reduced-motion:reduce){button,.button,.story-card,.artist-avatar,.artist-avatar img{transition:none!important}}
+
+
+/* Keep the More destination a normal dock item; only the centre Create action is raised. */
+.member-app-dock{grid-template-columns:repeat(5,minmax(0,1fr))}
+.member-app-dock>.dock-more{
+  position:relative;z-index:2;justify-self:stretch;align-self:stretch;
+  width:auto;height:auto;min-height:52px;border-radius:17px;
+  padding:4px 2px;background:transparent!important;color:#e8e9df!important;
+  box-shadow:none!important;transform:none;
+}
+.member-app-dock>.dock-more svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.member-app-dock>.dock-more.active{color:color-mix(in srgb,var(--lime) 82%,#dce5c7)!important;background:rgba(255,255,255,.045)!important}
+.member-app-dock>.dock-more.active span:after{content:"";display:block;width:14px;height:2px;margin:4px auto 0;border-radius:4px;background:color-mix(in srgb,var(--lime) 78%,#dce5c7)}
+.member-app-dock>.dock-more:active{transform:scale(.94)}
+@media(max-width:600px){.member-app-dock>.dock-more{min-height:50px;width:auto;height:auto}}

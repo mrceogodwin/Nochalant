@@ -93,54 +93,9 @@ export async function handleAccountType(req, res) {
     }
 
     if (req.body?.action === "switch_primary") {
-      const requestedType = String(req.body?.accountType || "");
-      if (!ACCOUNT_TYPES.has(requestedType)) {
-        return res.status(400).json({ ok: false, error: "Choose a valid workspace." });
-      }
-      const membership = await auth.sql`SELECT id FROM user_account_types
-        WHERE user_profile_id = ${auth.profile.id}
-          AND account_type = ${requestedType} AND status = 'active' LIMIT 1`;
-      if (!membership.length) {
-        return res.status(403).json({ ok: false, error: "That workspace is not active on your account yet." });
-      }
-      // Serialize workspace switches per member and update the primary membership
-      // plus the legacy account_type mirror in one database transaction.
-      // The row lock prevents an administrator changing this membership mid-switch.
-      const transactionResults = await auth.sql.transaction([
-        auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
-        auth.sql`SELECT id FROM user_account_types
-          WHERE user_profile_id = ${auth.profile.id}
-            AND account_type = ${requestedType} AND status = 'active'
-          FOR UPDATE`,
-        auth.sql`UPDATE user_account_types SET is_primary = false, updated_at = now()
-          WHERE user_profile_id = ${auth.profile.id} AND is_primary = true
-            AND EXISTS (
-              SELECT 1 FROM user_account_types
-              WHERE user_profile_id = ${auth.profile.id}
-                AND account_type = ${requestedType} AND status = 'active'
-            )`,
-        auth.sql`UPDATE user_account_types SET is_primary = true, updated_at = now()
-          WHERE user_profile_id = ${auth.profile.id}
-            AND account_type = ${requestedType} AND status = 'active'`,
-        auth.sql`UPDATE user_profiles SET account_type = ${requestedType}, updated_at = now()
-          WHERE id = ${auth.profile.id}
-            AND EXISTS (
-              SELECT 1 FROM user_account_types
-              WHERE user_profile_id = ${auth.profile.id}
-                AND account_type = ${requestedType} AND status = 'active' AND is_primary = true
-            )`,
-        auth.sql`SELECT account_type, status, is_primary, activated_at
-          FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
-          ORDER BY is_primary DESC, activated_at ASC`
-      ]);
-      const accountTypes = transactionResults[5] || [];
-      if (!accountTypes.some(item => item.account_type === requestedType && item.is_primary)) {
-        return res.status(403).json({ ok: false, error: "That workspace is no longer active. Refresh your account and try again." });
-      }
-      return res.status(200).json({
-        ok: true,
-        profile: { ...auth.profile, account_type: requestedType },
-        accountTypes
+      return res.status(403).json({
+        ok: false,
+        error: "Account type is fixed during registration. Contact Nochalant support if your account type needs to be reviewed."
       });
     }
 
@@ -149,6 +104,8 @@ export async function handleAccountType(req, res) {
       return res.status(400).json({ ok: false, error: "Choose a valid account type." });
     }
 
+    // Account type is selected once. The row lock and immutable database
+    // marker make concurrent registration/activation requests deterministic.
     // Activation and primary selection share the same per-member advisory lock
     // as workspace switching, preventing concurrent requests from creating
     // conflicting primary workspaces.
@@ -158,44 +115,42 @@ export async function handleAccountType(req, res) {
     const artistSlug = baseSlug + "-" + randomUUID().slice(0, 8);
     const activationResults = await auth.sql.transaction([
       auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
-      auth.sql`INSERT INTO user_account_types
-        (user_profile_id, account_type, status, is_primary)
-        VALUES (
-          ${auth.profile.id}, ${accountType}, 'active',
-          NOT EXISTS (
-            SELECT 1 FROM user_account_types
-            WHERE user_profile_id = ${auth.profile.id}
-              AND is_primary = true AND status = 'active'
-          )
+      auth.sql`WITH locked_profile AS (
+          SELECT id, account_type, account_type_locked_at
+          FROM user_profiles
+          WHERE id = ${auth.profile.id}
+          FOR UPDATE
+        ),
+        decision AS (
+          SELECT id,
+            (account_type_locked_at IS NULL OR account_type = ${accountType}) AS allowed
+          FROM locked_profile
+        ),
+        membership AS (
+          INSERT INTO user_account_types (user_profile_id, account_type, status, is_primary)
+          SELECT id, ${accountType}, 'active', true
+          FROM decision
+          WHERE allowed
+          ON CONFLICT (user_profile_id, account_type) DO NOTHING
+          RETURNING account_type
+        ),
+        updated_profile AS (
+          UPDATE user_profiles
+          SET account_type = ${accountType},
+              account_type_locked_at = COALESCE(account_type_locked_at, now()),
+              updated_at = now()
+          FROM decision
+          WHERE user_profiles.id = decision.id AND decision.allowed
+          RETURNING user_profiles.account_type
         )
-        ON CONFLICT (user_profile_id, account_type) DO UPDATE
-        SET status = 'active',
-            is_primary = CASE WHEN NOT EXISTS (
-              SELECT 1 FROM user_account_types
-              WHERE user_profile_id = ${auth.profile.id}
-                AND is_primary = true AND status = 'active'
-                AND account_type <> ${accountType}
-            ) THEN true ELSE false END,
-            activated_at = COALESCE(user_account_types.activated_at, now()),
-            updated_at = now()
-        RETURNING account_type, status, is_primary`,
-      auth.sql`UPDATE user_profiles
-        SET account_type = COALESCE((
-          SELECT account_type FROM user_account_types
-          WHERE user_profile_id = ${auth.profile.id}
-            AND status = 'active' AND is_primary = true
-          LIMIT 1
-        ), account_type), updated_at = now()
-        WHERE id = ${auth.profile.id}
-        RETURNING account_type`,
-      auth.sql`SELECT account_type, status, is_primary, activated_at
-        FROM user_account_types
-        WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
-        ORDER BY is_primary DESC, activated_at ASC`,
+        SELECT decision.allowed, updated_profile.account_type
+        FROM decision
+        LEFT JOIN updated_profile ON true`,
       auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status)
         SELECT id, display_name, ${artistSlug}, 'unverified'
         FROM user_profiles
         WHERE id = ${auth.profile.id}
+          AND account_type = 'artist'
           AND ${accountType === "artist"}
           AND NOT EXISTS (
             SELECT 1 FROM artist_profiles
@@ -205,9 +160,18 @@ export async function handleAccountType(req, res) {
       auth.sql`SELECT id, stage_name, slug, verification_status
         FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`
     ]);
-    const primaryType = activationResults[2]?.[0]?.account_type || auth.profile.account_type || accountType;
-    const accountTypes = activationResults[3] || [];
-    const artistProfile = accountType === "artist" ? activationResults[5]?.[0] || null : null;
+    const activation = activationResults[1]?.[0];
+    if (!activation?.allowed) {
+      return res.status(409).json({
+        ok: false,
+        error: "Your account type was already selected during registration and cannot be changed. Contact Nochalant support if it needs review."
+      });
+    }
+    const primaryType = activation.account_type || auth.profile.account_type || accountType;
+    const accountTypes = await auth.sql`SELECT account_type, status, is_primary, activated_at
+      FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+      ORDER BY is_primary DESC, activated_at ASC`;
+    const artistProfile = accountType === "artist" ? activationResults[3]?.[0] || null : null;
 
     return res.status(200).json({
       ok: true,
