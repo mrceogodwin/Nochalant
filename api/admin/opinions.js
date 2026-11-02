@@ -4,7 +4,7 @@ import { createMusicDownloadUrl } from "../_lib/music-storage.js";
 import { handleAccountType } from "../_lib/account-type.js";
 import { handleArtistStudio } from "../_lib/artist-studio.js";
 import { handlePodcast } from "../_lib/podcast.js";
-import { handlePromotions } from "../_lib/promotions.js";\nimport { handleEditorialAutoPost } from "../_lib/editorial-auto-post.js";\nimport { handleEditorialLatest } from "../_lib/editorial-auto-post.js";
+import { handlePromotions } from "../_lib/promotions.js";\nimport { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
 
 async function proxyNeonAuth(req, res) {
   const upstreamBase = process.env.NEON_AUTH_BASE_URL;
