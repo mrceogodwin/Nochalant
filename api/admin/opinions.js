@@ -471,6 +471,7 @@ export default async function handler(req, res) {
   if (req.query?.socialFeedRoute) return handleSocialFeed(req, res);
   if (req.query?.socialSettingsRoute) return handleSocialSettings(req, res);
   if (req.query?.editorialAutoPostRoute) return (await import("../_lib/editorial-auto-post.js")).handleEditorialAutoPost(req, res);
+  if (req.query?.editorialLatestRoute) return (await import("../_lib/editorial-auto-post.js")).handleEditorialLatest(req, res);
   if (req.query?.downloadRoute) return handleTrackDownload(req, res);
   if (req.query?.authPath) return proxyNeonAuth(req, res);
   if (req.query?.accountTypeRoute) return handleAccountType(req, res);
