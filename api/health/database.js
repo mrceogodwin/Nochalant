@@ -46,10 +46,10 @@ const REQUIRED_TABLES = [
   "podcast_staff_accounts",
   "social_feature_settings",
   "social_stories",
-  "social_story_views",\n  "editorial_auto_post_settings",\n  "editorial_content_sources",\n  "editorial_discovered_items",
+  "social_story_views",
   "editorial_auto_post_settings",
   "editorial_content_sources",
-  "editorial_discovered_items"
+  "editorial_discovered_items",
 ];
 
 export default async function handler(req, res) {
@@ -84,7 +84,14 @@ export default async function handler(req, res) {
       ["user_account_types", "is_primary"],
       ["user_profile_details", "avatar_url"],
       ["social_feature_settings", "enabled"],
-      ["user_profiles", "account_type_locked_at"],\n      ["submissions", "slug"],\n      ["submissions", "seo_title"],\n      ["submissions", "seo_description"],\n      ["submissions", "canonical_url"],\n      ["submissions", "og_image_url"],\n      ["submissions", "is_indexable"]
+      ["user_profiles", "account_type_locked_at"],
+      ["submissions", "slug"],
+      ["submissions", "seo_title"],
+      ["submissions", "seo_description"],
+      ["submissions", "focus_keyword"],
+      ["submissions", "canonical_url"],
+      ["submissions", "og_image_url"],
+      ["submissions", "is_indexable"]
     ];
     const columnRows = await sql`
       SELECT table_name, column_name
@@ -96,7 +103,14 @@ export default async function handler(req, res) {
           ('user_account_types', 'is_primary'),
           ('user_profile_details', 'avatar_url'),
           ('social_feature_settings', 'enabled'),
-          ('user_profiles', 'account_type_locked_at'),\n          ('submissions', 'slug'),\n          ('submissions', 'seo_title'),\n          ('submissions', 'seo_description'),\n          ('submissions', 'canonical_url'),\n          ('submissions', 'og_image_url'),\n          ('submissions', 'is_indexable')
+          ('user_profiles', 'account_type_locked_at'),
+          ('submissions', 'slug'),
+          ('submissions', 'seo_title'),
+          ('submissions', 'seo_description'),
+          ('submissions', 'focus_keyword'),
+          ('submissions', 'canonical_url'),
+          ('submissions', 'og_image_url'),
+          ('submissions', 'is_indexable')
         )
     `;
     const presentColumns = new Set(columnRows.map(row => row.table_name + "." + row.column_name));
