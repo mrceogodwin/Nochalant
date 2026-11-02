@@ -44,18 +44,6 @@ async function verifyImage(imageUrl) {
     return url.toString();
   } catch { return null; }
 }
-async function verifyImage(imageUrl) {
-  if (!imageUrl) return null;
-  try {
-    const parsed = new URL(imageUrl);
-    if (parsed.protocol !== "https:" || parsed.username || parsed.password) return null;
-    const response = await fetch(parsed, { method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(5000) });
-    const contentType = response.headers.get("content-type") || "";
-    const size = Number(response.headers.get("content-length") || 0);
-    if (!response.ok || !contentType.startsWith("image/") || (size && size > 8000000)) return null;
-    return parsed.toString();
-  } catch { return null; }
-}
 async function ensureSources(sql) {
   for (const source of DEFAULT_SOURCES) {
     await sql`INSERT INTO editorial_content_sources (name,feed_url,category) VALUES (${source.name},${source.feed_url},${source.category}) ON CONFLICT (feed_url) DO NOTHING`;
@@ -71,6 +59,7 @@ async function collect(sql) {
       if (!response.ok) continue;
       const xml = (await response.text()).slice(0, 1500000);
       for (const item of parseFeed(xml, source)) {
+        item.image_url = await verifyImage(item.image_url);
         const inserted = await sql`INSERT INTO editorial_discovered_items (source_id,title,summary,source_url,image_url,category,source_name,published_at) VALUES (${source.id},${item.title},${item.summary},${item.source_url},${item.image_url},${item.category},${item.source_name},${item.published_at && !Number.isNaN(item.published_at.getTime()) ? item.published_at : null}) ON CONFLICT (source_url) DO NOTHING RETURNING id`;
         discovered += inserted.length;
       }
