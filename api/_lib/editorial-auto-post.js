@@ -67,16 +67,43 @@ async function collect(sql) {
   }
   return { discovered, sourceCount: sources.length };
 }
+async function generateEditorialDraft(item) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return { ok: false, reason: 'Editorial AI is not configured; item remains in review.' };
+  const model = process.env.NOCHALANT_EDITORIAL_MODEL || 'gpt-4.1-mini';
+  const systemPrompt = 'You are an editor for Nochalant, a Nigerian entertainment and culture publication. Write original, clear editorial copy. Use only facts explicitly present in the supplied headline and feed summary. Never invent names, quotes, dates, numbers, motives, or events. Preserve uncertainty and attribute allegations. Do not copy source phrasing. If details are insufficient, return JSON with hold=true. Otherwise return JSON with headline, article, meta_description, focus_keyword. Article should be 350–600 words only when facts support that length. Include source attribution and the exact original URL in the article.';
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST', headers: { authorization: 'Bearer ' + apiKey, 'content-type': 'application/json' },
+      body: JSON.stringify({ model, temperature: 0.4, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: JSON.stringify({ source: item.source_name, headline: item.title, summary: item.summary, original_url: item.source_url }) }] }),
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!response.ok) return { ok: false, reason: 'Editorial draft generation failed; item remains in review.' };
+    const payload = await response.json();
+    const draft = JSON.parse(payload.choices?.[0]?.message?.content || '{}');
+    if (draft.hold) return { ok: false, reason: 'Insufficient source detail; item remains in review.' };
+    const headline = String(draft.headline || '').trim();
+    const article = String(draft.article || '').trim();
+    const description = String(draft.meta_description || '').trim();
+    const keyword = String(draft.focus_keyword || '').trim();
+    if (headline.length < 12 || headline.length > 180 || article.length < 700 || description.length < 60 || description.length > 160 || !keyword || !article.includes(item.source_url)) return { ok: false, reason: 'Draft failed editorial quality and attribution checks; item remains in review.' };
+    return { ok: true, headline, article, description, keyword };
+  } catch { return { ok: false, reason: 'Editorial draft could not be validated; item remains in review.' }; }
+}
 async function publish(sql, itemId, authorId) {
   const rows = await sql`SELECT * FROM editorial_discovered_items WHERE id=${itemId} AND status='pending' FOR UPDATE`;
   if (!rows.length) return { published: false, reason: "Already handled or unavailable." };
   const item = rows[0];
-  const body = composeEditorialCopy(item.title,item.summary,item.source_name,item.source_url);
-  const slug = slugify(item.title) + "-" + String(item.id).slice(0,8);
-  const seoDescription = String(item.summary || body).slice(0,155);
+  const verifiedImage = await verifyImage(item.image_url);
+  if (!verifiedImage) return { published: false, reason: "A valid story thumbnail is required; item remains in review." };
+  const draft = await generateEditorialDraft(item);
+  if (!draft.ok) return { published: false, reason: draft.reason };
+  const body = draft.article;
+  const slug = slugify(draft.headline) + "-" + String(item.id).slice(0,8);
+  const seoDescription = draft.description;
   const canonical = "https://nochalant.vercel.app/story/" + slug;
   const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(item.source_url)))).map(b=>b.toString(16).padStart(2,"0")).join("");
-  const inserted = await sql`INSERT INTO submissions (author_id,title,body,category,source_url,content_fingerprint,status,published_at,editorial_source,slug,seo_title,seo_description,focus_keyword,canonical_url,og_image_url,is_indexable) VALUES (${authorId},${item.title},${body},${item.category},${item.source_url},${fingerprint},'published',now(),true,${slug},${item.title.slice(0,65)},${seoDescription},${item.category},${canonical},${item.image_url},true) ON CONFLICT DO NOTHING RETURNING id`;
+  const inserted = await sql`INSERT INTO submissions (author_id,title,body,category,source_url,content_fingerprint,status,published_at,editorial_source,slug,seo_title,seo_description,focus_keyword,canonical_url,og_image_url,is_indexable) VALUES (${authorId},${draft.headline},${body},${item.category},${item.source_url},${fingerprint},'published',now(),true,${slug},${draft.headline.slice(0,65)},${seoDescription},${draft.keyword},${canonical},${verifiedImage},true) ON CONFLICT DO NOTHING RETURNING id`;
   if (!inserted.length) {
     await sql`UPDATE editorial_discovered_items SET status='dismissed' WHERE id=${itemId}`;
     return { published: false, reason: "Duplicate content." };
@@ -101,7 +128,7 @@ export async function handleEditorialAutoPost(req,res) {
     if (req.method === "GET" && !isCron) {
       await ensureSources(sql);
       const [settings, sources, items] = await Promise.all([
-        sql`SELECT enabled,daily_limit,last_run_at FROM editorial_auto_post_settings WHERE id=true`,
+        sql`SELECT enabled,auto_publish,daily_limit,last_run_at FROM editorial_auto_post_settings WHERE id=true`,
         sql`SELECT id,name,feed_url,category,enabled FROM editorial_content_sources ORDER BY name`,
         sql`SELECT id,title,summary,source_url,image_url,category,source_name,published_at,status,discovered_at FROM editorial_discovered_items ORDER BY discovered_at DESC LIMIT 100`
       ]);
@@ -109,9 +136,9 @@ export async function handleEditorialAutoPost(req,res) {
     }
     const action = String(req.body?.action || "");
     if (isCron || action === "daily_run") {
-      const settings = await sql`SELECT enabled,daily_limit FROM editorial_auto_post_settings WHERE id=true`;
-      if (!isCron && !settings[0]?.enabled) return res.status(409).json({ok:false,error:"Turn on Auto Post before running the daily job."});
-      if (isCron && !settings[0]?.enabled) return res.status(200).json({ok:true,skipped:true,reason:"Auto Post is off."});
+      const settings = await sql`SELECT enabled,auto_publish,daily_limit FROM editorial_auto_post_settings WHERE id=true`;
+      if (!isCron && (!settings[0]?.enabled || !settings[0]?.auto_publish)) return res.status(409).json({ok:false,error:"Enable Auto Post and automatic publishing before running the daily job."});
+      if (isCron && (!settings[0]?.enabled || !settings[0]?.auto_publish)) return res.status(200).json({ok:true,skipped:true,reason:"Automatic publishing is off."});
       const result = await collect(sql);
       let published = 0;
       const cap = Math.max(1,Math.min(20,Number(settings[0]?.daily_limit)||5));
@@ -126,7 +153,7 @@ export async function handleEditorialAutoPost(req,res) {
     if (!actor) return res.status(403).json({ok:false,error:"Super Admin access required."});
     if (action === "toggle") {
       const enabled = req.body?.enabled === true;
-      await sql`UPDATE editorial_auto_post_settings SET enabled=${enabled},updated_by=${actor.id},updated_at=now() WHERE id=true`;
+      await sql`UPDATE editorial_auto_post_settings SET enabled=${enabled},auto_publish=${enabled},updated_by=${actor.id},updated_at=now() WHERE id=true`;
       return res.status(200).json({ok:true,enabled});
     }
     if (action === "fetch") {
