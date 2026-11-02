@@ -162,3 +162,10 @@ The health endpoint checks the lock column and trigger, plus the unique Artist-p
 Migration `021_editorial_auto_post.sql` creates the Super Admin's free RSS discovery queue and daily Auto Post setting. Apply it to the isolated preflight branch first. The Control Room provides Fetch Latest, per-story Publish/Dismiss, and a daily Auto Post toggle. Vercel Cron calls the shared admin function once daily at 08:00 UTC (09:00 Africa/Lagos). Configure a server-only `CRON_SECRET` environment variable in Vercel; the scheduled request must use Vercel's cron authorization header. Do not expose this secret to the browser.
 
 The initial feeds are BellaNaija, NotJustOk and BBC Africa. RSS availability and publisher terms may change. The system stores source links and short feed summaries, deduplicates by canonical source URL, and publishes through the existing editorial submissions table as the Super Admin. Review feed summaries and rights/attribution before enabling automatic publication. No paid AI API is used.
+
+
+## 8. Editorial SEO
+
+Migration `022_editorial_seo_metadata.sql` adds per-article slug, SEO title/description, focus keyword, canonical URL, Open Graph image and indexability metadata. Public article URLs use `/story/:slug`, rendered server-side with NewsArticle JSON-LD, canonical and social metadata. `/sitemap.xml` is generated from published, indexable articles and `/robots.txt` advertises it to crawlers. Apply 022 on preflight before testing; production remains untouched until the full migration sequence is approved.
+
+Important: sitemap inclusion and crawlable HTML improve discovery, but cannot guarantee Google/Bing indexing or rankings. Search Console and Bing Webmaster Tools ownership verification and sitemap submission remain external setup steps.
