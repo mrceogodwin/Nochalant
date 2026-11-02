@@ -76,7 +76,7 @@ export async function handleEditorialAutoPost(req,res) {
       if (auth.profile.role !== "super_admin") return res.status(403).json({ok:false,error:"Super Admin access required."});
       actor = auth.profile;
     }
-    if (req.method === "GET") {
+    if (req.method === "GET" && !isCron) {
       await ensureSources(sql);
       const [settings, sources, items] = await Promise.all([
         sql`SELECT enabled,daily_limit,last_run_at FROM editorial_auto_post_settings WHERE id=true`,
