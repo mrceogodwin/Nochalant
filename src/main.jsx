@@ -40,6 +40,8 @@ function App() {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState("");
   const [story, setStory] = useState(demoStories[0]);
+  const [publishedStories, setPublishedStories] = useState([]);
+  const [publishedStories, setPublishedStories] = useState([]);
   const [vote, setVote] = useState("");
   const [poll, setPoll] = useState(null);
   const [pollLoading, setPollLoading] = useState(true);
@@ -361,6 +363,31 @@ function App() {
     (category === "All Gist" || item.category === category) &&
     (item.title.toLowerCase().includes(search.toLowerCase()) || item.excerpt.toLowerCase().includes(search.toLowerCase()))
   ), [category, search, editorialStories]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/editorial/latest", { signal: controller.signal, cache: "no-store" })
+      .then(response => response.json().then(data => ({ response, data })))
+      .then(({ response, data }) => {
+        if (!response.ok || !data.ok) throw new Error(data.error || "Editorial stories unavailable.");
+        if (!controller.signal.aborted) setPublishedStories((data.stories || []).map(item => ({
+          id: item.id,
+          category: item.category === "Music" ? "Afrobeats & Jamz" : item.category === "Nollywood" ? "Nollywood Drama" : item.category,
+          label: "LATEST GIST",
+          title: item.title,
+          excerpt: item.excerpt || item.title,
+          image: item.image || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1000&q=80",
+          time: item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" }) : "Latest",
+          views: 0,
+          read: item.read || "2 min read",
+          author: item.author,
+          body: item.body,
+          sourceUrl: item.sourceUrl
+        })));
+      })
+      .catch(error => { if (error?.name !== "AbortError") console.warn("Latest Gist feed unavailable:", error?.message || error); });
+    return () => controller.abort();
+  }, []);
 
   const notify = (message) => {
     setToast(message);
