@@ -46,7 +46,7 @@ const REQUIRED_TABLES = [
   "podcast_staff_accounts",
   "social_feature_settings",
   "social_stories",
-  "social_story_views",
+  "social_story_views",\n  "editorial_auto_post_settings",\n  "editorial_content_sources",\n  "editorial_discovered_items",
   "editorial_auto_post_settings",
   "editorial_content_sources",
   "editorial_discovered_items"
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
       ["user_account_types", "is_primary"],
       ["user_profile_details", "avatar_url"],
       ["social_feature_settings", "enabled"],
-      ["user_profiles", "account_type_locked_at"]
+      ["user_profiles", "account_type_locked_at"],\n      ["submissions", "slug"],\n      ["submissions", "seo_title"],\n      ["submissions", "seo_description"],\n      ["submissions", "canonical_url"],\n      ["submissions", "og_image_url"],\n      ["submissions", "is_indexable"]
     ];
     const columnRows = await sql`
       SELECT table_name, column_name
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
           ('user_account_types', 'is_primary'),
           ('user_profile_details', 'avatar_url'),
           ('social_feature_settings', 'enabled'),
-          ('user_profiles', 'account_type_locked_at')
+          ('user_profiles', 'account_type_locked_at'),\n          ('submissions', 'slug'),\n          ('submissions', 'seo_title'),\n          ('submissions', 'seo_description'),\n          ('submissions', 'canonical_url'),\n          ('submissions', 'og_image_url'),\n          ('submissions', 'is_indexable')
         )
     `;
     const presentColumns = new Set(columnRows.map(row => row.table_name + "." + row.column_name));
@@ -129,7 +129,7 @@ export default async function handler(req, res) {
     `;
     const missingConstraints = constraintRows.length ? []
       : ['payment_webhook_events.payment_webhook_events_processing_status_check'];
-    const requiredIndexes = ['artist_profiles_owner_user_id_key', 'payment_refunds_provider_refund_id_unique'];
+    const requiredIndexes = ['artist_profiles_owner_user_id_key', 'payment_refunds_provider_refund_id_unique', 'submissions_slug_unique', 'submissions_public_seo_idx'];
     const indexRows = await sql`
       SELECT indexname
       FROM pg_indexes
