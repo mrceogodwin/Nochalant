@@ -114,7 +114,17 @@ export default async function handler(req, res) {
     const missingTriggers = triggerRows[0]?.account_type_lock_trigger_present
       ? []
       : ['user_profiles.user_profiles_account_type_immutable'];
-    const complete = missing.length === 0 && missingColumns.length === 0 && missingTriggers.length === 0;
+    const requiredIndexes = ['artist_profiles_owner_user_id_key'];
+    const indexRows = await sql`
+      SELECT indexname
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname = ANY(${requiredIndexes})
+    `;
+    const presentIndexes = new Set(indexRows.map(row => row.indexname));
+    const missingIndexes = requiredIndexes.filter(name => !presentIndexes.has(name));
+    const complete = missing.length === 0 && missingColumns.length === 0
+      && missingTriggers.length === 0 && missingIndexes.length === 0;
     return res.status(complete ? 200 : 503).json({
       ok: complete,
       database: "connected",
@@ -125,7 +135,9 @@ export default async function handler(req, res) {
       checked_columns: requiredColumns.length,
       missing_columns: missingColumns,
       checked_triggers: 1,
-      missing_triggers: missingTriggers
+      missing_triggers: missingTriggers,
+      checked_indexes: requiredIndexes.length,
+      missing_indexes: missingIndexes
     });
   } catch (error) {
     console.error("Database health check failed:", error?.message || error);
