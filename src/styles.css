@@ -1789,3 +1789,6 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  .jury-pagination{gap:7px}
  .jury-pagination button{width:7px;height:7px}
 }
+
+/* Preserve the established square-edged editorial grid on mobile and desktop. */
+.story-card{border-radius:0!important}
