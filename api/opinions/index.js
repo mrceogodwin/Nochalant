@@ -1,4 +1,5 @@
 import { requireActiveUser } from "../_lib/neon-auth.js";
+import { neon } from "@neondatabase/serverless";
 import { resolveMusicAssetUrl } from "../_lib/music-storage.js";
 
 export default async function handler(req, res) {
@@ -24,10 +25,11 @@ export default async function handler(req, res) {
     res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
-  const auth = await requireActiveUser(req);
-  if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
+  const connectionString = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
+  if (!connectionString) return res.status(503).json({ ok: false, error: "Opinions are temporarily unavailable." });
   try {
-    const rows = await auth.sql`
+    const sql = neon(connectionString);
+    const rows = await sql`
       SELECT o.id, o.body, o.topic, o.published_at,
              p.display_name AS author_name, d.avatar_url
       FROM community_opinions o
