@@ -33,12 +33,13 @@ The route is rewritten to the existing admin opinions serverless handler to avoi
 - Migration 008: account types.
 - Migration 015 (`015_multi_workspace_accounts.sql`): account-type memberships, profile details and podcast staff accounts. It backfills each existing member's current account type as their primary membership.
 - Migration 016 (`016_unique_artist_profile_owner.sql`): enforces one Artist profile per member. Production currently has no duplicate artist-profile owners.
+- Migration 018 (`018_bachs_refund_reconciliation.sql`): provider refund IDs and settled refund amounts, with a unique provider-refund index. This is also required by the production payment reconciliation health gate.
 - Migration 019 (`019_social_stories.sql`): text story records and story views.
 - Migration 020 (`020_immutable_account_type.sql`): immutable account-type registration lock (adds `account_type_locked_at` and its database trigger).
 
-A read-only production-versus-preflight schema comparison confirms that migrations 015, 016, 019 and 020 are still outstanding on production. The preflight branch contains their expected schema. Migration 015 backfills one primary membership for each existing user; migration 020 locks each existing user to their current account type. Review these additive changes before production rollout.
+A read-only production-versus-preflight schema comparison confirms that migrations 015, 016, 018, 019 and 020 are still outstanding on production. Migration 018 was applied and verified on the isolated preflight branch; the preflight schema now passes all 46 required-table checks, six required-column checks, and the required trigger, webhook constraint and unique-index checks. Migration 015 backfills one primary membership for each existing user; migration 020 locks each existing user to their current account type. Review these additive changes before production rollout.
 
-Apply and verify all prerequisite migrations in numeric order on a non-production branch first. Do not enable Social Stories, account-profile editing, account-type activation or podcast staff workflows in production until the corresponding schema is applied and verified.
+Apply and verify all prerequisite migrations in numeric order on a non-production branch first. Do not enable Social Stories, account-profile editing, account-type activation, podcast staff workflows or mark payment reconciliation complete in production until the corresponding schema is applied and verified.
 ## Deliberate safety boundaries
 
 Stories are text-only. Image/video posts, story media, DMs, reposts and bookmarks are not enabled in this milestone. Media requires signed uploads, private storage, file-type/size checks, malware scanning, moderation review and expiring delivery URLs before launch.
