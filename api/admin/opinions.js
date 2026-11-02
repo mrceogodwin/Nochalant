@@ -4,7 +4,8 @@ import { createMusicDownloadUrl } from "../_lib/music-storage.js";
 import { handleAccountType } from "../_lib/account-type.js";
 import { handleArtistStudio } from "../_lib/artist-studio.js";
 import { handlePodcast } from "../_lib/podcast.js";
-import { handlePromotions } from "../_lib/promotions.js";\nimport { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
+import { handlePromotions } from "../_lib/promotions.js";
+import { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
 
 async function proxyNeonAuth(req, res) {
   const upstreamBase = process.env.NEON_AUTH_BASE_URL;
@@ -469,9 +470,9 @@ const accountActions = ["suspend","unsuspend","ban","unban"];
 export default async function handler(req, res) {
   if (req.query?.socialRoute) return handleSocialNetwork(req, res);
   if (req.query?.socialFeedRoute) return handleSocialFeed(req, res);
-  if (req.query?.socialSettingsRoute) return handleSocialSettings(req, res);\n  if (req.query?.editorialAutoPostRoute) return handleEditorialAutoPost(req, res);\n  if (req.query?.editorialLatestRoute) return handleEditorialLatest(req, res);
-  if (req.query?.editorialAutoPostRoute) return (await import("../_lib/editorial-auto-post.js")).handleEditorialAutoPost(req, res);
-  if (req.query?.editorialLatestRoute) return (await import("../_lib/editorial-auto-post.js")).handleEditorialLatest(req, res);
+  if (req.query?.socialSettingsRoute) return handleSocialSettings(req, res);
+  if (req.query?.editorialAutoPostRoute) return handleEditorialAutoPost(req, res);
+  if (req.query?.editorialLatestRoute) return handleEditorialLatest(req, res);
   if (req.query?.downloadRoute) return handleTrackDownload(req, res);
   if (req.query?.authPath) return proxyNeonAuth(req, res);
   if (req.query?.accountTypeRoute) return handleAccountType(req, res);
