@@ -1680,3 +1680,40 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .player-reopen:active,.member-player-reopen:active{cursor:grabbing}
 .player-reopen[style*="left"],.member-player-reopen[style*="left"]{right:auto!important;bottom:auto!important}
 @media(max-width:600px){.player-reopen,.member-player-reopen{width:62px;height:62px;min-width:62px}}
+
+/* Hot or Trash compact community-opinion slider */
+.jury-section{display:block;max-width:1100px}
+.jury-opinion-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 220px;align-items:center;column-gap:28px;row-gap:18px;min-height:0;padding:28px 34px 22px;border:1px solid #58613d;border-radius:28px;background:radial-gradient(ellipse at 72% 45%,#252d1b 0%,#151811 44%,#0e100d 100%);overflow:visible}
+.jury-copy{grid-column:1;grid-row:1;min-width:0}
+.jury-copy h2{margin:12px 0 12px;font-size:clamp(30px,4vw,48px);line-height:1.04;letter-spacing:-.055em}
+.jury-copy>p{max-width:520px;margin:0;color:#c4c6b9;font-size:clamp(13px,1.4vw,17px);line-height:1.55}
+.jury-opinion-avatar{grid-column:2;grid-row:1;justify-self:center;width:clamp(132px,19vw,220px);aspect-ratio:1;border-radius:50%;overflow:hidden;border:6px solid var(--lime);background:#20251a;box-shadow:0 0 0 9px #d6f66712}
+.jury-opinion-avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.jury-avatar-fallback{display:grid;width:100%;height:100%;place-items:center;background:linear-gradient(145deg,#28301e,#11140f)}
+.jury-avatar-fallback svg{width:42%;fill:none;stroke:var(--lime);stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+.jury-slide-arrow{position:absolute;z-index:2;top:35%;width:48px;height:48px;border:1px solid #58613d;border-radius:50%;background:#171b12;color:#f5f5ed;font-size:34px;line-height:1;cursor:pointer}
+.jury-slide-prev{left:-24px}.jury-slide-next{right:-24px}
+.jury-options{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0}
+.jury-option{min-height:58px;padding:14px 18px;border-radius:18px;font-size:clamp(14px,1.5vw,18px)}
+.jury-card-footer{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;padding-top:2px;color:#c5c8b9;font-size:9px;font-weight:900;letter-spacing:.12em}
+.jury-card-footer span:last-child{color:var(--lime)}
+.jury-pagination{grid-column:1/-1;display:flex;justify-content:center;gap:12px;margin-top:-7px}
+.jury-pagination button{width:10px;height:10px;padding:0;border:0;border-radius:50%;background:#62665c;cursor:pointer}
+.jury-pagination button.active{background:var(--lime);box-shadow:0 0 12px #d6f66766}
+.jury-opinion-quote{grid-column:1/-1;margin:0;color:#aeb2a2;font-size:12px;line-height:1.45;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.jury-feedback{grid-column:1/-1;margin:0}
+@media(max-width:600px){
+ .jury-section{padding-left:18px;padding-right:18px}
+ .jury-opinion-card{grid-template-columns:minmax(0,1fr) 116px;column-gap:12px;row-gap:14px;padding:22px 18px 18px;border-radius:24px}
+ .jury-copy h2{font-size:34px;margin:10px 0}
+ .jury-copy .eyebrow{font-size:8px;letter-spacing:.12em}
+ .jury-copy>p{font-size:12px;line-height:1.45}
+ .jury-opinion-avatar{width:112px;border-width:4px}
+ .jury-slide-arrow{top:28%;width:34px;height:34px;font-size:25px}
+ .jury-slide-prev{left:-12px}.jury-slide-next{right:-12px}
+ .jury-options{gap:9px}
+ .jury-option{min-height:52px;padding:12px 7px;border-radius:14px;font-size:13px}
+ .jury-card-footer{font-size:8px;letter-spacing:.07em}
+ .jury-pagination{gap:10px}
+ .jury-opinion-quote{font-size:11px}
+}
