@@ -14,11 +14,11 @@
     },
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "destination": "/api/content?type=sitemap"
     },
     {
       "source": "/story/:slug",
-      "destination": "/api/seo-story?slug=:slug"
+      "destination": "/api/content?type=story&slug=:slug"
     },
     {
       "source": "/api/editorial/auto-post",
