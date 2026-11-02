@@ -44,6 +44,18 @@ async function verifyImage(imageUrl) {
     return url.toString();
   } catch { return null; }
 }
+async function verifyImage(imageUrl) {
+  if (!imageUrl) return null;
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password) return null;
+    const response = await fetch(parsed, { method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(5000) });
+    const contentType = response.headers.get("content-type") || "";
+    const size = Number(response.headers.get("content-length") || 0);
+    if (!response.ok || !contentType.startsWith("image/") || (size && size > 8000000)) return null;
+    return parsed.toString();
+  } catch { return null; }
+}
 async function ensureSources(sql) {
   for (const source of DEFAULT_SOURCES) {
     await sql`INSERT INTO editorial_content_sources (name,feed_url,category) VALUES (${source.name},${source.feed_url},${source.category}) ON CONFLICT (feed_url) DO NOTHING`;
