@@ -766,20 +766,17 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (!currentUser?.id) { setOpinions([]); return () => controller.abort(); }
     (async () => {
       try {
-        const token = await getAuthToken();
-        if (!token) return;
-        const response = await fetch("/api/opinions", { signal: controller.signal, headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        const response = await fetch("/api/opinions", { signal: controller.signal, cache: "no-store" });
         const data = await response.json().catch(() => ({}));
         if (response.ok && data.ok && Array.isArray(data.opinions) && !controller.signal.aborted) setOpinions(data.opinions);
       } catch (error) {
-        if (error?.name !== "AbortError") console.error("Nochalant member opinions could not load:", error);
+        if (error?.name !== "AbortError") console.error("Nochalant public opinions could not load:", error);
       }
     })();
     return () => controller.abort();
-  }, [currentUser?.id]);
+  }, []);
   
   useEffect(() => { setOpinionSlide(0); }, [opinions.length]);
   const moveOpinion = (direction) => {
@@ -1235,9 +1232,9 @@ function App() {
             <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
           </div>
           <div className="jury-opinion-avatar" aria-hidden="true">
-            {opinions[opinionSlide]?.avatar_url ? <img src={opinions[opinionSlide].avatar_url} alt="" /> : <span className="jury-avatar-fallback"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></span>}
+            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" />
           </div>
-          {opinions.length > 1 && <>
+          {opinions.length > 0 && <>
             <button className="jury-slide-arrow jury-slide-prev" type="button" aria-label="Previous community opinion" onClick={() => moveOpinion(-1)}><span aria-hidden="true">‹</span></button>
             <button className="jury-slide-arrow jury-slide-next" type="button" aria-label="Next community opinion" onClick={() => moveOpinion(1)}><span aria-hidden="true">›</span></button>
           </>}
@@ -1249,10 +1246,9 @@ function App() {
             <span>{opinions.length ? `COMMUNITY OPINION · ${opinionSlide + 1} / ${opinions.length}` : "COMMUNITY OPINIONS"}</span>
             <span>{poll ? `${poll.total_votes} VOTES` : pollLoading ? "LOADING" : "LIVE RESULTS"}</span>
           </div>
-          {opinions.length > 1 && <div className="jury-pagination" aria-label="Choose community opinion">
-            {opinions.slice(0, 8).map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
+          {opinions.length > 0 && <div className="jury-pagination" aria-label="Choose community opinion">
+            {opinions.map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
           </div>}
-          {opinions.length > 0 && <p className="jury-opinion-quote" aria-live="polite">“{opinions[opinionSlide]?.body}”</p>}
           <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
         </div>
       </section>
