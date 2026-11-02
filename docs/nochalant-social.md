@@ -33,8 +33,11 @@ The route is rewritten to the existing admin opinions serverless handler to avoi
 - Migration 008: account types.
 - Migration 015: member profile details.
 - Migration 019: story records and story views.
+- Migration 020: immutable account-type registration lock (adds `account_type_locked_at` and its database trigger).
 
-Apply and verify missing migrations in a non-production Neon branch first. Do not expose Stories in production until migration 019 is applied and verified.
+The live production Neon schema currently lacks `user_profile_details`, `user_account_types`, `social_stories`, `social_story_views`, and `user_profiles.account_type_locked_at`; these are present on the preflight branch. The production schema also lacks `podcast_staff_accounts`, which is a separate outstanding schema difference and must be traced to its owning migration before podcast staff workflows are enabled.
+
+Apply and verify all prerequisite migrations in a non-production Neon branch first. Do not expose Social stories or account-type activation in production until the corresponding schema is applied and verified. Migration 020 locks existing members to their current account type; review this effect against the existing member base before production rollout.
 
 ## Deliberate safety boundaries
 
