@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/editorial/auto-post",
+      "destination": "/api/admin/opinions?editorialAutoPostRoute=1"
+    },
+    {
       "source": "/api/social",
       "destination": "/api/admin/opinions?socialRoute=1"
     },
@@ -79,6 +83,12 @@
           "value": "no-cache"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/admin/opinions?editorialAutoPostRoute=1",
+      "schedule": "0 8 * * *"
     }
   ]
 }
