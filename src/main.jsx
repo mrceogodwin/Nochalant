@@ -165,6 +165,7 @@ function App() {
   const [artistRailPaused, setArtistRailPaused] = useState(false);
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
+  const [opinionSlide, setOpinionSlide] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
   const [accountProfile, setAccountProfile] = useState(null);
   const [accountProfileLoading, setAccountProfileLoading] = useState(false);
@@ -779,6 +780,12 @@ function App() {
     })();
     return () => controller.abort();
   }, [currentUser?.id]);
+  
+  useEffect(() => { setOpinionSlide(0); }, [opinions.length]);
+  const moveOpinion = (direction) => {
+    if (!opinions.length) return;
+    setOpinionSlide(index => (index + direction + opinions.length) % opinions.length);
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1220,49 +1227,33 @@ function App() {
         <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category" aria-label={item.category}><span className="story-category-mark" aria-hidden="true">✦</span><span className="story-category-label">{item.category}</span></span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
       </section>
 
-      <section className="section container split-section" id="hot-or-trash">
-        <div className="jury-image">
-          <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial" />
-          <span className="image-tag">THE STREET JURY</span>
-        </div>
-        <div className="jury-panel">
-          <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
-          <h2>Hot or <em>trash?</em></h2>
-          <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
+      <section className="section container jury-section" id="hot-or-trash">
+        <div className="jury-panel jury-opinion-card">
+          <div className="jury-copy">
+            <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
+            <h2>Hot or <em>trash?</em></h2>
+            <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
+          </div>
+          <div className="jury-opinion-avatar" aria-hidden="true">
+            {opinions[opinionSlide]?.avatar_url ? <img src={opinions[opinionSlide].avatar_url} alt="" /> : <span className="jury-avatar-fallback"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></span>}
+          </div>
+          {opinions.length > 1 && <>
+            <button className="jury-slide-arrow jury-slide-prev" type="button" aria-label="Previous community opinion" onClick={() => moveOpinion(-1)}><span aria-hidden="true">‹</span></button>
+            <button className="jury-slide-arrow jury-slide-next" type="button" aria-label="Next community opinion" onClick={() => moveOpinion(1)}><span aria-hidden="true">›</span></button>
+          </>}
           <div className="jury-options">
             <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
             <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
           </div>
-          <div className="vote-results">
-            <div className="vote-labels">
-              <span>{poll ? "COMMUNITY VOTES · " + poll.total_votes : "COMMUNITY VOTES"}</span>
-              <span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : (pollLoading ? "LOADING" : "LIVE RESULTS")}</span>
-            </div>
-            <div className="vote-result-row"><span>🔥 Pure fire</span><b>{(poll?.hot_percent ?? 0) + "%"}</b></div>
-            <div className="vote-bar"><i style={{width: (poll?.hot_percent ?? 0) + "%"}} /></div>
-            <div className="vote-result-row"><span>✕ Off key</span><b>{(poll?.trash_percent ?? 0) + "%"}</b></div>
-            <div className="vote-bar vote-bar-trash"><i style={{width: (poll?.trash_percent ?? 0) + "%"}} /></div>
+          <div className="jury-card-footer">
+            <span>{opinions.length ? `COMMUNITY OPINION · ${opinionSlide + 1} / ${opinions.length}` : "COMMUNITY OPINIONS"}</span>
+            <span>{poll ? `${poll.total_votes} VOTES` : pollLoading ? "LOADING" : "LIVE RESULTS"}</span>
           </div>
-          {currentUser && opinions.length > 0 ? (
-            <div className="opinion-rail" aria-label="Opinions from Nochalant users">
-              <div className="opinion-rail-top">
-                <span>COMMUNITY TAKES</span>
-                <span>{opinions.length + (opinions.length === 1 ? " COMMUNITY TAKE" : " COMMUNITY TAKES")}</span>
-              </div>
-              <div className="opinion-rail-window">
-                <div className="opinion-rail-track">
-                  {[...opinions, ...opinions].map((item, index) => (
-                    <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}>
-                      <span className="opinion-topic">{item.topic}</span>
-                      <span className="opinion-quote">“{item.body}”</span>
-                      <span className="opinion-author">— {item.author_name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-          <small className="muted">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
+          {opinions.length > 1 && <div className="jury-pagination" aria-label="Choose community opinion">
+            {opinions.slice(0, 8).map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
+          </div>}
+          {opinions.length > 0 && <p className="jury-opinion-quote" aria-live="polite">“{opinions[opinionSlide]?.body}”</p>}
+          <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
         </div>
       </section>
 
