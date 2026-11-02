@@ -1,12 +1,14 @@
 -- Lock each member to the account type selected during registration.
--- Existing accounts retain their current type; newly-created profiles remain
--- unlocked only until the first successful account-type activation.
+-- Existing members with a selected type retain it. Profiles with no type remain
+-- eligible to make their first selection and are locked at that point.
 ALTER TABLE user_profiles
   ADD COLUMN IF NOT EXISTS account_type_locked_at timestamptz;
 
 UPDATE user_profiles
 SET account_type_locked_at = COALESCE(account_type_locked_at, now())
-WHERE account_type_locked_at IS NULL;
+WHERE account_type_locked_at IS NULL
+  AND account_type IS NOT NULL
+  AND btrim(account_type) <> '';
 
 CREATE OR REPLACE FUNCTION prevent_account_type_change_after_registration()
 RETURNS trigger
