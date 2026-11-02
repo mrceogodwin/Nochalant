@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/member-dashboard-mobile-drawer-light-skin-20261101
+      - fix/nochalant-hobby-function-consolidation-20261102
   pull_request:
 
 jobs:
