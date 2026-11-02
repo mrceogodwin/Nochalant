@@ -87,7 +87,7 @@
   ],
   "crons": [
     {
-      "path": "/api/admin/opinions?editorialAutoPostRoute=1",
+      "path": "/api/editorial/auto-post",
       "schedule": "0 8 * * *"
     }
   ]
