@@ -116,10 +116,13 @@ export default async function handler(req, res) {
       : ['user_profiles.user_profiles_account_type_immutable'];
     const constraintRows = await sql`
       SELECT conname
-      FROM pg_constraint
-      WHERE conrelid = 'public.payment_webhook_events'::regclass
-        AND conname = 'payment_webhook_events_processing_status_check'
-        AND pg_get_constraintdef(oid) LIKE '%processing%'
+      FROM pg_constraint c
+      JOIN pg_class r ON r.oid = c.conrelid
+      JOIN pg_namespace n ON n.oid = r.relnamespace
+      WHERE n.nspname = 'public'
+        AND r.relname = 'payment_webhook_events'
+        AND c.conname = 'payment_webhook_events_processing_status_check'
+        AND pg_get_constraintdef(c.oid) LIKE '%processing%'
     `;
     const missingConstraints = constraintRows.length ? []
       : ['payment_webhook_events.payment_webhook_events_processing_status_check'];
