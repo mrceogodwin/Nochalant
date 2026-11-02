@@ -2,6 +2,10 @@
   "rewrites": [
     {
       "source": "/api/editorial/latest",
+      "destination": "/api/editorial/latest.js"
+    },
+    {
+      "source": "/api/editorial/latest",
       "destination": "/api/admin/opinions?editorialLatestRoute=1"
     },
     {
