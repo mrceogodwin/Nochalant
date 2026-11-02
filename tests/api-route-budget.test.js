@@ -20,7 +20,7 @@ function routeFiles(directory, relative = "") {
 
 test("Vercel Hobby API route budget stays at or below 12", () => {
   const routes = routeFiles(apiRoot);
-  assert.ok(routes.length <= 12, `Found ${routes.length} API route files; Hobby limit is 12. Consolidate handlers before adding more.`);
+  assert.ok(routes.length <= 10, `Found ${routes.length} API route files; Nochalant route budget is 10. Consolidate handlers before adding more.`);
 });
 
 test("consolidated health and opinions routes have their handlers", () => {
