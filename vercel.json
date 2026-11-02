@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/editorial/latest",
+      "destination": "/api/admin/opinions?editorialLatestRoute=1"
+    },
+    {
       "source": "/api/editorial/auto-post",
       "destination": "/api/admin/opinions?editorialAutoPostRoute=1"
     },
