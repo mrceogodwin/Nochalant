@@ -7,9 +7,20 @@ export default async function handler(req,res) {
  if(!connection()) return res.status(503).send("Articles temporarily unavailable.");
  try {
   const sql=neon(connection());
-  const rows=await sql`SELECT title,body,category,published_at,slug,seo_title,seo_description,canonical_url,og_image_url,is_indexable FROM submissions WHERE slug=${slug} AND status='published' LIMIT 1`;
-  if(!rows.length) return res.status(404).send("Article not found.");
-  const a=rows[0], title=a.seo_title||a.title, description=a.seo_description||String(a.body||"").slice(0,155), canonical=a.canonical_url||"https://nochalant.vercel.app/story/"+a.slug;
+  let a;
+  try {
+   const rows=await sql`SELECT title,body,category,published_at,slug,seo_title,seo_description,canonical_url,og_image_url,is_indexable FROM submissions WHERE slug=${slug} AND status='published' LIMIT 1`;
+   a=rows[0];
+  } catch(schemaError) {
+   if (!["42P01","42703"].includes(schemaError?.code)) throw schemaError;
+   const rows=await sql`SELECT title,body,category,created_at,published_at FROM submissions WHERE status='published' ORDER BY COALESCE(published_at,created_at) DESC LIMIT 5000`;
+   const makeSlug=value=>String(value||"").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120);
+   const matches=rows.filter(row=>makeSlug(row.title)===slug);
+   if(matches.length>1) return res.status(409).send("This article URL is ambiguous. Please use its canonical URL.");
+   if(matches.length===1) a={...matches[0],slug,seo_title:null,seo_description:null,canonical_url:null,og_image_url:null,is_indexable:true};
+  }
+  if(!a) return res.status(404).send("Article not found.");
+  const title=a.seo_title||a.title, description=a.seo_description||String(a.body||"").slice(0,155), canonical=a.canonical_url||"https://nochalant.vercel.app/story/"+slug;
   const image=a.og_image_url||"https://nochalant.vercel.app/nochalant-og.jpg";
   const paragraphs=String(a.body||"").split(/\n{2,}/).filter(Boolean).map(p=>"<p>"+esc(p).replace(/\n/g,"<br>")+"</p>").join("");
   const date=a.published_at?new Date(a.published_at).toISOString():new Date().toISOString();
