@@ -6,6 +6,7 @@ const OpinionsPanel = lazy(() => import("./OpinionsPanel.jsx"));
 const SocialFeed = lazy(() => import("./SocialFeed.jsx"));
 const PodcastAdmin = lazy(() => import("./PodcastAdmin.jsx"));
 const SocialSettingsAdmin = lazy(() => import("./SocialSettingsAdmin.jsx"));
+const EditorialAutoPostAdmin = lazy(() => import("./EditorialAutoPostAdmin.jsx"));
 const DeferredPanel = ({ children }) => <Suspense fallback={<div className="deferred-panel-loading" role="status">Loading Nochalant…</div>}>{children}</Suspense>;
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
@@ -34,6 +35,8 @@ const demoStories = [
 
 function App() {
   const [category, setCategory] = useState("All Gist");
+  const [editorialStories, setEditorialStories] = useState([]);
+  useEffect(() => { let active=true; fetch("/api/editorial/latest",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(active&&d.ok)setEditorialStories((d.stories||[]).map(x=>({id:x.id,category:x.category==="Entertainment"?"Street Buzz":x.category,title:x.title,excerpt:x.body||"",image:x.image_url||"",time:"Latest",read:"3 min read",author:x.author_name||"Nochalant Editorial Desk",label:"SOURCE: "+(x.source_name||"Editorial"),body:x.body||"",source_url:x.source_url,slug:x.slug,canonical_url:x.canonical_url,seo_title:x.seo_title,seo_description:x.seo_description})));}).catch(()=>{}); return ()=>{active=false;}; }, []);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState("");
   const [story, setStory] = useState(demoStories[0]);
@@ -68,6 +71,83 @@ function App() {
   const [audioVolume, setAudioVolume] = useState(0.8);
   const [audioError, setAudioError] = useState(false);
   const [audioPlayerVisible, setAudioPlayerVisible] = useState(true);
+  const [playerButtonPosition, setPlayerButtonPosition] = useState(null);
+  const [playerDockPosition, setPlayerDockPosition] = useState(null);
+  const [playerDockDragging, setPlayerDockDragging] = useState(false);
+  const playerDockDragRef = useRef(null);
+  const handlePlayerDockPointerDown = event => {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (event.target.closest("button,input,a,select,textarea,.player-progress,.player-queue-controls")) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    playerDockDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      moved: false
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handlePlayerDockPointerMove = event => {
+    const drag = playerDockDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) return;
+    drag.moved = true;
+    setPlayerDockDragging(true);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    setPlayerDockPosition({
+      left: Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX - drag.offsetX)),
+      top: Math.max(8, Math.min(window.innerHeight - height - 8, event.clientY - drag.offsetY))
+    });
+  };
+  const handlePlayerDockPointerUp = event => {
+    if (playerDockDragRef.current?.pointerId === event.pointerId) {
+      playerDockDragRef.current = null;
+      setPlayerDockDragging(false);
+    }
+  };
+
+  const playerButtonDragRef = useRef(null);
+  const playerButtonDraggedRef = useRef(false);
+  const handlePlayerButtonPointerDown = event => {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    playerButtonDraggedRef.current = false;
+    const rect = event.currentTarget.getBoundingClientRect();
+    playerButtonDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handlePlayerButtonPointerMove = event => {
+    const drag = playerButtonDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5 && !playerButtonDraggedRef.current) return;
+    playerButtonDraggedRef.current = true;
+    const size = 66;
+    setPlayerButtonPosition({
+      left: Math.max(8, Math.min(window.innerWidth - size - 8, event.clientX - drag.offsetX)),
+      top: Math.max(8, Math.min(window.innerHeight - size - 8, event.clientY - drag.offsetY))
+    });
+  };
+  const handlePlayerButtonPointerUp = event => {
+    if (playerButtonDragRef.current?.pointerId === event.pointerId) playerButtonDragRef.current = null;
+  };
+  useEffect(() => {
+    const clampPlayerButton = () => setPlayerButtonPosition(position => position ? ({
+      left: Math.max(8, Math.min(window.innerWidth - 74, position.left)),
+      top: Math.max(8, Math.min(window.innerHeight - 74, position.top))
+    }) : position);
+    window.addEventListener("resize", clampPlayerButton);
+    return () => window.removeEventListener("resize", clampPlayerButton);
+  }, []);
   const [formCategory, setFormCategory] = useState("Afrobeats & Jamz");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
@@ -88,12 +168,12 @@ function App() {
   const [artistRailPaused, setArtistRailPaused] = useState(false);
   const [opinions, setOpinions] = useState([]);
   const [selectedOpinion, setSelectedOpinion] = useState(null);
+  const [opinionSlide, setOpinionSlide] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
   const [accountProfile, setAccountProfile] = useState(null);
   const [accountProfileLoading, setAccountProfileLoading] = useState(false);
   const [accountProfileRefresh, setAccountProfileRefresh] = useState(0);
   const [accountProfileError, setAccountProfileError] = useState("");
-  const [workspaceBusy, setWorkspaceBusy] = useState(false);
   const [memberProfileBusy, setMemberProfileBusy] = useState(false);
   const [artistStudio, setArtistStudio] = useState(null);
   const [artistStudioError, setArtistStudioError] = useState("");
@@ -122,6 +202,9 @@ function App() {
   const [selectedPodcastHost, setSelectedPodcastHost] = useState(null);
   const [memberDockHidden, setMemberDockHidden] = useState(false);
   const [memberDockTab, setMemberDockTab] = useState("home");
+  const [musicTab, setMusicTab] = useState("discover");
+  const [musicGenre, setMusicGenre] = useState("All genres");
+  const [musicSearch, setMusicSearch] = useState("");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const podcastLibraryItems = [
@@ -274,10 +357,11 @@ function App() {
     });
   }, [audioCurrent, audioDuration, activeAudioTrack]);
 
-  const filtered = useMemo(() => demoStories.slice(1).filter(item =>
+  const filtered = useMemo(() => editorialStories.filter(item =>
     (category === "All Gist" || item.category === category) &&
     (item.title.toLowerCase().includes(search.toLowerCase()) || item.excerpt.toLowerCase().includes(search.toLowerCase()))
-  ), [category, search]);
+  ), [category, search, editorialStories]);
+
 
   const notify = (message) => {
     setToast(message);
@@ -327,37 +411,6 @@ function App() {
       notify(error?.message || "Profile update failed.");
     } finally {
       setMemberProfileBusy(false);
-    }
-  };
-  const changeWorkspace = async (accountType, action = "switch_primary") => {
-    if (!currentUser?.id || !accountType || workspaceBusy) return;
-    setWorkspaceBusy(true);
-    try {
-      const token = await getAuthToken();
-      if (!token) throw new Error("Your session has expired. Please sign in again.");
-      const response = await fetch("/api/account/type", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(action === "activate" ? { accountType } : { action: "switch_primary", accountType }),
-        cache: "no-store"
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.ok) throw new Error(data.error || "Your workspace could not be updated.");
-      if (action === "switch_primary") {
-        setAccountProfile(previous => ({ ...previous, ...data, profile: { ...previous?.profile, ...data.profile } }));
-        setArtistStudio(null);
-        setArtistStudioError("");
-        setActiveScreen("dashboard");
-        notify(`Switched to ${ACCOUNT_TYPE_LABELS[accountType] || accountType}.`);
-      } else {
-        setAccountProfileRefresh(value => value + 1);
-        notify(`${ACCOUNT_TYPE_LABELS[accountType] || accountType} workspace activated.`);
-      }
-      setMobileMenu(false);
-    } catch (error) {
-      notify(error?.message || "Workspace update failed.");
-    } finally {
-      setWorkspaceBusy(false);
     }
   };
   const startPromotionCheckout = async (campaignId) => {
@@ -547,7 +600,7 @@ function App() {
 
   const navigateMemberDock = destination => {
     if (destination === "home") { setMemberDockTab("home"); setActiveScreen("home"); window.scrollTo({top:0,behavior:"smooth"}); }
-    else if (destination === "music") { setMemberDockTab("music"); setActiveScreen("home"); window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth",block:"start"}),80); }
+    else if (destination === "music") { setMemberDockTab("music"); setActiveScreen("music"); setMobileMenu(false); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "socials") { setMemberDockTab("socials"); setActiveScreen("social"); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "create") { setModal("submit"); }
     else if (destination === "more") { setMemberDockTab("more"); setMobileMenu(true); window.scrollTo({top:0,behavior:"smooth"}); }
@@ -717,20 +770,23 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (!currentUser?.id) { setOpinions([]); return () => controller.abort(); }
     (async () => {
       try {
-        const token = await getAuthToken();
-        if (!token) return;
-        const response = await fetch("/api/opinions", { signal: controller.signal, headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        const response = await fetch("/api/opinions", { signal: controller.signal, cache: "no-store" });
         const data = await response.json().catch(() => ({}));
         if (response.ok && data.ok && Array.isArray(data.opinions) && !controller.signal.aborted) setOpinions(data.opinions);
       } catch (error) {
-        if (error?.name !== "AbortError") console.error("Nochalant member opinions could not load:", error);
+        if (error?.name !== "AbortError") console.error("Nochalant public opinions could not load:", error);
       }
     })();
     return () => controller.abort();
-  }, [currentUser?.id]);
+  }, []);
+  
+  useEffect(() => { setOpinionSlide(0); }, [opinions.length]);
+  const moveOpinion = (direction) => {
+    if (!opinions.length) return;
+    setOpinionSlide(index => (index + direction + opinions.length) % opinions.length);
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -899,48 +955,73 @@ function App() {
         : await authClient.signIn.email({ email, password });
       if (result?.error) throw new Error(result.error.message || "Authentication failed.");
 
-      if (isSignup) window.localStorage.setItem("nochalant_pending_account_type", accountType);
+      const pendingKey = "nochalant_pending_account_type";
+      if (isSignup) {
+        window.localStorage.setItem(pendingKey, JSON.stringify({ email: email.toLowerCase(), accountType }));
+      }
       const sessionResult = await authClient.getSession();
       const signedInUser = sessionResult?.data?.user || null;
 
       if (!signedInUser && isSignup) {
-        setAuthMessage("Your account was created. Verify your email if requested, then sign in to activate your selected workspace. Your selection has been saved on this device.");
+        setAuthMessage("Your account was created. Verify your email if requested, then sign in with this same email to finish setting up your selected account type.");
         return;
       }
       if (signedInUser) setCurrentUser(signedInUser);
 
-      const pendingAccountType = isSignup
-        ? accountType
-        : window.localStorage.getItem("nochalant_pending_account_type");
+      let pendingSelection = null;
+      try {
+        const stored = window.localStorage.getItem(pendingKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.email && parsed?.accountType) pendingSelection = parsed;
+          else window.localStorage.removeItem(pendingKey);
+        }
+      } catch {
+        window.localStorage.removeItem(pendingKey);
+      }
+      if (pendingSelection && pendingSelection.email !== email.toLowerCase()) {
+        window.localStorage.removeItem(pendingKey);
+        pendingSelection = null;
+      }
+      const pendingAccountType = isSignup ? accountType : pendingSelection?.accountType || "";
+      let accountSetupNotice = "";
       if (pendingAccountType && signedInUser) {
         try {
           const token = await getAuthToken();
           if (!token) throw new Error("A secure session token was not available.");
           const profileResponse = await fetch("/api/account/type", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
             body: JSON.stringify({ accountType: pendingAccountType }),
             cache: "no-store"
           });
           const profileData = await profileResponse.json().catch(() => ({}));
           if (!profileResponse.ok || !profileData.ok) {
-            throw new Error(profileData.error || "Your selected workspace could not be activated.");
+            if (profileResponse.status === 409) {
+              window.localStorage.removeItem(pendingKey);
+              accountSetupNotice = "You are signed in. Your existing account type is unchanged; account types cannot be switched after registration.";
+            } else {
+              throw new Error(profileData.error || "Your selected account type could not be activated.");
+            }
+          } else {
+            window.localStorage.removeItem(pendingKey);
+            setAccountProfileRefresh(value => value + 1);
           }
-          window.localStorage.removeItem("nochalant_pending_account_type");
-          setAccountProfileRefresh(value => value + 1);
         } catch (profileError) {
-          console.error("Nochalant workspace activation failed:", profileError?.message || profileError);
-          try { await authClient.signOut(); } catch {}
-          clearRememberedAuthSession();
-          setCurrentUser(null);
-          setAuthMessage(`Your account exists, but the ${ACCOUNT_TYPE_LABELS[pendingAccountType] || pendingAccountType} workspace was not activated. Your selection is saved. Please try signing in again shortly. ${profileError?.message || ""}`.trim());
-          return;
+          console.error("Nochalant account setup needs attention:", profileError?.message || profileError);
+          accountSetupNotice = "You are signed in, but account setup is not complete yet. " + (profileError?.message || "Please retry account setup.");
         }
       }
 
-      setAuthMessage(isSignup ? "Your account and selected workspace are ready." : "You are signed in.");
-      notify(isSignup ? "Your Nochalant account and workspace are ready." : "Welcome back to Nochalant.");
-      if (signedInUser) setActiveScreen("dashboard");
+      setAuthMessage(accountSetupNotice || (isSignup ? "Your account and selected account type are ready." : "You are signed in."));
+      notify(isSignup ? "Welcome to Nochalant." : "Welcome back to Nochalant.");
+      if (signedInUser) {
+        setMemberDockTab("home");
+        setMemberDockHidden(false);
+        setAudioPlayerVisible(true);
+        setActiveScreen("home");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       closeModal();
     } catch (error) {
       setAuthMessage(error?.message || "We couldn't complete that request. Please try again.");
@@ -981,7 +1062,7 @@ function App() {
       {controlRoomStatus === "login" && <section className="control-room-gate"><span className="eyebrow">PRIVATE ADMINISTRATION</span><h1>Nochalant Control Room.</h1><p>Sign in with the authorized owner account. This entrance is not available to public members.</p><form className="control-room-login" onSubmit={submitControlRoomLogin}><label>Email address<input name="email" type="email" autoComplete="username" required placeholder="Owner email"/></label><label>Password<input name="password" type="password" autoComplete="current-password" required placeholder="Your password"/></label><button className="button button-green full-width" type="submit">Sign in securely</button></form>{controlRoomError && <p className="control-room-error" role="alert">{controlRoomError}</p>}</section>}
       {controlRoomStatus === "denied" && <section className="control-room-gate"><span className="eyebrow">ACCESS RESTRICTED</span><h1>Administrator access required.</h1><p>{controlRoomError || "This account does not have permission to enter the Control Room."}</p><a className="button button-outline" href="/">Return to Nochalant</a></section>}
       {controlRoomStatus === "error" && <section className="control-room-gate"><span className="eyebrow">SECURE ACCESS UNAVAILABLE</span><h1>We couldn't verify access.</h1><p>{controlRoomError}</p><button className="button button-green" onClick={verifyControlRoomAccess}>Try again</button></section>}
-      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><DeferredPanel><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /></DeferredPanel><DeferredPanel><PodcastAdmin /></DeferredPanel><DeferredPanel><SocialSettingsAdmin /></DeferredPanel><section className="promotion-admin-panel"><div className="artists-heading"><div><span className="eyebrow">ADVERTISING REVIEW</span><h2>Promotion <em>queue.</em></h2><p>Only confirmed, paid campaigns can be approved.</p></div><button className="button button-outline" onClick={() => loadPromotionAdminQueue().catch(error => notify(error.message))}>Refresh queue</button></div>
+      {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><DeferredPanel><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /></DeferredPanel><DeferredPanel><PodcastAdmin /></DeferredPanel><DeferredPanel><SocialSettingsAdmin /></DeferredPanel><DeferredPanel><EditorialAutoPostAdmin /></DeferredPanel><section className="promotion-admin-panel"><div className="artists-heading"><div><span className="eyebrow">ADVERTISING REVIEW</span><h2>Promotion <em>queue.</em></h2><p>Only confirmed, paid campaigns can be approved.</p></div><button className="button button-outline" onClick={() => loadPromotionAdminQueue().catch(error => notify(error.message))}>Refresh queue</button></div>
         {promotionAdminQueue.length ? <div className="promotion-admin-list">{promotionAdminQueue.map(campaign => <article className="promotion-admin-row" key={campaign.id}>{campaign.media_url && (campaign.media_kind === "video" ? <video className="promotion-admin-preview" src={campaign.media_url} controls preload="metadata"/> : <img className="promotion-admin-preview" src={campaign.media_url} alt={campaign.title}/>)}<div><strong>{campaign.title}</strong><p>{campaign.package_code} · {campaign.media_kind} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p><span className="dashboard-status">{campaign.status.replaceAll("_"," ")} · {campaign.payment_status}</span></div><div className="promotion-admin-actions"><button className="button button-green button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"approve")}>Approve</button><button className="button button-outline button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"reject")}>Reject</button></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns awaiting review.</strong><p>Paid campaigns will appear here after payment confirmation.</p></div>}
       </section></>}
     </main>
@@ -996,24 +1077,21 @@ function App() {
       {mobileMenu && <button className="drawer-backdrop" type="button" aria-label="Close navigation menu" onClick={() => setMobileMenu(false)} />}
       <nav id="nochalant-mobile-menu" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation">
         {currentUser?.id && <section className="drawer-account" aria-label="Member account">
-          <span className="drawer-kicker">MY ACCOUNT</span>
-          <div className="drawer-member-identity"><span className="drawer-member-avatar">{accountProfile?.profileDetails?.avatar_url ? <img src={accountProfile.profileDetails.avatar_url} alt=""/> : (accountProfile?.profile?.display_name || currentUser?.name || currentUser?.email || "N").trim().charAt(0).toUpperCase()}</span><span><strong>{accountProfile?.profile?.display_name || currentUser?.name || "Nochalant member"}</strong><small>{accountProfile?.profileDetails?.username ? "@"+accountProfile.profileDetails.username : currentUser?.email || "Member account"}</small></span></div>
-          <button type="button" className="drawer-account-dashboard" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>
-            <span><strong>My dashboard</strong><small>{accountProfile?.profile?.display_name || currentUser?.name || currentUser?.email || "Nochalant member"}</small></span><b>↗</b>
-          </button>
-          <div className="workspace-switcher" aria-label="Account workspaces">
-            <span className="workspace-switcher-label">YOUR WORKSPACES</span>
-            {(accountProfile?.accountTypes || [{ account_type: accountProfile?.profile?.account_type || "fan", is_primary: true }]).map(item =>
-              <button type="button" key={item.account_type} className={item.is_primary ? "workspace-choice active" : "workspace-choice"} disabled={workspaceBusy || item.is_primary} onClick={() => changeWorkspace(item.account_type)}>
-                <span>{ACCOUNT_TYPE_LABELS[item.account_type] || item.account_type}</span><small>{item.is_primary ? "CURRENT" : "SWITCH"}</small>
-              </button>
-            )}
-            <label className="workspace-add-label" htmlFor="drawer-add-workspace">Add another workspace</label>
-            <select id="drawer-add-workspace" defaultValue="" disabled={workspaceBusy} onChange={event => {const type=event.target.value;if(type)changeWorkspace(type,"activate");event.target.value="";}}>
-              <option value="">Choose account type…</option>
-              {Object.entries(ACCOUNT_TYPE_LABELS).filter(([type]) => !(accountProfile?.accountTypes || []).some(item => item.account_type === type && item.status === "active")).map(([type,label]) => <option value={type} key={type}>{label}</option>)}
-            </select>
+          <div className="drawer-member-identity">
+            <span className="drawer-member-avatar">{accountProfile?.profileDetails?.avatar_url ? <img src={accountProfile.profileDetails.avatar_url} alt=""/> : (accountProfile?.profile?.display_name || currentUser?.name || currentUser?.email || "N").trim().charAt(0).toUpperCase()}</span>
+            <span className="drawer-member-copy"><strong>{accountProfile?.profile?.display_name || currentUser?.name || "Nochalant member"}</strong><small>{accountProfile?.profileDetails?.username ? "@"+accountProfile.profileDetails.username : currentUser?.email || "Member account"}</small></span>
+            <span className="drawer-account-type">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span>
           </div>
+          <span className="drawer-kicker">YOUR ACCOUNT</span>
+          <button type="button" className="drawer-account-link is-primary" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>
+            <span><strong>My dashboard</strong><small>Open your {({fan:"fan",artist:"artist",creator:"creator",event_organizer:"event organiser",business:"business",media:"publisher"})[accountProfile?.profile?.account_type || "fan"]} workspace</small></span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <button type="button" className="drawer-account-link" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("member-profile-settings")?.scrollIntoView({behavior:"smooth",block:"start"}),120);}}>Profile settings <span aria-hidden="true">→</span></button>
+          <button type="button" className="drawer-account-link" onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("account-dashboard-tools")?.scrollIntoView({behavior:"smooth",block:"start"}),120);}}>
+            {({fan:"My activity & community",artist:"Artist studio & releases",creator:"Creator portfolio & bookings",event_organizer:"Events & guest management",business:"Brand profile & campaigns",media:"Publisher tools & submissions"})[accountProfile?.profile?.account_type || "fan"] || "My workspace"}
+            <span aria-hidden="true">→</span>
+          </button>
           <button type="button" className="drawer-account-logout" onClick={() => {setMobileMenu(false);signOutUser();}}>Log out</button>
         </section>}
         <div className="drawer-flagship"><span className="drawer-kicker">NOCHALANT FLAGSHIP</span>
@@ -1040,7 +1118,56 @@ function App() {
     
 
     <main id="top">
-      {activeScreen === "home" ? <>
+      {activeScreen === "music" ? (() => {
+        const allMusicTracks = artists.flatMap(artist => (artist.tracks || []).map(track => ({
+          ...track,
+          artist_name: track.artist_name || artist.name,
+          artist_slug: track.artist_slug || artist.slug,
+          genre: track.genre || artist.genre || "Other"
+        })));
+        const searchableTracks = allMusicTracks.filter(track => {
+          const query = musicSearch.trim().toLowerCase();
+          const matchesSearch = !query || [track.title, track.artist_name, track.genre].some(value => String(value || "").toLowerCase().includes(query));
+          const matchesGenre = musicGenre === "All genres" || String(track.genre || "").toLowerCase() === musicGenre.toLowerCase();
+          return matchesSearch && matchesGenre;
+        });
+        const rankedTracks = [...searchableTracks].sort((a,b) => Number(b.plays_count || 0) - Number(a.plays_count || 0));
+        const genres = ["All genres", ...Array.from(new Set(allMusicTracks.map(track => String(track.genre || "").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
+        const playTrack = track => playArtistTrack(track, allMusicTracks);
+        const trackCard = (track, index) => <article className="music-release-card" key={track.id}>
+          <button className="music-release-art" type="button" onClick={() => playTrack(track)} disabled={!track.audio_url} aria-label={"Play " + track.title}>
+            {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy"/> : <span>♫</span>}
+            <i>▶</i>
+          </button>
+          <div className="music-release-meta"><b>{String(index + 1).padStart(2,"0")}</b><span>{track.genre || "No genre"}</span></div>
+          <strong>{track.title}</strong>
+          <button className="music-artist-link" type="button" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified && <span className="artist-silver-tick">✓</span>}</button>
+          <div className="music-release-foot"><span>{Number(track.plays_count || 0).toLocaleString()} plays</span><button type="button" onClick={() => playTrack(track)} disabled={!track.audio_url}>{track.audio_url ? "PLAY" : "COMING SOON"}</button></div>
+        </article>;
+        return <section className="music-hub container screen-page" aria-labelledby="music-hub-title">
+          <header className="music-hub-hero">
+            <div><span className="eyebrow">NOCHALANT MUSIC · THE SOUND OF THE CULTURE</span><h1 id="music-hub-title">Your sound.<br/><em>Your culture.</em></h1><p>Discover official releases from artists on Nochalant, explore genres and find your next repeat.</p></div>
+            <div className="music-hub-mark" aria-hidden="true">♫</div>
+          </header>
+          <div className="music-hub-tabs" role="tablist" aria-label="Music sections">
+            {[["discover","Discover"],["top100","Nochalant Top 100"],["genres","Genres"],["playlists","Playlists"],["artists","Artists"],["library","My library"]].map(([id,label])=><button type="button" role="tab" aria-selected={musicTab===id} className={musicTab===id?"active":""} onClick={()=>setMusicTab(id)} key={id}>{label}</button>)}
+          </div>
+          <label className="music-hub-search"><span>⌕</span><input value={musicSearch} onChange={event=>setMusicSearch(event.target.value)} placeholder="Search songs, artists or genres" aria-label="Search music"/></label>
+          {musicTab === "discover" && <>
+            <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">FRESH RELEASES</span><h2>New on <em>Nochalant.</em></h2><p>Official tracks published by Nochalant artists.</p></div><span>{allMusicTracks.length} RELEASES</span></div>
+              {artistsLoading ? <div className="music-hub-empty">Loading the artist catalogue…</div> : searchableTracks.length ? <div className="music-release-grid">{searchableTracks.slice(0,12).map(trackCard)}</div> : <div className="music-hub-empty">No matching published releases yet. Verified artist releases will appear here when approved and published.</div>}
+            </section>
+            <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">FIND YOUR SOUND</span><h2>Explore <em>genres.</em></h2></div></div><div className="music-genre-grid">{genres.slice(1).map(genre=><button type="button" key={genre} onClick={()=>{setMusicGenre(genre);setMusicTab("genres");}}>{genre}<span>Explore →</span></button>)}{genres.length===1&&<p className="music-hub-empty">Genre shelves will appear as artists publish releases with genre information.</p>}</div></section>
+          </>}
+          {musicTab === "top100" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE NOCHALANT CHART</span><h2>Nochalant <em>Top 100.</em></h2><p>Ranked by eligible plays recorded on Nochalant. Rankings update as verified plays are counted.</p></div><span>LIVE CATALOGUE DATA</span></div>
+            {rankedTracks.length ? <div className="music-chart-list">{rankedTracks.slice(0,100).map((track,index)=><div className="music-chart-row" key={track.id}><b className="music-chart-rank">{String(index+1).padStart(2,"0")}</b>{track.cover_art_url?<img src={track.cover_art_url} alt="" loading="lazy"/>:<span className="music-chart-placeholder">♫</span>}<div><strong>{track.title}</strong><small>{track.artist_name} · {track.genre || "Genre not set"}</small></div><span className="music-chart-plays">{Number(track.plays_count||0).toLocaleString()} plays</span><button type="button" onClick={()=>playTrack(track)} disabled={!track.audio_url} aria-label={"Play "+track.title}>▶</button></div>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading chart data…":"The chart will populate when approved releases have eligible play counts. No rankings are being fabricated."}</div>}
+          </section>}
+          {musicTab === "genres" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">EXPLORE BY SOUND</span><h2>Music <em>genres.</em></h2><p>Browse published releases by the genre selected by each artist.</p></div></div><div className="music-genre-pills">{genres.map(genre=><button type="button" className={musicGenre===genre?"active":""} key={genre} onClick={()=>setMusicGenre(genre)}>{genre}</button>)}</div>{searchableTracks.length?<div className="music-release-grid">{searchableTracks.map(trackCard)}</div>:<div className="music-hub-empty">No releases are listed in this genre yet.</div>}</section>}
+          {musicTab === "playlists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">CURATED FOR THE CULTURE</span><h2>Playlists <em>& moods.</em></h2><p>Editorial playlists will bring together official Nochalant releases by genre, mood and moment.</p></div></div><div className="music-playlist-grid"><article><span>01</span><b>Afrobeats Essentials</b><small>Curated Afrobeats releases</small></article><article><span>02</span><b>Naija Street & Energy</b><small>Street-pop and high-energy sounds</small></article><article><span>03</span><b>Late Night R&amp;B</b><small>Soul, R&amp;B and slow jams</small></article><article><span>04</span><b>New & Next</b><small>Fresh discoveries from the culture</small></article></div><div className="music-hub-empty">Playlist playback is not live yet. These are editorial playlist destinations, not populated playlists; tracks will appear when the playlist catalogue is connected.</div></section>}
+          {musicTab === "artists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE PEOPLE BEHIND THE SOUND</span><h2>Artists on <em>Nochalant.</em></h2></div><span>{artists.length} ARTISTS</span></div>{artists.length?<div className="music-artist-grid">{artists.map(artist=><button type="button" className="music-artist-card" key={artist.id || artist.slug} onClick={()=>openArtistProfile(artist.slug)}>{artist.image_url?<img src={artist.image_url} alt="" loading="lazy"/>:<span className="music-artist-placeholder">{String(artist.name||"N").slice(0,1)}</span>}<b>{artist.name}</b><small>{artist.genre || "Artist"}</small></button>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading artists…":"No artist profiles are published yet."}</div>}</section>}
+          {musicTab === "library" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">YOUR PERSONAL COLLECTION</span><h2>My <em>library.</em></h2></div></div><div className="music-hub-empty">Your saved songs, liked releases and followed artists will appear here when Music Library saving is enabled.</div></section>}
+        </section>;
+      })() : activeScreen === "home" ? <>
       <section className="container lead-layout">
         <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
           <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
@@ -1062,6 +1189,11 @@ function App() {
           </div>
         </article>
       </section>
+
+      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
+        <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
+        <DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
+      </section>}
 
       <section className="artists-section container" id="artists" aria-labelledby="artists-title">
         <div className="artists-heading">
@@ -1091,12 +1223,35 @@ function App() {
         </div>
       </section>
 
-      <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
+      <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div></div>
         <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
-        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category">{item.category}</span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div>
+        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-card-bottom"><span className="story-category-quiet">{item.category}</span><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]} aria-label={likes[item.id] ? "Unlike story" : "Like story"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/></svg></button><span className="story-icon-stat" aria-label={`${comments[item.id]?.length || 0} comments`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.7-.8L4 20l1.3-3.4A7.1 7.1 0 0 1 4 12c0-4.1 3.6-7.5 8-7.5s8 3.1 8 7Z"/></svg><small>{comments[item.id]?.length || 0}</small></span><span className="story-icon-stat" aria-label={`${typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0} views`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><small>{typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0}</small></span><button className="story-icon-button" type="button" aria-label="Read full story" onClick={e => {e.stopPropagation();openStory(item);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
       </section>
 
-      <section className="section container split-section" id="hot-or-trash"><div className="jury-image"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial"/><span className="image-tag">THE STREET JURY</span></div><div className="jury-panel"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>{currentUser && opinions.length > 0 && <div className="opinion-rail" aria-label="Opinions from Nochalant users"><div className="opinion-rail-top"><span>THE PEOPLE HAVE SPOKEN</span><span>{opinions.length} COMMUNITY {opinions.length === 1 ? "TAKE" : "TAKES"}</span></div><div className="opinion-rail-window"><div className="opinion-rail-track">{[...opinions, ...opinions].map((item, index) => <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}><span className="opinion-topic">{item.topic}</span><span className="opinion-quote">“{item.body}”</span><span className="opinion-author">— {item.author_name}</span></button>)}</div></div></div>}<div className="jury-options"><button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button><button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button></div><div className="vote-results"><div className="vote-labels"><span>{poll ? `COMMUNITY VOTES · ${poll.total_votes}` : "COMMUNITY VOTES"}</span><span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : pollLoading ? "LOADING" : "LIVE RESULTS"}</span></div><div className="vote-result-row"><span>🔥 Pure fire</span><b>{poll?.hot_percent ?? 0}%</b></div><div className="vote-bar"><i style={{width: `${poll?.hot_percent ?? 0}%`}}/></div><div className="vote-result-row"><span>✕ Off key</span><b>{poll?.trash_percent ?? 0}%</b></div><div className="vote-bar vote-bar-trash"><i style={{width: `${poll?.trash_percent ?? 0}%`}}/></div></div><small className="muted">{pollError || (pollLoading ? "Loading community results…" : vote ? "Your vote has been recorded. Thanks for having your say." : currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")}</small></div></section>
+      <section className="section container jury-section" id="hot-or-trash">
+        <div className="jury-panel jury-opinion-card">
+          <div className="jury-copy">
+            <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
+            <h2>Hot or <em>trash?</em></h2>
+            <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
+          </div>
+          <div className="jury-opinion-avatar" aria-hidden="true">
+            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" />
+          </div>
+          <div className="jury-options">
+            <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
+            <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
+          </div>
+          <div className="jury-slider-controls">
+            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(-1)} disabled={opinions.length < 2} aria-label="Previous opinion">‹ <span>PREVIOUS</span></button>
+            <div className="jury-pagination" aria-label="Choose community opinion">
+              {opinions.map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
+            </div>
+            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(1)} disabled={opinions.length < 2} aria-label="Next opinion"><span>NEXT</span> ›</button>
+          </div>
+          <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
+        </div>
+      </section>
 
       <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
         <div className="nochalant-faces">
@@ -1189,7 +1344,7 @@ function App() {
         {selectedPodcastHost && <div className="podcast-host-profile-backdrop" role="presentation" onClick={event=>{if(event.target===event.currentTarget)setSelectedPodcastHost(null);}}><section className="podcast-host-profile-modal" role="dialog" aria-modal="true" aria-label={selectedPodcastHost.host_name+" profile"}><button type="button" className="podcast-host-profile-close" onClick={()=>setSelectedPodcastHost(null)} aria-label="Close profile">×</button><div className="podcast-host-profile-hero">{selectedPodcastHost.host_image_url?<img src={selectedPodcastHost.host_image_url} alt={selectedPodcastHost.host_name}/>:<span className="podcast-host-avatar">N.</span>}<div><span className="eyebrow">NOCHALANT PODCAST · HOST PROFILE</span><h2>{selectedPodcastHost.host_name}</h2><p>{selectedPodcastHost.host_role}</p><span className="podcast-host-location">BENIN CITY · EDO STATE, NIGERIA</span></div></div><div className="podcast-host-profile-body"><span className="eyebrow">ABOUT THE HOST</span><p>{selectedPodcastHost.host_bio}</p><h3>Music catalogue</h3><ul><li><strong>Do Or Die</strong><span>Hunter Of Africa, Gasky & Marvis LA · 9 October 2022</span></li><li><strong>Hunter We Wanna Party</strong></li><li><strong>My Friend & Brother</strong></li></ul><h3>Follow Hunter</h3><div className="podcast-host-socials">{selectedPodcastHost.host_instagram_url&&<a href={selectedPodcastHost.host_instagram_url} target="_blank" rel="noreferrer">Instagram ↗</a>}{selectedPodcastHost.host_tiktok_url&&<a href={selectedPodcastHost.host_tiktok_url} target="_blank" rel="noreferrer">TikTok ↗</a>}</div><small>Music catalogue and professional details are presented from supplied editorial information; further career milestones remain subject to verification.</small></div></section></div>}
         <div className="podcast-library-feature">
           <div className="podcast-library-screen podcast-player-stage">
-            {activePodcastEpisode?.video_url ? <video className="podcast-video" src={activePodcastEpisode.video_url} poster={activePodcastEpisode.thumbnail_url || ""} controls playsInline preload="metadata" /> : <><span className="podcast-screen-mark">N.</span><strong>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(0,1).join(" ")}<br/>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(1).join(" ")}</strong><span>FULL EPISODES · CLIPS · SESSIONS</span></>}
+            {activePodcastEpisode?.video_url ? <video className="podcast-video" src={activePodcastEpisode.video_url} poster={activePodcastEpisode.thumbnail_url || ""} controls playsInline preload="metadata" /> : <><div className="podcast-stage-play" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="M26 19.5 46 32 26 44.5Z"/></svg></div><strong>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(0,1).join(" ")}<br/>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(1).join(" ")}</strong><span>FULL EPISODES · CLIPS · SESSIONS</span></>}
           </div>
           <div className="podcast-library-copy"><span className="eyebrow">{activePodcastEpisode ? "NOW PLAYING" : `SERIES · ${String(selectedPodcastIndex+1).padStart(2,"0")} / ${String(podcastDisplayItems.length).padStart(2,"0")}`}</span><h2>{activePodcastEpisode?.title || podcastDisplayItems[selectedPodcastIndex].title} <em>on Nochalant.</em></h2><p>{activePodcastEpisode?.description || podcastDisplayItems[selectedPodcastIndex].description}</p><span className="podcast-status">{activePodcastEpisode ? "OFFICIAL NOCHALANT EPISODE" : "NEW EPISODES WILL APPEAR HERE"}</span>{activePodcastEpisode && <button className="podcast-clear-selection" type="button" onClick={() => setActivePodcastEpisode(null)}>Back to series</button>}</div>
         </div>
@@ -1198,7 +1353,7 @@ function App() {
         <div className="podcast-episodes-heading"><span className="eyebrow">THE SERIES LIBRARY</span><h2>{podcastDisplayItems[selectedPodcastIndex].title} <em>episodes.</em></h2></div>
         {podcastCatalogueLoading ? <p className="podcast-empty-state">Loading the Nochalant catalogue…</p> : (podcastCatalogue.episodes || []).filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex].id).length ? <div className="podcast-episodes-grid">{podcastCatalogue.episodes.filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex].id).map(episode => <article className={activePodcastEpisode?.id === episode.id ? "podcast-episode-card is-playing" : "podcast-episode-card"} key={episode.id}><div className="podcast-episode-art">{episode.thumbnail_url ? <img src={episode.thumbnail_url} alt="" loading="lazy"/> : <span className="podcast-episode-monogram">N.</span>}<span className="podcast-episode-number">EP {String(episode.episode_number || "—").padStart(2,"0")}</span></div><div className="podcast-episode-copy"><strong>{episode.title}</strong><p>{episode.description || "An original Nochalant episode."}</p><button type="button" className="podcast-branded-play" onClick={() => {setActivePodcastEpisode(episode);window.scrollTo({top:0,behavior:"smooth"});}}><span>WATCH EPISODE</span><span aria-hidden="true">↗</span></button></div></article>)}</div> : <div className="podcast-empty-state"><span className="podcast-empty-mark">N.</span><strong>Episodes are on the way.</strong><p>This series is set up. Its first published episode will appear here as soon as the editorial team uploads and publishes it.</p></div>}
         <div className="podcast-library-grid">{podcastDisplayItems.map((item,index) => <button type="button" key={item.id || item.title} className={selectedPodcastIndex === index ? "podcast-library-card is-selected" : "podcast-library-card"} onClick={() => {setActivePodcastEpisode(null);setPodcastSelection(index);}} aria-pressed={selectedPodcastIndex === index}><div className={item.art}><span>{String(index+1).padStart(2,"0")}</span><b>{item.label}</b></div><div><strong>{item.title}</strong><p>{item.subtitle}</p></div></button>)}</div>
-      </section> : activeScreen === "dashboard" ? <section className="account-dashboard container screen-page" aria-labelledby="account-dashboard-title"><div className="account-dashboard-head"><div><span className="eyebrow">YOUR NOCHALANT SPACE</span><h1 id="account-dashboard-title">Your dashboard<span>.</span></h1><p>Welcome back, {accountProfile?.profile?.display_name || currentUser?.name || "member"}.</p></div><div className="dashboard-workspace-control"><span className="account-type-chip">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span><label htmlFor="dashboard-workspace-select">Switch workspace</label><select id="dashboard-workspace-select" value={accountProfile?.profile?.account_type || "fan"} disabled={workspaceBusy} onChange={event => changeWorkspace(event.target.value)}>{(accountProfile?.accountTypes || [{account_type:accountProfile?.profile?.account_type || "fan"}]).map(item => <option key={item.account_type} value={item.account_type}>{ACCOUNT_TYPE_LABELS[item.account_type] || item.account_type}</option>)}</select></div></div>{accountProfileLoading ? <div className="account-dashboard-loading">Loading your account tools…</div> : accountProfileError ? <div className="account-dashboard-loading" role="alert">{accountProfileError} <button className="button button-outline" type="button" onClick={() => setAccountProfileRefresh(value => value + 1)}>Retry</button></div> : <><form className="member-profile-editor artist-studio-form" onSubmit={saveMemberProfile}>
+      </section> : activeScreen === "dashboard" ? <section className="account-dashboard container screen-page" aria-labelledby="account-dashboard-title"><div className="account-dashboard-head"><div><span className="eyebrow">YOUR NOCHALANT SPACE</span><h1 id="account-dashboard-title">Your dashboard<span>.</span></h1><p>Welcome back, {accountProfile?.profile?.display_name || currentUser?.name || "member"}.</p></div><div className="dashboard-account-type"><span className="account-type-chip">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span><small>Account type selected during registration</small></div></div>{accountProfileLoading ? <div className="account-dashboard-loading">Loading your account tools…</div> : accountProfileError ? <div className="account-dashboard-loading" role="alert">{accountProfileError} <button className="button button-outline" type="button" onClick={() => setAccountProfileRefresh(value => value + 1)}>Retry</button></div> : <><form id="member-profile-settings" className="member-profile-editor artist-studio-form" onSubmit={saveMemberProfile}>
           <div><span className="eyebrow">YOUR PUBLIC IDENTITY</span><h2>Member profile</h2><p>Set up the profile people see when you join the Nochalant community.</p></div>
           <div className="member-avatar-editor"><span className="member-avatar-preview">{accountProfile?.profileDetails?.avatar_url ? <img src={accountProfile.profileDetails.avatar_url} alt="Your profile"/> : (accountProfile?.profile?.display_name || currentUser?.name || "N").charAt(0).toUpperCase()}</span><label>Profile photo<input name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/avif"/></label></div>
           <label>Username<input name="username" minLength="3" maxLength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="your_username" defaultValue={accountProfile?.profileDetails?.username || ""}/></label>
@@ -1207,7 +1362,7 @@ function App() {
           <label>Location<input name="location" maxLength="100" placeholder="City, country" defaultValue={accountProfile?.profileDetails?.location || ""}/></label>
           <button className="button button-green" disabled={memberProfileBusy}>{memberProfileBusy ? "Saving profile…" : "Save member profile"}</button>
         </form>
-        <div className="account-dashboard-grid"><article className="account-dashboard-card account-dashboard-primary"><span className="eyebrow">ACCOUNT TYPE</span><h2>{({fan:"Fan & Listener",artist:"Artist / Musician",creator:"Creator / Influencer",event_organizer:"Event Organizer",business:"Business / Brand",media:"Media / Publisher"})[accountProfile?.profile?.account_type || "fan"]}</h2><p>Your dashboard is organized around the account type you selected. Your account type does not grant editorial or verification privileges.</p></article>{(accountProfile?.profile?.account_type || "fan") === "artist" ? <><article className="account-dashboard-card"><span className="eyebrow">ARTIST PROFILE</span><h3>{artistStudio?.artist?.stage_name || accountProfile?.artistProfile?.stage_name || "Your artist identity"}</h3><p>Verification: {artistStudio?.artist?.verification_status || accountProfile?.artistProfile?.verification_status || "unverified"}. Public verification is reviewed separately by Nochalant.</p><span className="dashboard-status">{(artistStudio?.artist?.verification_status || "unverified").toUpperCase()}</span></article><article className="account-dashboard-card"><span className="eyebrow">MUSIC CATALOGUE</span><h3>{artistStudio?.releases?.length || 0} release drafts &amp; submissions</h3><p>{artistStudio?.stats?.published_tracks || 0} published tracks · {Number(artistStudio?.stats?.downloads || 0).toLocaleString()} recorded downloads</p><span className="dashboard-status">LIVE ACCOUNT DATA</span></article></> : (accountProfile?.profile?.account_type || "fan") === "creator" ? <><article className="account-dashboard-card"><span className="eyebrow">CREATOR PROFILE</span><h3>Your public portfolio</h3><p>Build your creator identity, showcase work and connect with your audience.</p><span className="dashboard-status">PROFILE TO SET UP</span></article><article className="account-dashboard-card"><span className="eyebrow">BOOKINGS</span><h3>Enquiries &amp; bookings</h3><p>Manage service details, availability and booking requests.</p><span className="dashboard-status">BOOKING TOOLS IN DEVELOPMENT</span></article></> : (accountProfile?.profile?.account_type || "fan") === "event_organizer" ? <><article className="account-dashboard-card"><span className="eyebrow">EVENTS</span><h3>Your event listings</h3><p>Create event details, submit them for review and manage approved listings.</p><span className="dashboard-status">EVENT TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">ATTENDANCE</span><h3>Tickets &amp; guests</h3><p>Track event interest and attendance when ticketing is enabled.</p><span className="dashboard-status">TICKETING NOT CONNECTED</span></article></> : (accountProfile?.profile?.account_type || "fan") === "business" ? <><article className="account-dashboard-card"><span className="eyebrow">BRAND PROFILE</span><h3>Your business presence</h3><p>Showcase your brand, services and approved promotions.</p><span className="dashboard-status">PROFILE TO SET UP</span></article><article className="account-dashboard-card"><span className="eyebrow">PROMOTIONS</span><h3>Campaigns</h3><p>Prepare sponsored placements with transparent labels and editorial review.</p><span className="dashboard-status">CAMPAIGN TOOLS IN DEVELOPMENT</span></article></> : (accountProfile?.profile?.account_type || "fan") === "media" ? <><article className="account-dashboard-card"><span className="eyebrow">PUBLISHER PROFILE</span><h3>Media submissions</h3><p>Manage publisher identity and submit coverage for editorial consideration.</p><span className="dashboard-status">PUBLISHER TOOLS IN DEVELOPMENT</span></article></> : <><article className="account-dashboard-card"><span className="eyebrow">YOUR ACTIVITY</span><h3>Saved culture &amp; follows</h3><p>Keep up with artists, creators, conversations and events you follow.</p><span className="dashboard-status">MEMBER TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">COMMUNITY</span><h3>Social &amp; opinions</h3><p>Join conversations, share posts and take part in community voting.</p><span className="dashboard-status">MEMBER ACCESS</span></article></>}</div>{(accountProfile?.profile?.account_type || "fan") === "artist" && <div className="artist-studio-tools"><div className="artist-studio-heading"><div><span className="eyebrow">ARTIST WORKSPACE</span><h2>Manage your <em>sound.</em></h2><p>Build your artist identity and prepare music releases for review.</p></div></div>{artistStudioError && <p className="artist-studio-error" role="alert">{artistStudioError}</p>}<div className="artist-studio-forms"><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"update_profile")}><h3>Artist profile</h3><label>Stage / artist name<input name="stageName" required maxLength="100" defaultValue={artistStudio?.artist?.stage_name || ""}/></label><label>Short biography<textarea name="bio" rows="4" maxLength="3000" defaultValue={artistStudio?.artist?.bio || ""}/></label><label>City<input name="city" maxLength="100" defaultValue={artistStudio?.artist?.city || ""}/></label><label>Profile image<input name="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><label>Banner image<input name="bannerFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional. JPEG, PNG, WebP or AVIF, up to 15 MB each. Leave blank to keep your current images.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save artist profile"}</button></form><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"create_release")}><h3>Start a music release</h3><label>Release title<input name="title" required maxLength="180" placeholder="Your single or album title"/></label><label>Release type<select name="releaseType" defaultValue="single"><option value="single">Single</option><option value="ep">EP</option><option value="album">Album</option><option value="mixtape">Mixtape</option></select></label><label>Genre<input name="genre" required maxLength="80" placeholder="Afrobeats, Amapiano…"/></label><label>Release date<input name="releaseDate" type="date"/></label><label>Cover artwork<input name="coverArtFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional JPEG, PNG, WebP or AVIF artwork, up to 15 MB.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save release draft"}</button><small className="fine-print">Audio and cover artwork upload directly to private Neon Storage. A saved draft is not published.</small>
+        <div className="account-dashboard-grid" id="account-dashboard-tools"><article className="account-dashboard-card account-dashboard-primary"><span className="eyebrow">ACCOUNT TYPE</span><h2>{({fan:"Fan & Listener",artist:"Artist / Musician",creator:"Creator / Influencer",event_organizer:"Event Organizer",business:"Business / Brand",media:"Media / Publisher"})[accountProfile?.profile?.account_type || "fan"]}</h2><p>Your dashboard is organized around the account type you selected. Your account type does not grant editorial or verification privileges.</p></article>{(accountProfile?.profile?.account_type || "fan") === "artist" ? <><article className="account-dashboard-card"><span className="eyebrow">ARTIST PROFILE</span><h3>{artistStudio?.artist?.stage_name || accountProfile?.artistProfile?.stage_name || "Your artist identity"}</h3><p>Verification: {artistStudio?.artist?.verification_status || accountProfile?.artistProfile?.verification_status || "unverified"}. Public verification is reviewed separately by Nochalant.</p><span className="dashboard-status">{(artistStudio?.artist?.verification_status || "unverified").toUpperCase()}</span></article><article className="account-dashboard-card"><span className="eyebrow">MUSIC CATALOGUE</span><h3>{artistStudio?.releases?.length || 0} release drafts &amp; submissions</h3><p>{artistStudio?.stats?.published_tracks || 0} published tracks · {Number(artistStudio?.stats?.downloads || 0).toLocaleString()} recorded downloads</p><span className="dashboard-status">LIVE ACCOUNT DATA</span></article></> : (accountProfile?.profile?.account_type || "fan") === "creator" ? <><article className="account-dashboard-card"><span className="eyebrow">CREATOR PROFILE</span><h3>Your public portfolio</h3><p>Build your creator identity, showcase work and connect with your audience.</p><span className="dashboard-status">PROFILE TO SET UP</span></article><article className="account-dashboard-card"><span className="eyebrow">BOOKINGS</span><h3>Enquiries &amp; bookings</h3><p>Manage service details, availability and booking requests.</p><span className="dashboard-status">BOOKING TOOLS IN DEVELOPMENT</span></article></> : (accountProfile?.profile?.account_type || "fan") === "event_organizer" ? <><article className="account-dashboard-card"><span className="eyebrow">EVENTS</span><h3>Your event listings</h3><p>Create event details, submit them for review and manage approved listings.</p><span className="dashboard-status">EVENT TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">ATTENDANCE</span><h3>Tickets &amp; guests</h3><p>Track event interest and attendance when ticketing is enabled.</p><span className="dashboard-status">TICKETING NOT CONNECTED</span></article></> : (accountProfile?.profile?.account_type || "fan") === "business" ? <><article className="account-dashboard-card"><span className="eyebrow">BRAND PROFILE</span><h3>Your business presence</h3><p>Showcase your brand, services and approved promotions.</p><span className="dashboard-status">PROFILE TO SET UP</span></article><article className="account-dashboard-card"><span className="eyebrow">PROMOTIONS</span><h3>Campaigns</h3><p>Prepare sponsored placements with transparent labels and editorial review.</p><span className="dashboard-status">CAMPAIGN TOOLS IN DEVELOPMENT</span></article></> : (accountProfile?.profile?.account_type || "fan") === "media" ? <><article className="account-dashboard-card"><span className="eyebrow">PUBLISHER PROFILE</span><h3>Media submissions</h3><p>Manage publisher identity and submit coverage for editorial consideration.</p><span className="dashboard-status">PUBLISHER TOOLS IN DEVELOPMENT</span></article></> : <><article className="account-dashboard-card"><span className="eyebrow">YOUR ACTIVITY</span><h3>Saved culture &amp; follows</h3><p>Keep up with artists, creators, conversations and events you follow.</p><span className="dashboard-status">MEMBER TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">COMMUNITY</span><h3>Social &amp; opinions</h3><p>Join conversations, share posts and take part in community voting.</p><span className="dashboard-status">MEMBER ACCESS</span></article></>}</div>{(accountProfile?.profile?.account_type || "fan") === "artist" && <div className="artist-studio-tools" id="artist-studio-tools"><div className="artist-studio-heading"><div><span className="eyebrow">ARTIST WORKSPACE</span><h2>Manage your <em>sound.</em></h2><p>Build your artist identity and prepare music releases for review.</p></div></div>{artistStudioError && <p className="artist-studio-error" role="alert">{artistStudioError}</p>}<div className="artist-studio-forms"><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"update_profile")}><h3>Artist profile</h3><label>Stage / artist name<input name="stageName" required maxLength="100" defaultValue={artistStudio?.artist?.stage_name || ""}/></label><label>Short biography<textarea name="bio" rows="4" maxLength="3000" defaultValue={artistStudio?.artist?.bio || ""}/></label><label>City<input name="city" maxLength="100" defaultValue={artistStudio?.artist?.city || ""}/></label><label>Profile image<input name="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><label>Banner image<input name="bannerFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional. JPEG, PNG, WebP or AVIF, up to 15 MB each. Leave blank to keep your current images.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save artist profile"}</button></form><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"create_release")}><h3>Start a music release</h3><label>Release title<input name="title" required maxLength="180" placeholder="Your single or album title"/></label><label>Release type<select name="releaseType" defaultValue="single"><option value="single">Single</option><option value="ep">EP</option><option value="album">Album</option><option value="mixtape">Mixtape</option></select></label><label>Genre<input name="genre" required maxLength="80" placeholder="Afrobeats, Amapiano…"/></label><label>Release date<input name="releaseDate" type="date"/></label><label>Cover artwork<input name="coverArtFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional JPEG, PNG, WebP or AVIF artwork, up to 15 MB.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save release draft"}</button><small className="fine-print">Audio and cover artwork upload directly to private Neon Storage. A saved draft is not published.</small>
 </form></div>
 <form className="artist-studio-form artist-track-form" onSubmit={e => submitArtistStudio(e,"add_track")}>
 <h3>Add a track</h3>
@@ -1239,7 +1394,7 @@ function App() {
     {!currentUser?.id && <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>}
 
     <audio ref={audioRef} preload="metadata" />
-    {audioPlayerVisible ? <div className={"mini-player-dock"+(currentUser?.id?" member-player-dock":"")}>
+    {audioPlayerVisible ? <div className={"mini-player-dock"+(currentUser?.id?" member-player-dock":"")+(playerDockPosition?" is-positioned":"")+(playerDockDragging?" is-dragging":"")} style={playerDockPosition ? {left:playerDockPosition.left+"px",top:playerDockPosition.top+"px",right:"auto",bottom:"auto"} : undefined} onPointerDown={handlePlayerDockPointerDown} onPointerMove={handlePlayerDockPointerMove} onPointerUp={handlePlayerDockPointerUp} onPointerCancel={handlePlayerDockPointerUp}>
       <section className="mini-player" aria-label="Nochalant audio player">
         <img className="player-artwork" src={activeAudioTrack?.cover_art_url || demoStories[0].image} alt={activeAudioTrack ? activeAudioTrack.title + " cover art" : "Nochalant player artwork"}/>
         <div className="player-main">
@@ -1250,22 +1405,28 @@ function App() {
             <span>{formatAudioTime(audioDuration)}</span>
           </div>
         </div>
+        <div className="player-inline-queue" aria-label="Track navigation">
+          <button type="button" onClick={() => moveAudioQueue(-1)} disabled={!audioQueue.length} aria-label="Previous track">‹</button>
+          <button type="button" onClick={() => moveAudioQueue(1)} disabled={!audioQueue.length} aria-label="Next track">›</button>
+        </div>
         <button className="player-toggle" onClick={toggleAudio} aria-label={audioPlaying ? "Pause audio" : "Play audio"}><span className={audioPlaying ? "player-pause-symbol" : "player-play-symbol"} aria-hidden="true"/></button>
-        <button className="player-close" onClick={() => setAudioPlayerVisible(false)} aria-label="Close player" title="Close player">×</button>
+        <button className="player-close" onClick={event => {const rect=event.currentTarget.closest(".mini-player-dock")?.getBoundingClientRect();if(rect){setPlayerButtonPosition({left:rect.left,top:rect.top});setPlayerDockPosition({left:rect.left,top:rect.top});}setAudioPlayerVisible(false);}} aria-label="Minimize player" title="Minimize player">×</button>
       </section>
-      <div className="player-queue-controls" aria-label="Track navigation">
-        <button type="button" onClick={() => moveAudioQueue(-1)} disabled={!audioQueue.length} aria-label="Previous track">‹ <span>PREVIOUS</span></button>
-        <span>{audioQueue.length ? (audioQueueIndex + 1) + " / " + audioQueue.length : "NO TRACK QUEUE"}</span>
-        <button type="button" onClick={() => moveAudioQueue(1)} disabled={!audioQueue.length} aria-label="Next track"><span>NEXT</span> ›</button>
-      </div>
-    </div> : <button className="player-reopen" onClick={() => setAudioPlayerVisible(true)} aria-label="Open audio player">♫ <span>Player</span></button>}
+    </div> : <button type="button" className={"player-reopen"+(currentUser?.id?" member-player-reopen":"")}
+      style={playerButtonPosition ? {left:playerButtonPosition.left+"px",top:playerButtonPosition.top+"px",right:"auto",bottom:"auto"} : undefined}
+      onPointerDown={handlePlayerButtonPointerDown} onPointerMove={handlePlayerButtonPointerMove}
+      onPointerUp={handlePlayerButtonPointerUp} onPointerCancel={handlePlayerButtonPointerUp}
+      onClick={() => {if (playerButtonDraggedRef.current) {playerButtonDraggedRef.current=false;return;} if(playerButtonPosition)setPlayerDockPosition(playerButtonPosition); setAudioPlayerVisible(true);}}
+      aria-label="Open Nochalant audio player" title="Open Nochalant player">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14V10M8 18V6M12 15V9M16 19V5M20 14V10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+    </button>}
 
     {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
       <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
       <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       <button type="button" className={memberDockTab==="socials"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
-      <button type="button" className={memberDockTab==="more"?"active":""} onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></svg><span>MORE</span></button>
+      <button type="button" className={"dock-more"+(memberDockTab==="more"?" active":"")} onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>MORE</span></button>
     </nav>}
     {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "artist-profile" && <div className="artist-profile-modal">
@@ -1285,7 +1446,7 @@ function App() {
         </>}
       </div>}
       {modal === "newsletter-success" && <div className="newsletter-success"><span className="brand-signature" aria-hidden="true">N</span><span className="eyebrow">YOU'RE IN THE LOOP</span><h2 id="modal-title">Good things are coming.</h2><p>Thanks for wanting the Nochalant update. Email signups aren't connected yet, so your address hasn't been saved.</p><button className="button button-green full-width" onClick={closeModal}>Got you</button></div>}
-      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><div className="article-byline"><span>By {story.author}</span><span>{typeof viewCounts[story.id] === "number" ? `${viewCounts[story.id].toLocaleString()} views` : "Reader count loading"}</span><span>{story.read}</span></div><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p><div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
+      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><div className="article-byline"><span>By {story.author}</span><span>{typeof viewCounts[story.id] === "number" ? `${viewCounts[story.id].toLocaleString()} views` : "Reader count loading"}</span><span>{story.read}</span></div><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p>{story.slug && <p><a href={"/story/"+story.slug} target="_blank" rel="noreferrer">Open search-friendly article page ↗</a></p>}<div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
       {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send a tip or story anonymously. No account, sign-in or registration is required. Every anonymous gist is archived privately for editorial review, with a target review window of up to 7 days.</p><form onSubmit={submitGist}><label>Category<select name="category" value={submissionCategories.includes(formCategory) ? formCategory : "Entertainment"} onChange={e => setFormCategory(e.target.value)}>{submissionCategories.map(x => <option key={x} value={x}>{x}</option>)}</select></label><label>Post title<input name="title" required minLength="8" maxLength="180" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea name="body" required minLength="20" maxLength="12000" rows="5" placeholder="Add details, links and useful context..."/></label><label>Source link (optional)<input name="sourceUrl" type="url" placeholder="https://..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Send anonymous gist</button><small className="fine-print">Your identity is not requested. Your submission remains private and pending until an editor reviews it.</small></form></>}
       {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <><label>Full name<input name="name" required placeholder="Your name"/></label><label>Choose your account type<select name="accountType" defaultValue="fan"><option value="fan">Fan / Listener</option><option value="artist">Artist / Musician</option><option value="creator">Creator / Influencer</option><option value="event_organizer">Event Organizer</option><option value="business">Business / Brand</option><option value="media">Media / Publisher</option></select></label><small className="fine-print">Your account type personalizes your dashboard and tools. Artist verification and publishing approval are separate steps.</small></>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
     </div></div>}

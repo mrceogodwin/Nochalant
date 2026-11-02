@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /control-room
+Disallow: /api/
+Sitemap: https://nochalant.vercel.app/sitemap.xml

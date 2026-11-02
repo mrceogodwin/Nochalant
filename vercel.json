@@ -1,6 +1,26 @@
 {
   "rewrites": [
     {
+      "source": "/api/editorial/latest",
+      "destination": "/api/admin/opinions?editorialLatestRoute=1"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/story/:slug",
+      "destination": "/api/seo-story?slug=:slug"
+    },
+    {
+      "source": "/api/editorial/auto-post",
+      "destination": "/api/admin/opinions?editorialAutoPostRoute=1"
+    },
+    {
+      "source": "/api/social",
+      "destination": "/api/admin/opinions?socialRoute=1"
+    },
+    {
       "source": "/api/social/feed",
       "destination": "/api/admin/opinions?socialFeedRoute=1"
     },
@@ -75,6 +95,12 @@
           "value": "no-cache"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/editorial/auto-post",
+      "schedule": "0 8 * * *"
     }
   ]
 }
