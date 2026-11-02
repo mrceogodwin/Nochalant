@@ -54,7 +54,7 @@ async function publish(sql, itemId, authorId) {
   const item = rows[0];
   const body = [item.summary || item.title, "", "Source: " + item.source_name, "Original report: " + item.source_url].join("\n").slice(0,12000);
   const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(item.source_url)))).map(b=>b.toString(16).padStart(2,"0")).join("");
-  const inserted = await sql`INSERT INTO submissions (author_id,title,body,category,source_url,content_fingerprint,status,published_at) VALUES (${authorId},${item.title},${body},${item.category},${item.source_url},${fingerprint},'published',now()) ON CONFLICT DO NOTHING RETURNING id`;
+  const inserted = await sql`INSERT INTO submissions (author_id,title,body,category,source_url,content_fingerprint,status,published_at,editorial_source) VALUES (${authorId},${item.title},${body},${item.category},${item.source_url},${fingerprint},'published',now(),true) ON CONFLICT DO NOTHING RETURNING id`;
   if (!inserted.length) {
     await sql`UPDATE editorial_discovered_items SET status='dismissed' WHERE id=${itemId}`;
     return { published: false, reason: "Duplicate content." };
