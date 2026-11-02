@@ -1,9 +1,9 @@
 import { requireActiveUser } from "./neon-auth.js";
 
 const DEFAULT_SOURCES = [
-  { name: "BellaNaija", feed_url: "https://www.bellanaija.com/feed/", category: "Street Buzz" },
-  { name: "NotJustOk", feed_url: "https://notjustok.com/feed/", category: "Afrobeats & Jamz" },
-  { name: "BBC Africa", feed_url: "https://feeds.bbci.co.uk/news/africa/rss.xml", category: "All Gist" }
+  { name: "BellaNaija", feed_url: "https://www.bellanaija.com/feed/", category: "Entertainment" },
+  { name: "NotJustOk", feed_url: "https://notjustok.com/feed/", category: "Music" },
+  { name: "BBC Africa", feed_url: "https://feeds.bbci.co.uk/news/africa/rss.xml", category: "Entertainment" }
 ];
 const textOnly = value => String(value || "").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, " ").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\s+/g," ").trim();
 const tag = (xml, name) => {
