@@ -114,7 +114,16 @@ export default async function handler(req, res) {
     const missingTriggers = triggerRows[0]?.account_type_lock_trigger_present
       ? []
       : ['user_profiles.user_profiles_account_type_immutable'];
-    const requiredIndexes = ['artist_profiles_owner_user_id_key'];
+    const constraintRows = await sql`
+      SELECT conname
+      FROM pg_constraint
+      WHERE conrelid = 'public.payment_webhook_events'::regclass
+        AND conname = 'payment_webhook_events_processing_status_check'
+        AND pg_get_constraintdef(oid) LIKE '%processing%'
+    `;
+    const missingConstraints = constraintRows.length ? []
+      : ['payment_webhook_events.payment_webhook_events_processing_status_check'];
+    const requiredIndexes = ['artist_profiles_owner_user_id_key', 'payment_refunds_provider_refund_id_unique'];
     const indexRows = await sql`
       SELECT indexname
       FROM pg_indexes
@@ -124,7 +133,7 @@ export default async function handler(req, res) {
     const presentIndexes = new Set(indexRows.map(row => row.indexname));
     const missingIndexes = requiredIndexes.filter(name => !presentIndexes.has(name));
     const complete = missing.length === 0 && missingColumns.length === 0
-      && missingTriggers.length === 0 && missingIndexes.length === 0;
+      && missingTriggers.length === 0 && missingConstraints.length === 0 && missingIndexes.length === 0;
     return res.status(complete ? 200 : 503).json({
       ok: complete,
       database: "connected",
@@ -136,6 +145,8 @@ export default async function handler(req, res) {
       missing_columns: missingColumns,
       checked_triggers: 1,
       missing_triggers: missingTriggers,
+      checked_constraints: 1,
+      missing_constraints: missingConstraints,
       checked_indexes: requiredIndexes.length,
       missing_indexes: missingIndexes
     });
