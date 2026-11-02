@@ -1761,3 +1761,31 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  #hot-or-trash .jury-options{gap:8px!important}
  #hot-or-trash .jury-option{font-size:12px!important;min-height:48px!important}
 }
+
+/* Nochalant approved mobile grid and slider treatment */
+.story-image .story-category{display:none}
+.story-card-bottom{margin-top:auto;border-top:1px solid var(--line);padding-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.story-category-quiet{display:inline-flex;align-items:center;padding:2px 0;color:#aebc78;font-size:8px;font-weight:700;letter-spacing:.02em;background:transparent;border:0;text-transform:none}
+.story-foot{display:flex;align-items:center;justify-content:flex-end;gap:16px;border:0;margin:0;padding:0;font-size:9px}
+.story-foot button,.story-foot .story-icon-stat{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:2px;border:0;background:transparent;color:#aab09b;cursor:pointer}
+.story-foot svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.story-foot .liked{color:var(--lime)}
+.story-icon-stat small{font-size:8px;color:#aab09b}
+.jury-slide-arrow{display:none}
+.jury-slider-controls{grid-column:1/-1;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:2px}
+.jury-slider-nav{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:max-content;padding:9px 13px;border:1px solid var(--lime);border-radius:24px;background:transparent;color:var(--lime);font-size:9px;font-weight:900;letter-spacing:.1em;cursor:pointer}
+.jury-slider-nav:last-child{justify-self:end}
+.jury-slider-nav:disabled{opacity:.3;cursor:not-allowed}
+.jury-pagination{display:flex;justify-content:center;gap:10px;margin:0}
+.jury-pagination button{width:9px;height:9px;flex:none}
+.jury-card-footer{display:none}
+@media(max-width:600px){
+ .story-card-bottom{padding-top:8px}
+ .story-category-quiet{font-size:7px}
+ .story-foot{gap:11px}
+ .story-foot svg{width:16px;height:16px}
+ .jury-slider-controls{gap:5px}
+ .jury-slider-nav{padding:8px 9px;font-size:8px;gap:4px}
+ .jury-pagination{gap:7px}
+ .jury-pagination button{width:7px;height:7px}
+}
