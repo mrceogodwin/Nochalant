@@ -6,6 +6,7 @@ const composeEditorialCopy = (title, summary, sourceName, sourceUrl) => {
   const context = clean.length > 40 ? clean : "The development is drawing attention across the entertainment conversation."; 
   return [title, context, "Nochalant is tracking the story as more verified details emerge. This short editorial digest is based on the publisher feed; read the original report for full context and updates.", "Source: " + sourceName, "Original report: " + sourceUrl].join("\n\n");
 };
+const DEFAULT_SOURCES = [
   { name: "BellaNaija", feed_url: "https://www.bellanaija.com/feed/", category: "Entertainment" },
   { name: "NotJustOk", feed_url: "https://notjustok.com/feed/", category: "Music" },
   { name: "BBC Africa", feed_url: "https://feeds.bbci.co.uk/news/africa/rss.xml", category: "Entertainment" }
