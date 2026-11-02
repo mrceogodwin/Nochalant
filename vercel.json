@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/editorial/latest",
+      "destination": "/api/admin/opinions?editorialLatestRoute=1"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
     },
@@ -99,4 +103,4 @@
       "schedule": "0 8 * * *"
     }
   ]
-}
+}\n
