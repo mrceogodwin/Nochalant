@@ -40,3 +40,11 @@ CREATE INDEX IF NOT EXISTS editorial_discovered_queue_idx
   ON editorial_discovered_items(status, discovered_at DESC);
 CREATE INDEX IF NOT EXISTS editorial_sources_enabled_idx
   ON editorial_content_sources(enabled) WHERE enabled = true;
+
+-- Keep the one-free-member-submission-per-day rule while allowing the editorial desk
+-- to publish multiple independently sourced stories in a day.
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS editorial_source boolean NOT NULL DEFAULT false;
+DROP INDEX IF EXISTS submissions_one_free_per_day;
+CREATE UNIQUE INDEX IF NOT EXISTS submissions_one_free_per_day
+  ON submissions(author_id, submission_day)
+  WHERE submission_type = 'free' AND editorial_source = false;
