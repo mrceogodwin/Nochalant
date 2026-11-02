@@ -1,8 +1,10 @@
 import { requireActiveUser } from "../_lib/neon-auth.js";
 import { neon } from "@neondatabase/serverless";
 import { resolveMusicAssetUrl } from "../_lib/music-storage.js";
+import handleMine from "../_lib/opinions-mine.js";
 
 export default async function handler(req, res) {
+  if (req.query?.mine === "1") return handleMine(req, res);
   if (req.method === "POST") {
     const auth = await requireActiveUser(req);
     if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
