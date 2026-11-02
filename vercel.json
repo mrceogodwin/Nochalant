@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/artists",
+      "destination": "/api/community?type=artists"
+    },
+    {
+      "source": "/api/community/faces",
+      "destination": "/api/community?type=faces"
+    },
+    {
       "source": "/api/editorial/latest",
       "destination": "/api/admin/opinions?editorialLatestRoute=1"
     },
