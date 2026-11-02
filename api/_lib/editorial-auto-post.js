@@ -185,6 +185,26 @@ export async function handleEditorialLatest(req,res) {
     const rows=await sql`SELECT s.id,s.title,s.body,s.category,s.published_at,s.slug,s.canonical_url,s.seo_title,s.seo_description,s.is_indexable,d.image_url,d.source_name,d.source_url,p.display_name AS author_name FROM submissions s JOIN editorial_discovered_items d ON d.submission_id=s.id JOIN user_profiles p ON p.id=s.author_id WHERE s.status='published' AND d.status='published' AND s.is_indexable=true ORDER BY s.published_at DESC LIMIT 30`;
     return res.status(200).json({ok:true,stories:rows});
   } catch(error) {
+    // Keep the public feed available while optional SEO/editorial migrations are
+    // pending. The fallback uses only the core submissions/profile schema.
+    if (["42P01", "42703"].includes(error?.code)) {
+      try {
+        const fallbackRows = await sql`SELECT s.id,s.title,s.body,s.category,s.created_at,s.published_at,s.source_url,p.display_name AS author_name
+          FROM submissions s
+          JOIN user_profiles p ON p.id=s.author_id
+          WHERE s.status='published'
+          ORDER BY COALESCE(s.published_at,s.created_at) DESC
+          LIMIT 60`;
+        return res.status(200).json({ok:true,stories:fallbackRows.map(row=>({
+          id:row.id,title:row.title,body:row.body,category:row.category,
+          image_url:null,source_name:null,source_url:row.source_url||null,
+          author_name:row.author_name||"Nochalant Editorial Desk",
+          published_at:row.published_at||row.created_at
+        }))});
+      } catch(fallbackError) {
+        console.error("Editorial fallback feed failed:",fallbackError?.message||fallbackError);
+      }
+    }
     console.error("Editorial public feed failed:",error?.message||error);
     return res.status(503).json({ok:false,error:"Editorial feed is temporarily unavailable."});
   }
