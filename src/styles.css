@@ -1968,3 +1968,15 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .editorial-discovery-item small a{color:var(--accent,#d4ff62)}
 .editorial-discovery-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 @media(max-width:600px){.editorial-auto-controls{align-items:flex-start;flex-direction:column}.editorial-discovery-item{grid-template-columns:76px minmax(0,1fr);padding:10px;gap:10px}.editorial-discovery-item>img{width:76px;height:76px}}
+
+
+/* Navigation docking: keep the header flush to the viewport and stack the feature rail beneath it. */
+.site-shell:not(.header-not-sticky) .site-header{position:sticky;top:0;z-index:45}
+.site-shell:not(.header-not-sticky) .feature-nav{position:sticky;top:79px;z-index:44}
+.site-shell.header-not-sticky .site-header{position:relative;top:auto}
+.site-shell.header-not-sticky .feature-nav{position:relative;top:auto;z-index:1}
+@media(max-width:760px){
+  .site-shell:not(.header-not-sticky) .site-header{top:0}
+  .site-shell:not(.header-not-sticky) .feature-nav{top:79px}
+  .site-shell.header-not-sticky .feature-nav{position:relative;top:auto}
+}
