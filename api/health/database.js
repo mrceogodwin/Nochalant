@@ -122,7 +122,7 @@ export default async function handler(req, res) {
       WHERE n.nspname = 'public'
         AND r.relname = 'payment_webhook_events'
         AND c.conname = 'payment_webhook_events_processing_status_check'
-        AND pg_get_constraintdef(c.oid) LIKE '%processing%'
+        AND pg_get_constraintdef(c.oid) LIKE '%''processing''%'
     `;
     const missingConstraints = constraintRows.length ? []
       : ['payment_webhook_events.payment_webhook_events_processing_status_check'];
