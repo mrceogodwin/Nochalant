@@ -46,7 +46,10 @@ const REQUIRED_TABLES = [
   "podcast_staff_accounts",
   "social_feature_settings",
   "social_stories",
-  "social_story_views"
+  "social_story_views",
+  "editorial_auto_post_settings",
+  "editorial_content_sources",
+  "editorial_discovered_items"
 ];
 
 export default async function handler(req, res) {
