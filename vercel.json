@@ -5,6 +5,14 @@
       "destination": "/api/admin/opinions?editorialLatestRoute=1"
     },
     {
+      "source": "/api/health",
+      "destination": "/api/health/database"
+    },
+    {
+      "source": "/api/opinions/mine",
+      "destination": "/api/opinions?mine=1"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
     },
