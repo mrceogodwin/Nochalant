@@ -36,7 +36,7 @@ const demoStories = [
 function App() {
   const [category, setCategory] = useState("All Gist");
   const [editorialStories, setEditorialStories] = useState([]);
-  useEffect(() => { let active=true; fetch("/api/editorial/latest",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(active&&d.ok)setEditorialStories((d.stories||[]).map(x=>({id:x.id,category:x.category==="Entertainment"?"Street Buzz":x.category,title:x.title,excerpt:x.body||"",image:x.image_url||"",time:"Latest",read:"3 min read",author:x.author_name||"Nochalant Editorial Desk",label:"SOURCE: "+(x.source_name||"Editorial"),body:x.body||"",source_url:x.source_url,slug:x.slug,canonical_url:x.canonical_url})));}).catch(()=>{}); return ()=>{active=false;}; }, []);
+  useEffect(() => { let active=true; fetch("/api/editorial/latest",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(active&&d.ok)setEditorialStories((d.stories||[]).map(x=>({id:x.id,category:x.category==="Entertainment"?"Street Buzz":x.category,title:x.title,excerpt:x.body||"",image:x.image_url||"",time:"Latest",read:"3 min read",author:x.author_name||"Nochalant Editorial Desk",label:"SOURCE: "+(x.source_name||"Editorial"),body:x.body||"",source_url:x.source_url,slug:x.slug,canonical_url:x.canonical_url,seo_title:x.seo_title,seo_description:x.seo_description})));}).catch(()=>{}); return ()=>{active=false;}; }, []);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState("");
   const [story, setStory] = useState(demoStories[0]);
