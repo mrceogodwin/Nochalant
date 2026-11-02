@@ -1855,3 +1855,72 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
   #hot-or-trash .jury-slider-nav{min-width:100px!important;min-height:38px!important;padding:7px 8px!important;font-size:7px!important;gap:3px!important}
   #hot-or-trash .jury-slider-controls .jury-pagination{max-width:calc(100% - 210px)!important;gap:5px!important}
 }
+
+
+/* Mobile polish: keep story-card metadata and actions on one horizontal line. */
+@media(max-width:600px){
+  #latest .story-card-bottom{
+    display:grid!important;
+    grid-template-columns:minmax(0,72px) minmax(0,1fr)!important;
+    align-items:center!important;
+    column-gap:8px!important;
+    row-gap:0!important;
+    min-width:0!important;
+  }
+  #latest .story-category-quiet{
+    min-width:0!important;
+    white-space:normal!important;
+    line-height:1.2!important;
+    overflow-wrap:anywhere!important;
+  }
+  #latest .story-foot{
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:clamp(5px,2vw,10px)!important;
+    min-width:0!important;
+    white-space:nowrap!important;
+  }
+  #latest .story-foot > button,
+  #latest .story-foot > .story-icon-stat{
+    flex:0 0 auto!important;
+    min-width:0!important;
+    white-space:nowrap!important;
+  }
+  #latest .story-foot svg{width:16px!important;height:16px!important}
+  #latest .story-icon-stat small{font-size:8px!important}
+}
+
+/* Keep PREVIOUS on the left and NEXT on the right, on the same row. */
+#hot-or-trash .jury-slider-controls{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  grid-template-rows:auto!important;
+  align-items:center!important;
+  justify-items:stretch!important;
+  gap:8px!important;
+  width:100%!important;
+}
+#hot-or-trash .jury-slider-controls > .jury-slider-nav:first-child{
+  grid-column:1!important;
+  grid-row:1!important;
+  justify-self:start!important;
+}
+#hot-or-trash .jury-slider-controls > .jury-pagination{
+  grid-column:2!important;
+  grid-row:1!important;
+  justify-self:center!important;
+  width:auto!important;
+  margin:0!important;
+}
+#hot-or-trash .jury-slider-controls > .jury-slider-nav:last-of-type{
+  grid-column:3!important;
+  grid-row:1!important;
+  justify-self:end!important;
+}
+@media(max-width:600px){
+  #hot-or-trash .jury-slider-controls{gap:5px!important}
+  #hot-or-trash .jury-slider-nav{padding:8px 10px!important;font-size:8px!important;letter-spacing:.06em!important}
+  #hot-or-trash .jury-pagination{gap:7px!important}
+}
