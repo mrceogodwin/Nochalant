@@ -31,14 +31,14 @@ The route is rewritten to the existing admin opinions serverless handler to avoi
 
 - Migration 002: community posts, comments, reactions, follows and notifications.
 - Migration 008: account types.
-- Migration 015: member profile details.
-- Migration 019: story records and story views.
-- Migration 020: immutable account-type registration lock (adds `account_type_locked_at` and its database trigger).
+- Migration 015 (`015_multi_workspace_accounts.sql`): account-type memberships, profile details and podcast staff accounts. It backfills each existing member's current account type as their primary membership.
+- Migration 016 (`016_unique_artist_profile_owner.sql`): enforces one Artist profile per member. Production currently has no duplicate artist-profile owners.
+- Migration 019 (`019_social_stories.sql`): text story records and story views.
+- Migration 020 (`020_immutable_account_type.sql`): immutable account-type registration lock (adds `account_type_locked_at` and its database trigger).
 
-The live production Neon schema currently lacks `user_profile_details`, `user_account_types`, `social_stories`, `social_story_views`, and `user_profiles.account_type_locked_at`; these are present on the preflight branch. The production schema also lacks `podcast_staff_accounts`, which is a separate outstanding schema difference and must be traced to its owning migration before podcast staff workflows are enabled.
+A read-only production-versus-preflight schema comparison confirms that migrations 015, 016, 019 and 020 are still outstanding on production. The preflight branch contains their expected schema. Migration 015 backfills one primary membership for each existing user; migration 020 locks each existing user to their current account type. Review these additive changes before production rollout.
 
-Apply and verify all prerequisite migrations in a non-production Neon branch first. Do not expose Social stories or account-type activation in production until the corresponding schema is applied and verified. Migration 020 locks existing members to their current account type; review this effect against the existing member base before production rollout.
-
+Apply and verify all prerequisite migrations in numeric order on a non-production branch first. Do not enable Social Stories, account-profile editing, account-type activation or podcast staff workflows in production until the corresponding schema is applied and verified.
 ## Deliberate safety boundaries
 
 Stories are text-only. Image/video posts, story media, DMs, reposts and bookmarks are not enabled in this milestone. Media requires signed uploads, private storage, file-type/size checks, malware scanning, moderation review and expiring delivery URLs before launch.
