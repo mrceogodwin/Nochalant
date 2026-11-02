@@ -31,6 +31,18 @@ function parseFeed(xml, source) {
     } catch { return null; }
   }).filter(Boolean);
 }
+async function verifyImage(imageUrl) {
+  if (!imageUrl) return null;
+  try {
+    const url = new URL(imageUrl);
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    const response = await fetch(url, { method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(5000) });
+    const type = response.headers.get("content-type") || "";
+    const size = Number(response.headers.get("content-length") || 0);
+    if (!response.ok || !type.startsWith("image/") || (size && size > 8000000)) return null;
+    return url.toString();
+  } catch { return null; }
+}
 async function ensureSources(sql) {
   for (const source of DEFAULT_SOURCES) {
     await sql`INSERT INTO editorial_content_sources (name,feed_url,category) VALUES (${source.name},${source.feed_url},${source.category}) ON CONFLICT (feed_url) DO NOTHING`;
