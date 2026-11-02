@@ -49,8 +49,10 @@ The numbered SQL files are committed to GitHub; that does **not** mean they have
 19. `016_unique_artist_profile_owner.sql`
 20. `017_payment_webhook_processing_claim.sql`
 21. `018_bachs_refund_reconciliation.sql`
+22. `019_social_stories.sql`
+23. `020_immutable_account_type.sql`
 
-The new workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Do not run it on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
+The workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Migration 019 adds text-only 24-hour stories and story-view tracking. Migration 020 adds the immutable registration-time account-type lock. It locks existing members to their current account type; review that effect against the existing member base before applying it. Do not run these migrations on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
 ## 4. Verify the schema
 
@@ -62,9 +64,10 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 44`
+- `present_tables: 46`
 - `missing_columns: []`
 - `missing_tables: []`
+- `missing_triggers: []`
 
 If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, inspect both `missing_tables` and `missing_columns`, then apply or repair the listed migrations in order. The health endpoint checks the Bachs refund reconciliation columns added by migration 018 and the webhook processing schema required by migration 017.
 
@@ -138,3 +141,15 @@ HAVING COUNT(*) > 1;
 ```
 
 The migration intentionally fails if duplicates exist. Do not delete or merge profiles automatically; review and reconcile any duplicates first. The isolated preflight branch was checked and currently has no duplicate owners. This does not establish that Production is duplicate-free.
+
+## 13. Social stories and story views
+
+Migration 019 creates `social_stories` and `social_story_views`. Stories are text-only and expire after 24 hours. Photo/video story uploads are not part of this release and must remain disabled until signed uploads, private object storage, file validation, malware scanning and moderation are implemented.
+
+The database health endpoint checks both story tables so production cannot report a complete schema while the Stories API is missing its tables.
+
+## 14. Immutable account type registration
+
+Migration 020 adds `user_profiles.account_type_locked_at` and the `user_profiles_account_type_immutable` trigger. Existing members are locked to their current account type when the migration runs. New accounts may set their initial type once; later changes are rejected by the database as well as the API.
+
+The health endpoint checks the lock column and trigger. Review the existing-member impact before rollout; do not apply migration 020 to production without explicit release approval.
