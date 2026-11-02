@@ -68,6 +68,7 @@ A successful response has:
 - `missing_columns: []`
 - `missing_tables: []`
 - `missing_triggers: []`
+- `missing_indexes: []`
 
 If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, inspect both `missing_tables` and `missing_columns`, then apply or repair the listed migrations in order. The health endpoint checks the Bachs refund reconciliation columns added by migration 018 and the webhook processing schema required by migration 017.
 
@@ -152,4 +153,4 @@ The database health endpoint checks both story tables so production cannot repor
 
 Migration 020 adds `user_profiles.account_type_locked_at` and the `user_profiles_account_type_immutable` trigger. Existing members are locked to their current account type when the migration runs. New accounts may set their initial type once; later changes are rejected by the database as well as the API.
 
-The health endpoint checks the lock column and trigger. Review the existing-member impact before rollout; do not apply migration 020 to production without explicit release approval.
+The health endpoint checks the lock column and trigger, plus the unique Artist-profile ownership index from migration 016. Review the existing-member impact before rollout; do not apply migration 020 to production without explicit release approval.
