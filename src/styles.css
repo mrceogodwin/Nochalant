@@ -1792,3 +1792,66 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 
 /* Preserve the established square-edged editorial grid on mobile and desktop. */
 .story-card{border-radius:0!important}
+
+
+/* Mobile fixes from the Nov 2 visual review: balanced final grid row and aligned poll navigation. */
+@media(max-width:600px){
+  #latest .story-grid>.story-card:last-child:nth-child(odd){
+    grid-column:1 / -1;
+    width:100%;
+  }
+  #latest .story-grid>.story-card:last-child:nth-child(odd) .story-image{
+    height:clamp(150px,42vw,210px);
+  }
+  #latest .story-grid>.story-card:last-child:nth-child(odd) .story-content{
+    padding:14px 15px;
+  }
+  #latest .story-grid>.story-card:last-child:nth-child(odd) .story-content h3{
+    font-size:clamp(15px,4vw,19px);
+  }
+}
+#hot-or-trash .jury-slider-controls{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  position:relative!important;
+  width:100%!important;
+  min-height:46px!important;
+  gap:12px!important;
+  margin:5px 0 0!important;
+}
+#hot-or-trash .jury-slider-nav{
+  display:inline-flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:118px!important;
+  min-height:42px!important;
+  padding:9px 13px!important;
+  white-space:nowrap!important;
+}
+#hot-or-trash .jury-slider-nav:last-child{
+  margin-left:auto!important;
+  justify-self:auto!important;
+}
+#hot-or-trash .jury-slider-controls .jury-pagination{
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  transform:translate(-50%,-50%)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  max-width:calc(100% - 250px)!important;
+  margin:0!important;
+}
+#hot-or-trash .jury-feedback{
+  display:block!important;
+  width:100%!important;
+  margin:12px 0 0!important;
+}
+@media(max-width:420px){
+  #hot-or-trash .jury-slider-controls{gap:7px!important;min-height:42px!important}
+  #hot-or-trash .jury-slider-nav{min-width:100px!important;min-height:38px!important;padding:7px 8px!important;font-size:7px!important;gap:3px!important}
+  #hot-or-trash .jury-slider-controls .jury-pagination{max-width:calc(100% - 210px)!important;gap:5px!important}
+}
