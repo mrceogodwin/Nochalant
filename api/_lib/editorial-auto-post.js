@@ -1,6 +1,11 @@
 import { requireActiveUser } from "./neon-auth.js";
 
 const slugify = value => String(value||"").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80);
+const composeEditorialCopy = (title, summary, sourceName, sourceUrl) => {
+  const clean = String(summary || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0,900);
+  const context = clean.length > 40 ? clean : "The development is drawing attention across the entertainment conversation."; 
+  return [title, context, "Nochalant is tracking the story as more verified details emerge. This short editorial digest is based on the publisher feed; read the original report for full context and updates.", "Source: " + sourceName, "Original report: " + sourceUrl].join("\n\n");
+};
 const composeEditorialCopy = (title, summary, sourceName, sourceUrl) => {\n  const clean = String(summary || "").replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim().slice(0,900);\n  const context = clean.length > 40 ? clean : "The development is drawing attention across the entertainment conversation.";\n  return title + "\\n\\n" + context + "\\n\\nNochalant is tracking the story as more verified details emerge. This short editorial digest is based on the publisher feed; read the original report for full context and updates.\\n\\nSource: " + sourceName + "\\nOriginal report: " + sourceUrl;\n};\nconst DEFAULT_SOURCES = [
   { name: "BellaNaija", feed_url: "https://www.bellanaija.com/feed/", category: "Entertainment" },
   { name: "NotJustOk", feed_url: "https://notjustok.com/feed/", category: "Music" },
@@ -53,7 +58,10 @@ async function publish(sql, itemId, authorId) {
   const rows = await sql`SELECT * FROM editorial_discovered_items WHERE id=${itemId} AND status='pending' FOR UPDATE`;
   if (!rows.length) return { published: false, reason: "Already handled or unavailable." };
   const item = rows[0];
-  const body = [item.summary || item.title, "", "Source: " + item.source_name, "Original report: " + item.source_url].join("\n").slice(0,12000);
+  const body = composeEditorialCopy(item.title,item.summary,item.source_name,item.source_url);
+  const slug = slugify(item.title) + "-" + String(item.id).slice(0,8);
+  const seoDescription = String(item.summary || body).slice(0,155);
+  const canonical = "https://nochalant.vercel.app/story/" + slug;
   const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(item.source_url)))).map(b=>b.toString(16).padStart(2,"0")).join("");
   const inserted = await sql`INSERT INTO submissions (author_id,title,body,category,source_url,content_fingerprint,status,published_at,editorial_source,slug,seo_title,seo_description,focus_keyword,canonical_url,og_image_url,is_indexable) VALUES (${authorId},${item.title},${body},${item.category},${item.source_url},${fingerprint},'published',now(),true,${slug},${item.title.slice(0,65)},${seoDescription},${item.category},${canonical},${item.image_url},true) ON CONFLICT DO NOTHING RETURNING id`;
   if (!inserted.length) {
