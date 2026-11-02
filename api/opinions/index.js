@@ -1,4 +1,5 @@
 import { requireActiveUser } from "../_lib/neon-auth.js";
+import { resolveMusicAssetUrl } from "../_lib/music-storage.js";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -28,15 +29,17 @@ export default async function handler(req, res) {
   try {
     const rows = await auth.sql`
       SELECT o.id, o.body, o.topic, o.published_at,
-             p.display_name AS author_name
+             p.display_name AS author_name, d.avatar_url
       FROM community_opinions o
       JOIN user_profiles p ON p.id = o.author_id
+      LEFT JOIN user_profile_details d ON d.user_profile_id = p.id
       WHERE o.status = 'published'
         AND p.account_status = 'active'
       ORDER BY o.featured DESC, o.published_at DESC NULLS LAST, o.created_at DESC
       LIMIT 30
     `;
-    return res.status(200).json({ ok: true, opinions: rows });
+    const opinions = await Promise.all(rows.map(async row => ({ ...row, avatar_url: await resolveMusicAssetUrl(row.avatar_url) })));
+    return res.status(200).json({ ok: true, opinions });
   } catch (error) {
     console.error("Nochalant opinions feed failed:", error?.message || error);
     return res.status(503).json({ ok: false, error: "Opinions are temporarily unavailable." });
