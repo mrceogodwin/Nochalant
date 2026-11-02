@@ -1,12 +1,7 @@
 import { requireActiveUser } from "./neon-auth.js";
 
 const slugify = value => String(value||"").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80);
-const composeEditorialCopy = (title, summary, sourceName, sourceUrl) => {
-  const clean = String(summary||"").replace(/https?:\\/\\/\\S+/g,"").replace(/<[^>]*>/g," ").replace(/\\s+/g," ").trim().slice(0,900);
-  const context = clean.length > 40 ? clean : "The development is drawing attention across the entertainment conversation.";
-  return title + "\\n\\n" + context + "\\n\\nNochalant is tracking the story as more verified details emerge. This short editorial digest is based on the publisher's feed; read the original report for full context and updates.\\n\\nSource: " + sourceName + "\\nOriginal report: " + sourceUrl;
-};
-const DEFAULT_SOURCES = [
+const composeEditorialCopy = (title, summary, sourceName, sourceUrl) => {\n  const clean = String(summary || "").replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim().slice(0,900);\n  const context = clean.length > 40 ? clean : "The development is drawing attention across the entertainment conversation.";\n  return title + "\\n\\n" + context + "\\n\\nNochalant is tracking the story as more verified details emerge. This short editorial digest is based on the publisher feed; read the original report for full context and updates.\\n\\nSource: " + sourceName + "\\nOriginal report: " + sourceUrl;\n};\nconst DEFAULT_SOURCES = [
   { name: "BellaNaija", feed_url: "https://www.bellanaija.com/feed/", category: "Entertainment" },
   { name: "NotJustOk", feed_url: "https://notjustok.com/feed/", category: "Music" },
   { name: "BBC Africa", feed_url: "https://feeds.bbci.co.uk/news/africa/rss.xml", category: "Entertainment" }
