@@ -117,7 +117,7 @@ export async function handleEditorialAutoPost(req,res) {
       const cap = Math.max(1,Math.min(20,Number(settings[0]?.daily_limit)||5));
       const owner = await sql`SELECT id FROM user_profiles WHERE role='super_admin' ORDER BY created_at ASC LIMIT 1`;
       if (owner.length) {
-        const queue = await sql`SELECT id FROM editorial_discovered_items WHERE status='pending' ORDER BY published_at DESC NULLS LAST,discovered_at DESC LIMIT ${cap}`;
+        const queue = await sql`SELECT id FROM editorial_discovered_items WHERE status='pending' AND length(summary) >= 100 AND image_url IS NOT NULL ORDER BY published_at DESC NULLS LAST,discovered_at DESC LIMIT ${cap}`;
         for (const item of queue) if ((await publish(sql,item.id,owner[0].id)).published) published++;
       }
       await sql`UPDATE editorial_auto_post_settings SET last_run_at=now() WHERE id=true`;
