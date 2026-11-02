@@ -469,7 +469,7 @@ const accountActions = ["suspend","unsuspend","ban","unban"];
 export default async function handler(req, res) {
   if (req.query?.socialRoute) return handleSocialNetwork(req, res);
   if (req.query?.socialFeedRoute) return handleSocialFeed(req, res);
-  if (req.query?.socialSettingsRoute) return handleSocialSettings(req, res);\n  if (req.query?.editorialAutoPostRoute) return handleEditorialAutoPost(req, res);
+  if (req.query?.socialSettingsRoute) return handleSocialSettings(req, res);\n  if (req.query?.editorialAutoPostRoute) return handleEditorialAutoPost(req, res);\n  if (req.query?.editorialLatestRoute) return handleEditorialLatest(req, res);
   if (req.query?.editorialAutoPostRoute) return (await import("../_lib/editorial-auto-post.js")).handleEditorialAutoPost(req, res);
   if (req.query?.editorialLatestRoute) return (await import("../_lib/editorial-auto-post.js")).handleEditorialLatest(req, res);
   if (req.query?.downloadRoute) return handleTrackDownload(req, res);
