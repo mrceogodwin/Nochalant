@@ -51,6 +51,7 @@ The numbered SQL files are committed to GitHub; that does **not** mean they have
 21. `018_bachs_refund_reconciliation.sql`
 22. `019_social_stories.sql`
 23. `020_immutable_account_type.sql`
+24. `021_editorial_auto_post.sql`
 
 The workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Migration 019 adds text-only 24-hour stories and story-view tracking. Migration 020 adds the immutable registration-time account-type lock. It locks existing members only when they already have a non-empty account type; members with no selected type remain eligible to make their first selection, which is locked at activation. Verify this behavior on the isolated preflight branch before production rollout. Do not run these migrations on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
@@ -155,3 +156,9 @@ The database health endpoint checks both story tables so production cannot repor
 Migration 020 adds `user_profiles.account_type_locked_at` and the `user_profiles_account_type_immutable` trigger. Existing members with a non-empty account type are locked to that type when the migration runs. Existing profiles with no selected type remain unlocked until their first successful selection; that selection is locked by the API and trigger. New accounts may set their initial type once; later changes are rejected by the database as well as the API.
 
 The health endpoint checks the lock column and trigger, plus the unique Artist-profile ownership index from migration 016. Review the existing-member impact before rollout; do not apply migration 020 to production without explicit release approval.
+
+## 7. Editorial Auto-Post
+
+Migration `021_editorial_auto_post.sql` creates the Super Admin's free RSS discovery queue and daily Auto Post setting. Apply it to the isolated preflight branch first. The Control Room provides Fetch Latest, per-story Publish/Dismiss, and a daily Auto Post toggle. Vercel Cron calls the shared admin function once daily at 08:00 UTC (09:00 Africa/Lagos). Configure a server-only `CRON_SECRET` environment variable in Vercel; the scheduled request must use Vercel's cron authorization header. Do not expose this secret to the browser.
+
+The initial feeds are BellaNaija, NotJustOk and BBC Africa. RSS availability and publisher terms may change. The system stores source links and short feed summaries, deduplicates by canonical source URL, and publishes through the existing editorial submissions table as the Super Admin. Review feed summaries and rights/attribution before enabling automatic publication. No paid AI API is used.
