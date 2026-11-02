@@ -5,8 +5,8 @@
       "destination": "/api/admin/opinions?editorialLatestRoute=1"
     },
     {
-      "source": "/api/health",
-      "destination": "/api/health/database"
+      "source": "/api/health/database",
+      "destination": "/api/health?database=1"
     },
     {
       "source": "/api/opinions/mine",
