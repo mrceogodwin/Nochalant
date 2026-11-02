@@ -10,7 +10,7 @@
     },
     {
       "source": "/story/:slug",
-      "destination": "/api/seo-story?slug=$1"
+      "destination": "/api/seo-story?slug=:slug"
     },
     {
       "source": "/api/editorial/auto-post",
@@ -103,4 +103,4 @@
       "schedule": "0 8 * * *"
     }
   ]
-}\n
+}
