@@ -44,7 +44,9 @@ const REQUIRED_TABLES = [
   "user_account_types",
   "user_profile_details",
   "podcast_staff_accounts",
-  "social_feature_settings"
+  "social_feature_settings",
+  "social_stories",
+  "social_story_views"
 ];
 
 export default async function handler(req, res) {
@@ -78,7 +80,8 @@ export default async function handler(req, res) {
       ["payment_refunds", "refunded_amount_minor"],
       ["user_account_types", "is_primary"],
       ["user_profile_details", "avatar_url"],
-      ["social_feature_settings", "enabled"]
+      ["social_feature_settings", "enabled"],
+      ["user_profiles", "account_type_locked_at"]
     ];
     const columnRows = await sql`
       SELECT table_name, column_name
@@ -89,14 +92,29 @@ export default async function handler(req, res) {
           ('payment_refunds', 'refunded_amount_minor'),
           ('user_account_types', 'is_primary'),
           ('user_profile_details', 'avatar_url'),
-          ('social_feature_settings', 'enabled')
+          ('social_feature_settings', 'enabled'),
+          ('user_profiles', 'account_type_locked_at')
         )
     `;
     const presentColumns = new Set(columnRows.map(row => row.table_name + "." + row.column_name));
     const missingColumns = requiredColumns
       .map(([table, column]) => table + "." + column)
       .filter(name => !presentColumns.has(name));
-    const complete = missing.length === 0 && missingColumns.length === 0;
+    const triggerRows = await sql`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_trigger t
+        JOIN pg_class c ON c.oid = t.tgrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'user_profiles'
+          AND t.tgname = 'user_profiles_account_type_immutable'
+          AND NOT t.tgisinternal
+      ) AS account_type_lock_trigger_present
+    `;
+    const missingTriggers = triggerRows[0]?.account_type_lock_trigger_present
+      ? []
+      : ['user_profiles.user_profiles_account_type_immutable'];
+    const complete = missing.length === 0 && missingColumns.length === 0 && missingTriggers.length === 0;
     return res.status(complete ? 200 : 503).json({
       ok: complete,
       database: "connected",
@@ -105,7 +123,9 @@ export default async function handler(req, res) {
       present_tables: REQUIRED_TABLES.length - missing.length,
       missing_tables: missing,
       checked_columns: requiredColumns.length,
-      missing_columns: missingColumns
+      missing_columns: missingColumns,
+      checked_triggers: 1,
+      missing_triggers: missingTriggers
     });
   } catch (error) {
     console.error("Database health check failed:", error?.message || error);
