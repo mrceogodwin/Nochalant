@@ -2029,3 +2029,14 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  .main-nav,.main-nav.open{width:min(390px,90vw);height:calc(100dvh - 70px);max-height:calc(100dvh - 70px);padding:20px 16px max(28px,env(safe-area-inset-bottom));border-radius:0 0 16px 0}
  .nav-actions{margin-left:0}
 }
+
+
+/* Drawer content must be explicitly enabled on desktop too.
+   The original navigation rules hid these groups outside the mobile breakpoint. */
+.drawer-flagship{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;padding:0 0 17px;margin:0;border-bottom:1px solid var(--line)}
+.drawer-flagship .drawer-kicker,.drawer-quick .drawer-kicker{display:block;margin:0 0 5px;color:var(--lime);font-size:9px;font-weight:900;letter-spacing:.16em}
+.drawer-flagship>a,.drawer-flagship>button{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:43px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);text-align:left;font-size:12px;font-weight:700}
+.drawer-flagship>a span,.drawer-flagship>button span{color:var(--muted);font-size:9px}
+.drawer-quick{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;padding:0 0 17px;margin:0;border-bottom:1px solid var(--line)}
+.drawer-quick>a,.drawer-quick>button{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:41px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);text-align:left;font-size:12px;font-weight:700}
+.drawer-flagship>a:hover,.drawer-flagship>button:hover,.drawer-quick>a:hover,.drawer-quick>button:hover{border-color:var(--lime);color:var(--lime)}
