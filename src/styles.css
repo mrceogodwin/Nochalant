@@ -2020,3 +2020,20 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .podcast-video-progress{display:flex;align-items:center;gap:10px;margin-top:15px;color:#aeb49e;font-size:10px;font-variant-numeric:tabular-nums}
 .podcast-video-progress input{flex:1;min-width:0;accent-color:var(--lime);cursor:pointer}
 @media(max-width:760px){.podcast-video-shell{min-height:0}.podcast-video-shell .podcast-video{max-height:none}.podcast-video-controls{padding:14px 12px}.podcast-video-track strong{font-size:13px}.podcast-video-control-row{gap:10px}.podcast-video-skip{min-width:76px}.podcast-video-toggle{width:48px;height:48px}}
+
+
+/* Creator workspace */
+.creator-workspace-tools{margin:34px 0 20px;padding:28px;border:1px solid rgba(218,245,117,.18);border-radius:22px;background:linear-gradient(145deg,rgba(30,33,25,.96),rgba(17,19,15,.98))}
+.creator-workspace-tools .artist-studio-heading{margin-bottom:22px}
+.creator-workspace-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.creator-workspace-stats .account-dashboard-card{min-height:130px}
+.creator-workspace-stats .account-dashboard-card h3{font-size:30px;margin:10px 0 4px}
+.creator-portfolio-list,.creator-booking-inbox{margin-top:28px}
+.creator-portfolio-list>h3,.creator-booking-inbox h3{font-size:22px;margin:0 0 16px}
+.creator-workspace-tools .account-dashboard-card a{display:inline-block;margin:8px 12px 8px 0;color:var(--lime);text-decoration:underline;overflow-wrap:anywhere}
+.creator-booking-toggle{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:13px}
+.creator-booking-toggle input{accent-color:var(--lime);width:18px;height:18px}
+.creator-booking-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.creator-workspace-tools .artist-studio-forms{margin-top:18px}
+.creator-workspace-tools .artist-studio-form{min-width:0}
+@media(max-width:680px){.creator-workspace-tools{padding:18px 14px;margin:22px 0}.creator-workspace-stats{gap:9px}.creator-workspace-stats .account-dashboard-card{padding:15px;min-height:112px}.creator-booking-inbox .artist-studio-heading{align-items:flex-start;gap:12px;flex-direction:column}}
