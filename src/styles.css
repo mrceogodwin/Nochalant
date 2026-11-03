@@ -1980,3 +1980,23 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
   .site-shell:not(.header-not-sticky) .feature-nav{top:79px}
   .site-shell.header-not-sticky .feature-nav{position:relative;top:auto}
 }
+
+/* Navigation drawer isolation: drawer-only content must never leak into the desktop header. */
+.site-header .main-nav>.drawer-account,
+.site-header .main-nav>.drawer-flagship,
+.site-header .main-nav>.drawer-quick,
+.site-header .main-nav>.drawer-preferences{display:none}
+
+@media(max-width:760px){
+  .site-header:has(.main-nav.open){z-index:80}
+  .site-header .main-nav.open>.drawer-account{display:flex}
+  .site-header .main-nav.open>.drawer-flagship,
+  .site-header .main-nav.open>.drawer-quick{display:flex}
+  .site-header .main-nav.open>.drawer-preferences{display:block}
+  .site-header .main-nav.open{
+    top:110px;
+    height:calc(100dvh - 110px);
+    z-index:82;
+  }
+  .site-header .drawer-backdrop{top:110px;z-index:81}
+}
