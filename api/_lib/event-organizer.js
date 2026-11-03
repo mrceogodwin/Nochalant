@@ -8,6 +8,8 @@ const validUrl = value => {
 };
 
 export async function handleEventOrganizer(req, res) {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  res.setHeader("Vary", "Authorization");
   if (!["GET", "POST"].includes(req.method)) return res.status(405).json({ ok:false, error:"Method not allowed." });
   const auth = await requireActiveUser(req);
   if (auth.error) return res.status(auth.error.status).json({ ok:false, error:auth.error.message });
