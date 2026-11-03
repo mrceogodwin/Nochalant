@@ -10,6 +10,7 @@ const EditorialAutoPostAdmin = lazy(() => import("./EditorialAutoPostAdmin.jsx")
 const CreatorWorkspace = lazy(() => import("./CreatorWorkspace.jsx"));
 const EventOrganizerWorkspace = lazy(() => import("./EventOrganizerWorkspace.jsx"));
 const BusinessWorkspace = lazy(() => import("./BusinessWorkspace.jsx"));
+const HomeCultureExpansion = lazy(() => import("./HomeCultureExpansion.jsx"));
 const DeferredPanel = ({ children }) => <Suspense fallback={<div className="deferred-panel-loading" role="status">Loading Nochalant…</div>}>{children}</Suspense>;
 
 const categories = ["All Gist", "Trending", "Afrobeats", "Nollywood", "Celebrity", "BBNaija", "Gossip", "Hip-Hop", "Street Culture", "Fashion", "Lifestyle", "Comedy", "Sports", "Events", "Podcasts", "Technology", "Viral Videos", "Relationships", "Influencers", "Business", "Politics"];
@@ -1270,7 +1271,7 @@ function App() {
         </article>
       </section>
 
-      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
+      <DeferredPanel><HomeCultureExpansion stories={[...editorialStories,...demoStories.filter(story=>story.label==="EDITORIAL PREVIEW" && !editorialStories.length)]} artists={artists} onOpenStory={openStory} onChooseCategory={name => { const map = {Trending:"All Gist",Afrobeats:"Afrobeats & Jamz",Nollywood:"Nollywood Drama",Celebrity:"Nollywood Drama",BBNaija:"BBNaija / Reality",Gossip:"Street Buzz","Hip-Hop":"Afrobeats & Jamz","Street Culture":"Street Buzz",Fashion:"Fashion & Swag",Lifestyle:"Lifestyle",Comedy:"Street Buzz",Sports:"All Gist",Events:"Agenda",Podcasts:"All Gist",Technology:"All Gist","Viral Videos":"All Gist",Relationships:"Lifestyle",Influencers:"Street Buzz",Business:"Lifestyle",Politics:"All Gist"}; setCategory(map[name] || "All Gist"); document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"}); }} /></DeferredPanel>\n\n      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
         <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
         <DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
       </section>}
