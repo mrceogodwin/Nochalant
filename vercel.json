@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/creator/workspace",
+      "destination": "/api/admin/opinions?creatorWorkspaceRoute=1"
+    },
+    {
       "source": "/api/artists",
       "destination": "/api/community?type=artists"
     },
