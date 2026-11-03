@@ -55,7 +55,7 @@ async function collect(sql) {
   let discovered = 0;
   for (const source of sources) {
     try {
-      const response = await fetch(source.feed_url, { headers: { "user-agent": "NochalantEditorialBot/1.0 (+https://nochalant.vercel.app)" }, signal: AbortSignal.timeout(10000) });
+      const response = await fetch(source.feed_url, { headers: { "user-agent": "NochalantEditorialBot/1.0 (+https://nochalant.com)" }, signal: AbortSignal.timeout(10000) });
       if (!response.ok) continue;
       const xml = (await response.text()).slice(0, 1500000);
       for (const item of parseFeed(xml, source)) {
@@ -101,7 +101,7 @@ async function publish(sql, itemId, authorId) {
   const body = draft.article;
   const slug = slugify(draft.headline) + "-" + String(item.id).slice(0,8);
   const seoDescription = draft.description;
-  const canonical = "https://nochalant.vercel.app/story/" + slug;
+  const canonical = "https://nochalant.com/story/" + slug;
   const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(item.source_url)))).map(b=>b.toString(16).padStart(2,"0")).join("");
   const inserted = await sql`INSERT INTO submissions (author_id,title,body,category,source_url,content_fingerprint,status,published_at,editorial_source,slug,seo_title,seo_description,focus_keyword,canonical_url,og_image_url,is_indexable) VALUES (${authorId},${draft.headline},${body},${item.category},${item.source_url},${fingerprint},'published',now(),true,${slug},${draft.headline.slice(0,65)},${seoDescription},${draft.keyword},${canonical},${verifiedImage},true) ON CONFLICT DO NOTHING RETURNING id`;
   if (!inserted.length) {
