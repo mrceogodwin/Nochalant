@@ -2000,3 +2000,23 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
   }
   .site-header .drawer-backdrop{top:110px;z-index:81}
 }
+\n
+/* Nochalant flagship podcast video player */
+.podcast-player-stage{overflow:hidden;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,rgba(213,243,106,.12),transparent 55%),linear-gradient(145deg,#151912,#080a08 72%);border:1px solid #343d25;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.38)}
+.podcast-video-shell{width:100%;height:100%;min-height:360px;display:flex;flex-direction:column;background:#070807}
+.podcast-video-shell .podcast-video{display:block;width:100%;height:auto;max-height:min(62vh,620px);aspect-ratio:16/9;object-fit:contain;background:#030403}
+.podcast-video-controls{padding:18px 22px 16px;background:linear-gradient(180deg,#11150f,#090b09);border-top:1px solid #303a22;color:#f4f5ec}
+.podcast-video-track{display:flex;flex-direction:column;gap:5px;min-width:0;margin-bottom:14px}
+.podcast-video-track span{font-size:9px;font-weight:900;letter-spacing:.18em;color:var(--lime)}
+.podcast-video-track strong{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.podcast-video-control-row{display:flex;align-items:center;justify-content:center;gap:24px}
+.podcast-video-control-row button{display:flex;align-items:center;justify-content:center;gap:8px;border:0;color:#f4f5ec;background:transparent;cursor:pointer}
+.podcast-video-control-row button:disabled{opacity:.28;cursor:not-allowed}
+.podcast-video-skip{min-width:96px;flex-direction:column;font-size:17px}
+.podcast-video-skip small,.podcast-video-toggle small{font-size:8px;font-weight:900;letter-spacing:.16em;color:#aeb49e}
+.podcast-video-toggle{width:54px;height:54px;flex-direction:column;border-radius:50%!important;background:var(--lime)!important;color:#11140b!important;box-shadow:0 0 0 5px rgba(213,243,106,.10),0 8px 26px rgba(213,243,106,.16)}
+.podcast-video-toggle small{color:#11140b!important}
+.podcast-video-toggle{font-size:20px}
+.podcast-video-progress{display:flex;align-items:center;gap:10px;margin-top:15px;color:#aeb49e;font-size:10px;font-variant-numeric:tabular-nums}
+.podcast-video-progress input{flex:1;min-width:0;accent-color:var(--lime);cursor:pointer}
+@media(max-width:760px){.podcast-video-shell{min-height:0}.podcast-video-shell .podcast-video{max-height:none}.podcast-video-controls{padding:14px 12px}.podcast-video-track strong{font-size:13px}.podcast-video-control-row{gap:10px}.podcast-video-skip{min-width:76px}.podcast-video-toggle{width:48px;height:48px}}
