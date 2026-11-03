@@ -67,7 +67,7 @@ export default function CreatorWorkspace() {
     {notice && <p className="dashboard-status" role="status">{notice}</p>}
     {!loading && <div className="creator-workspace-stats"><article className="account-dashboard-card"><span className="eyebrow">PORTFOLIO</span><h3>{data.stats?.portfolioItems || 0}</h3><p>Published work samples</p></article><article className="account-dashboard-card"><span className="eyebrow">BOOKING INBOX</span><h3>{data.stats?.pendingBookings || 0}</h3><p>Pending enquiries</p></article></div>}
     <div className="artist-studio-forms">
-      <form className="artist-studio-form" onSubmit={e => submit(e,"save_profile")}>
+      <form key={profile.updated_at || "new-creator-profile"} className="artist-studio-form" onSubmit={e => submit(e,"save_profile")}>
         <h3>Public creator profile</h3>
         <label>Creator / brand name<input name="displayTitle" required maxLength="120" defaultValue={profile.display_title || ""} placeholder="How people know your work"/></label>
         <label>Creator category<select name="category" defaultValue={profile.creator_category || "content_creator"}>{categories.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
