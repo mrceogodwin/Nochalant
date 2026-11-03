@@ -1,6 +1,9 @@
 import { neon } from "@neondatabase/serverless";
+
+const SITE_ORIGIN = "https://nochalant.com";
 const esc = value => String(value || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const connection = () => process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
+
 export default async function handler(req,res) {
  const slug=String(req.query?.slug||"").slice(0,120);
  if(!slug || !/^[a-z0-9-]+$/.test(slug)) return res.status(400).send("Invalid article URL.");
@@ -14,17 +17,18 @@ export default async function handler(req,res) {
   } catch(schemaError) {
    if (!["42P01","42703"].includes(schemaError?.code)) throw schemaError;
    const rows=await sql`SELECT title,body,category,created_at,published_at FROM submissions WHERE status='published' ORDER BY COALESCE(published_at,created_at) DESC LIMIT 5000`;
-   const makeSlug=value=>String(value||"").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120);
+   const makeSlug=value=>String(value||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120);
    const matches=rows.filter(row=>makeSlug(row.title)===slug);
    if(matches.length>1) return res.status(409).send("This article URL is ambiguous. Please use its canonical URL.");
    if(matches.length===1) a={...matches[0],slug,seo_title:null,seo_description:null,canonical_url:null,og_image_url:null,is_indexable:true};
   }
   if(!a) return res.status(404).send("Article not found.");
-  const title=a.seo_title||a.title, description=a.seo_description||String(a.body||"").slice(0,155), canonical=a.canonical_url||"https://nochalant.vercel.app/story/"+slug;
-  const image=a.og_image_url||"https://nochalant.vercel.app/nochalant-og.jpg";
+  const title=a.seo_title||a.title, description=a.seo_description||String(a.body||"").slice(0,155);
+  const canonical=a.canonical_url||SITE_ORIGIN+"/story/"+slug;
+  const image=a.og_image_url||SITE_ORIGIN+"/nochalant-og.jpg";
   const paragraphs=String(a.body||"").split(/\n{2,}/).filter(Boolean).map(p=>"<p>"+esc(p).replace(/\n/g,"<br>")+"</p>").join("");
   const date=a.published_at?new Date(a.published_at).toISOString():new Date().toISOString();
-  const jsonLd=JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":a.title,"description":description,"datePublished":date,"dateModified":date,"mainEntityOfPage":canonical,"image":[image],"author":{"@type":"Organization","name":"Nochalant Editorial Desk"},"publisher":{"@type":"Organization","name":"Nochalant","url":"https://nochalant.vercel.app"}});
+  const jsonLd=JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":a.title,"description":description,"datePublished":date,"dateModified":date,"mainEntityOfPage":canonical,"image":[image],"author":{"@type":"Organization","name":"Nochalant Editorial Desk"},"publisher":{"@type":"Organization","name":"Nochalant","url":SITE_ORIGIN}});
   res.setHeader("Content-Type","text/html; charset=utf-8");
   res.setHeader("X-Robots-Tag",a.is_indexable===false?"noindex,follow":"index,follow");
   res.setHeader("Cache-Control","public, s-maxage=300, stale-while-revalidate=3600");
