@@ -11,7 +11,7 @@ async function proxyNeonAuth(req, res) {
   const upstreamBase = process.env.NEON_AUTH_BASE_URL;
   if (!upstreamBase) return res.status(503).json({ message: "Neon Auth proxy is not configured." });
 
-  const requestUrl = new URL(req.url, "https://nochalant.vercel.app");
+  const requestUrl = new URL(req.url, "https://nochalant.com");
   const authPath = requestUrl.searchParams.get("authPath") || "";
   const segments = authPath.split("/").filter(Boolean);
   if (!segments.length || segments.some(part => !/^[a-zA-Z0-9._~-]+$/.test(part))) {
@@ -44,7 +44,7 @@ async function proxyNeonAuth(req, res) {
       return res.status(403).json({ message: "Authentication origin does not match this site." });
     }
   } else if (process.env.VERCEL_ENV === "production") {
-    authOrigin = "https://nochalant.vercel.app";
+    authOrigin = "https://nochalant.com";
   } else if (process.env.VERCEL_URL) {
     authOrigin = `https://${process.env.VERCEL_URL}`;
   }
