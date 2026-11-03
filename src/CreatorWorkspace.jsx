@@ -38,14 +38,15 @@ export default function CreatorWorkspace() {
 
   const submit = async (event, action) => {
     event.preventDefault(); if (busy) return;
+    const formElement = event.currentTarget;
     setBusy(true); setError(""); setNotice("");
     try {
-      const form = new FormData(event.currentTarget);
+      const form = new FormData(formElement);
       const payload = { action };
       for (const [key, value] of form.entries()) if (typeof value === "string") payload[key] = value.trim();
       const result = await request("POST", payload);
       if (action === "save_profile") setNotice("Creator profile saved.");
-      if (action === "add_portfolio_item") { setNotice("Portfolio item added."); event.currentTarget.reset(); }
+      if (action === "add_portfolio_item") { setNotice("Portfolio item added."); formElement.reset(); }
       await refresh();
     } catch (e) { setError(e?.message || "Could not save this change."); }
     finally { setBusy(false); }
