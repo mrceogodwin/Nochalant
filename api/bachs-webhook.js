@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
+import { isValidBachsEventEnvelope, getBachsCheckoutId, matchesBachsSuccessfulPayment, parseBachsRefundEvent } from "./_lib/bachs-webhook-validation.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -44,11 +45,18 @@ export default async function handler(req, res) {
   const secret = process.env.BACHS_WEBHOOK_SECRET;
   const databaseUrl = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
   if (!secret || !databaseUrl) return res.status(503).send("Webhook is not configured");
+  let eventId = null;
   try {
     const rawBody = await readRawBody(req);
     if (!verifySignature(rawBody, req.headers, secret)) return res.status(400).send("Invalid webhook signature");
-    const event = JSON.parse(rawBody.toString("utf8"));
-    if (!event?.id || !event?.type || !event?.data) return res.status(400).send("Invalid event envelope");
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      return res.status(400).send("Invalid webhook JSON");
+    }
+    if (!isValidBachsEventEnvelope(event)) return res.status(400).send("Invalid event envelope");
+    eventId = String(event.id);
     const sql = neon(databaseUrl);
     const inserted = await sql`
       INSERT INTO payment_webhook_events (provider, provider_event_id, event_type, signature_verified, payload, processing_status)
@@ -56,50 +64,139 @@ export default async function handler(req, res) {
       ON CONFLICT (provider, provider_event_id) DO NOTHING
       RETURNING id
     `;
-    if (!inserted.length) {
+    const payloadMismatch = await sql`
+      SELECT id FROM payment_webhook_events
+      WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}
+        AND payload IS DISTINCT FROM ${JSON.stringify(event)}::jsonb
+      LIMIT 1
+    `;
+    if (payloadMismatch.length) {
+      // A provider event ID must always identify one immutable payload.
+      // Do not let a conflicting replay alter the original event or payment.
+      return res.status(409).send("Conflicting webhook event payload");
+    }
+    // Atomically claim this event so concurrent duplicate deliveries cannot
+    // process the same payment transition at the same time. A stale claim is
+    // recoverable after five minutes if a serverless invocation was interrupted.
+    const claimed = await sql`
+      UPDATE payment_webhook_events
+      SET processing_status = 'processing', received_at = now(), error_message = NULL
+      WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}
+        AND (
+          processing_status IN ('received','failed')
+          OR (processing_status = 'processing' AND received_at < now() - interval '5 minutes')
+        )
+      RETURNING id
+    `;
+    if (!claimed.length) {
       const existing = await sql`SELECT processing_status FROM payment_webhook_events WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} LIMIT 1`;
-      if (existing[0]?.processing_status === "processed" || existing[0]?.processing_status === "ignored") return res.status(200).json({ received: true, duplicate: true });
+      return res.status(200).json({
+        received: true,
+        duplicate: existing[0]?.processing_status === "processed" || existing[0]?.processing_status === "ignored",
+        inProgress: existing[0]?.processing_status === "processing"
+      });
     }
 
+    if (event.type === "refund.created" || event.type === "refund.paid" || event.type === "refund.failed") {
+      const refundEvent = parseBachsRefundEvent(event);
+      if (!refundEvent) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Invalid refund event fields' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(400).send("Invalid refund event");
+      }
+      const refunds = await sql`SELECT r.id, r.payment_order_id, r.amount_minor, r.status AS refund_status, r.refunded_amount_minor, r.currency AS refund_currency, r.provider_refund_id, o.amount_minor AS order_amount_minor, o.currency AS order_currency, o.metadata FROM payment_refunds r JOIN payment_orders o ON o.id = r.payment_order_id WHERE r.provider_reference = ${refundEvent.reference} AND o.provider = 'bachs' LIMIT 1`;
+      const refund = refunds[0];
+      if (!refund) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Refund reference not mapped yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
+        return res.status(503).json({ received: false, retry: true });
+      }
+      const expectedChargeId = typeof refund.metadata?.charge_id === "string" ? refund.metadata.charge_id : "";
+      const expectedCurrency = String(refund.order_currency || "").trim().toUpperCase();
+      const recordedRefundCurrency = String(refund.refund_currency || "").trim().toUpperCase();
+      if (expectedChargeId !== refundEvent.chargeId || refundEvent.currency !== expectedCurrency || expectedCurrency !== recordedRefundCurrency ||
+          (event.type !== "refund.paid" && Number(refund.amount_minor) !== refundEvent.amountMinor) ||
+          (event.type === "refund.paid" && refundEvent.amountMinor > Number(refund.amount_minor)) ||
+          (event.type === "refund.paid" && refund.refund_status === "successful" && Number(refund.refunded_amount_minor) !== refundEvent.amountMinor) ||
+          (refund.provider_refund_id && refund.provider_refund_id !== refundEvent.refundId)) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Refund reference, charge, currency or amount mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(400).send("Refund details did not match the recorded request");
+      }
+      await sql.transaction([
+        sql`SELECT id FROM payment_orders WHERE id = ${refund.payment_order_id} FOR UPDATE`,
+        sql`UPDATE payment_refunds SET status = CASE WHEN status = 'successful' THEN 'successful' ELSE ${refundEvent.status} END, provider_refund_id = ${refundEvent.refundId}, refunded_amount_minor = CASE WHEN ${event.type === "refund.paid"} THEN ${refundEvent.amountMinor} ELSE refunded_amount_minor END, updated_at = now() WHERE id = ${refund.id} AND status IN ('requested','pending','successful')`,
+        sql`UPDATE payment_orders SET status = CASE WHEN COALESCE((SELECT SUM(refunded_amount_minor) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful'),0) >= amount_minor THEN 'refunded' WHEN COALESCE((SELECT SUM(refunded_amount_minor) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful'),0) > 0 THEN 'partially_refunded' ELSE status END, updated_at = now() WHERE id = ${refund.payment_order_id} AND status IN ('successful','partially_refunded','refunded')`,
+        sql`UPDATE promotion_campaigns SET payment_status = 'refunded', status = CASE WHEN status IN ('pending_review','approved','active','paused') THEN 'paused' ELSE status END WHERE id = (SELECT campaign_id FROM payment_orders WHERE id = ${refund.payment_order_id}) AND payment_status = 'paid' AND (SELECT COALESCE(SUM(refunded_amount_minor),0) FROM payment_refunds WHERE payment_order_id = ${refund.payment_order_id} AND status = 'successful') >= ${refund.order_amount_minor}`
+      ]);
+      await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+      return res.status(200).json({ received: true, refundStatus: refundEvent.status });
+    }
     if (event.type === "collection.succeeded") {
-      const checkoutId = String(event.data.checkout_id || "");
-      if (!checkoutId) {
+      const checkoutId = getBachsCheckoutId(event.data);
+      if (!checkoutId || checkoutId.length > 200) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', error_message = 'Missing checkout_id' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Missing checkout ID");
       }
       const orders = await sql`SELECT id, campaign_id, amount_minor, currency, metadata, provider_reference FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
       const order = orders[0];
       if (!order) {
-        await sql`UPDATE payment_webhook_events SET processing_status = 'ignored', processed_at = now(), error_message = 'No matching promotion order' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
-        return res.status(200).json({ received: true, matched: false });
+        // Checkout creation and webhook delivery can race: the provider may notify
+        // us before checkout_id has been persisted on the order. Keep the event
+        // retryable instead of permanently acknowledging it as an unknown payment.
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
+        return res.status(503).json({ received: false, retry: true });
       }
-      const receivedAmount = Number(event.data.amount);
-      const expectedAmount = Number(order.amount_minor) / 100;
-      const receivedCurrency = String(event.data.currency || "").toUpperCase();
-      if (!Number.isFinite(receivedAmount) || Math.round(receivedAmount * 100) !== Number(order.amount_minor) || receivedCurrency !== String(order.currency).trim().toUpperCase() || String(event.data.status || "").toUpperCase() !== "SUCCEEDED") {
+      if (!matchesBachsSuccessfulPayment(event.data, order)) {
         await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Payment amount, currency or status mismatch' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
         return res.status(400).send("Payment details did not match the order");
       }
-      await sql`UPDATE payment_orders SET status = 'successful', paid_at = now(), metadata = metadata || ${JSON.stringify({ bachs_event_id: event.id, charge_id: event.data.charge_id || null })}::jsonb WHERE id = ${order.id} AND status IN ('created','pending','failed')`;
-      await sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status IN ('pending','failed') AND payment_reference = ${order.provider_reference}`;
-      await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now() WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+      await sql.transaction([
+        sql`SELECT id FROM payment_orders WHERE id = ${order.id} AND status IN ('created','pending','failed') FOR UPDATE`,
+        sql`UPDATE payment_orders SET status = 'successful', paid_at = COALESCE(paid_at, now()), metadata = metadata || ${JSON.stringify({ bachs_event_id: event.id, charge_id: event.data.charge_id || null })}::jsonb WHERE id = ${order.id} AND status IN ('created','pending','failed') RETURNING id`,
+        sql`UPDATE promotion_campaigns SET payment_status = 'paid', status = 'pending_review' WHERE id = ${order.campaign_id} AND status = 'pending_payment' AND payment_status IN ('pending','failed') AND payment_reference = ${order.provider_reference} RETURNING id`,
+      ]);
+      const currentOrder = await sql`SELECT status FROM payment_orders WHERE id = ${order.id} LIMIT 1`;
+      const currentCampaign = await sql`SELECT payment_status FROM promotion_campaigns WHERE id = ${order.campaign_id} LIMIT 1`;
+      if (currentOrder[0]?.status !== 'successful' || currentCampaign[0]?.payment_status !== 'paid') {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Payment order or campaign could not be fully reconciled; awaiting retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
+        return res.status(409).json({ received: false, error: "Payment could not be fully reconciled. Provider retry is required." });
+      }
+      await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
       return res.status(200).json({ received: true, paid: true });
     }
 
     if (event.type === "collection.failed" || event.type === "collection.underpaid" || event.type === "checkout.expired") {
       const checkoutId = String(event.data.checkout_id || "");
-      if (checkoutId) {
-        const orders = await sql`SELECT id, campaign_id, provider_reference FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
-        if (orders.length) {
-          await sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ last_bachs_event: event.type })}::jsonb WHERE id = ${orders[0].id} AND status IN ('created','pending')`;
-          await sql`UPDATE promotion_campaigns SET payment_status = 'failed', status = 'pending_payment' WHERE id = ${orders[0].campaign_id} AND payment_status = 'pending' AND payment_reference = ${orders[0].provider_reference}`;
-        }
+      if (!checkoutId) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'failed', processed_at = now(), error_message = 'Missing checkout_id' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+        return res.status(400).send("Missing checkout ID");
       }
+      const orders = await sql`SELECT id, campaign_id, provider_reference FROM payment_orders WHERE provider = 'bachs' AND metadata->>'checkout_id' = ${checkoutId} AND order_type = 'promotion' LIMIT 1`;
+      if (!orders.length) {
+        await sql`UPDATE payment_webhook_events SET processing_status = 'received', error_message = 'Checkout order mapping not available yet; awaiting provider retry' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)} AND processing_status = 'processing'`;
+        return res.status(503).json({ received: false, retry: true });
+      }
+      await sql.transaction([
+        sql`UPDATE payment_orders SET status = 'failed', metadata = metadata || ${JSON.stringify({ last_bachs_event: event.type })}::jsonb WHERE id = ${orders[0].id} AND status IN ('created','pending')`,
+        sql`UPDATE promotion_campaigns SET payment_status = 'failed', status = 'pending_payment' WHERE id = ${orders[0].campaign_id} AND payment_status = 'pending' AND payment_reference = ${orders[0].provider_reference}`
+      ]);
     }
-    await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now() WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+    const supportedEvent = event.type === "collection.failed" || event.type === "collection.underpaid" || event.type === "checkout.expired";
+    if (!supportedEvent) {
+      await sql`UPDATE payment_webhook_events SET processing_status = 'ignored', processed_at = now(), error_message = 'Unsupported event type' WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
+      return res.status(200).json({ received: true, ignored: true });
+    }
+    await sql`UPDATE payment_webhook_events SET processing_status = 'processed', processed_at = now(), error_message = NULL WHERE provider = 'bachs' AND provider_event_id = ${String(event.id)}`;
     return res.status(200).json({ received: true });
   } catch (error) {
     console.error("Bachs promotion webhook failed:", error?.message || error);
+    try {
+      const sql = neon(databaseUrl);
+      await sql`UPDATE payment_webhook_events
+        SET processing_status = 'received', error_message = 'Webhook processing interrupted; awaiting provider retry'
+        WHERE provider = 'bachs' AND provider_event_id = ${eventId}
+          AND processing_status = 'processing'`;
+    } catch (releaseError) {
+      console.error("Bachs webhook claim release failed:", releaseError?.message || releaseError);
+    }
     return res.status(500).send("Webhook processing failed");
   }
 }

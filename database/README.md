@@ -26,23 +26,38 @@ After adding or changing environment variables, redeploy the project so the depl
 
 ## 3. Apply migrations in order
 
-Open the SQL Editor for the Nochalant Neon project and select the `production` branch. Execute each complete file in this exact order, waiting for success before proceeding:
+The numbered SQL files are committed to GitHub; that does **not** mean they have been executed in Neon. Apply each file once, in this explicit dependency order, on a non-production Neon branch first. The duplicate numeric prefixes are intentional legacy filenames, so use the full filenames below rather than sorting by filename.
 
-1. `database/migrations/001_initial_schema.sql`
-2. `database/migrations/002_platform_expansion.sql`
-3. `database/migrations/003_article_views.sql`
-4. `database/migrations/004_nochalant_faces.sql`
-5. `database/migrations/005_nochalant_opinions_moderation.sql`
-6. `database/migrations/006_editorial_artists.sql`
-7. `database/migrations/007_artist_download_counts.sql`
-8. `database/migrations/008_account_types.sql`
-9. `database/migrations/009_podcast_publishing.sql`
+1. `001_initial_schema.sql`
+2. `002_platform_expansion.sql`
+3. `003_article_views.sql`
+4. `004_nochalant_faces.sql`
+5. `005_nochalant_opinions_moderation.sql`
+6. `006_editorial_artists.sql`
+7. `006_artists_spotlight.sql`
+8. `006_hot_or_trash_voting.sql`
+9. `007_artist_download_counts.sql`
+10. `008_account_types.sql`
+11. `009_podcast_publishing.sql`
+12. `010_paid_artist_verification.sql`
+13. `011_promotions_marketplace.sql`
+14. `012_podcast_host_profiles.sql`
+15. `013_social_video_feature_flag.sql`
+16. `013_text_promotion_design.sql`
+17. `014_podcast_host_social_links.sql`
+18. `015_multi_workspace_accounts.sql`
+19. `016_unique_artist_profile_owner.sql`
+20. `017_payment_webhook_processing_claim.sql`
+21. `018_bachs_refund_reconciliation.sql`
+22. `019_social_stories.sql`
+23. `020_immutable_account_type.sql`
+24. `021_editorial_auto_post.sql`
 
-Do not skip a failed migration or run a later migration first. If a script errors, stop and inspect the error before retrying. These files are intended to be re-runnable in most respects, but do not assume a partially failed script completed.
+The workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Migration 019 adds text-only 24-hour stories and story-view tracking. Migration 020 adds the immutable registration-time account-type lock. It locks existing members only when they already have a non-empty account type; members with no selected type remain eligible to make their first selection, which is locked at activation. Verify this behavior on the isolated preflight branch before production rollout. Do not run these migrations on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
 ## 4. Verify the schema
 
-After all nine migrations complete, open:
+After all migrations in the ordered list above complete on the intended branch, open:
 
 `https://nochalant.vercel.app/api/health/database`
 
@@ -50,10 +65,14 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 37`
+- `present_tables: 46`
+- `missing_columns: []`
 - `missing_tables: []`
+- `missing_triggers: []`
+- `missing_constraints: []`
+- `missing_indexes: []`
 
-If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, apply or repair the listed migrations in order.
+If the endpoint says `not_configured`, the server-side Vercel variables are missing. If it says `unavailable`, check the connection string and Neon access. If it says `incomplete`, inspect `missing_tables`, `missing_columns`, `missing_triggers`, `missing_constraints` and `missing_indexes`, then apply or repair the listed migrations in order. The health endpoint checks the refund reconciliation columns and provider-refund idempotency index from migration 018, the webhook processing constraint from migration 017, the artist ownership index from migration 016, the account-type lock trigger from migration 020, and the Social Stories tables from migration 019.
 
 ## 5. Verify Nochalant Faces
 
@@ -104,3 +123,49 @@ Migration 009 creates the editorial podcast catalogue:
 - `podcast_clips`: short-form clips linked to full episodes, including optional clip in/out points.
 
 The schema stores media references only. A public catalogue API and Super Admin management API have been added in code, but they are not live until the pending Vercel deployment succeeds. A media bucket, secure upload workflow, transcoding pipeline and actual playback delivery still need to be implemented and tested before real episodes can be published.
+
+
+## 11. Multi-workspace accounts and Podcast team access
+
+Migration 015 creates member workspace memberships, member profile details and the initial Podcast staff account table. This is a schema foundation, not a complete invitation or permission system. Podcast team invitations, per-show assignments, granular action permissions and staff dashboard workflows remain pending application work and must be tested before production. Do not grant Podcast or staff access through a public account-type selector.
+
+The workspace and profile APIs depend on migration 015. Until it is applied to the target Neon branch, those APIs may return a controlled "not ready" response. Never apply this migration directly to production as a shortcut. The current validation branch is a separate preflight environment; successful checks there do not prove that Production is ready.
+
+
+## 12. Artist profile ownership integrity
+
+Migration 016 adds a unique index on `artist_profiles.owner_user_id`, enforcing one creator-owned Artist profile per member at the database level. Before applying it to any branch, inspect for duplicate owners:
+
+```sql
+SELECT owner_user_id, COUNT(*) AS profile_count
+FROM artist_profiles
+GROUP BY owner_user_id
+HAVING COUNT(*) > 1;
+```
+
+The migration intentionally fails if duplicates exist. Do not delete or merge profiles automatically; review and reconcile any duplicates first. The isolated preflight branch was checked and currently has no duplicate owners. This does not establish that Production is duplicate-free.
+
+## 13. Social stories and story views
+
+Migration 019 creates `social_stories` and `social_story_views`. Stories are text-only and expire after 24 hours. Photo/video story uploads are not part of this release and must remain disabled until signed uploads, private object storage, file validation, malware scanning and moderation are implemented.
+
+The database health endpoint checks both story tables so production cannot report a complete schema while the Stories API is missing its tables.
+
+## 14. Immutable account type registration
+
+Migration 020 adds `user_profiles.account_type_locked_at` and the `user_profiles_account_type_immutable` trigger. Existing members with a non-empty account type are locked to that type when the migration runs. Existing profiles with no selected type remain unlocked until their first successful selection; that selection is locked by the API and trigger. New accounts may set their initial type once; later changes are rejected by the database as well as the API.
+
+The health endpoint checks the lock column and trigger, plus the unique Artist-profile ownership index from migration 016. Review the existing-member impact before rollout; do not apply migration 020 to production without explicit release approval.
+
+## 7. Editorial Auto-Post
+
+Migration `021_editorial_auto_post.sql` creates the Super Admin's free RSS discovery queue and daily Auto Post setting. Apply it to the isolated preflight branch first. The Control Room provides Fetch Latest, per-story Publish/Dismiss, and a daily Auto Post toggle. Vercel Cron calls the shared admin function once daily at 08:00 UTC (09:00 Africa/Lagos). Configure a server-only `CRON_SECRET` environment variable in Vercel; the scheduled request must use Vercel's cron authorization header. Do not expose this secret to the browser.
+
+The initial feeds are BellaNaija, NotJustOk and BBC Africa. RSS availability and publisher terms may change. The system stores source links and short feed summaries, deduplicates by canonical source URL, and publishes through the existing editorial submissions table as the Super Admin. Review feed summaries and rights/attribution before enabling automatic publication. No paid AI API is used.
+
+
+## 8. Editorial SEO
+
+Migration `022_editorial_seo_metadata.sql` adds per-article slug, SEO title/description, focus keyword, canonical URL, Open Graph image and indexability metadata. Public article URLs use `/story/:slug`, rendered server-side with NewsArticle JSON-LD, canonical and social metadata. `/sitemap.xml` is generated from published, indexable articles and `/robots.txt` advertises it to crawlers. Apply 022 on preflight before testing; production remains untouched until the full migration sequence is approved.
+
+Important: sitemap inclusion and crawlable HTML improve discovery, but cannot guarantee Google/Bing indexing or rankings. Search Console and Bing Webmaster Tools ownership verification and sitemap submission remain external setup steps.

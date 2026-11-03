@@ -1,6 +1,46 @@
 {
   "rewrites": [
     {
+      "source": "/api/artists",
+      "destination": "/api/community?type=artists"
+    },
+    {
+      "source": "/api/community/faces",
+      "destination": "/api/community?type=faces"
+    },
+    {
+      "source": "/api/editorial/latest",
+      "destination": "/api/admin/opinions?editorialLatestRoute=1"
+    },
+    {
+      "source": "/api/health/database",
+      "destination": "/api/health?database=1"
+    },
+    {
+      "source": "/api/opinions/mine",
+      "destination": "/api/opinions?mine=1"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/content?type=sitemap"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/content?type=robots"
+    },
+    {
+      "source": "/story/:slug",
+      "destination": "/api/content?type=story&slug=:slug"
+    },
+    {
+      "source": "/api/editorial/auto-post",
+      "destination": "/api/admin/opinions?editorialAutoPostRoute=1"
+    },
+    {
+      "source": "/api/social",
+      "destination": "/api/admin/opinions?socialRoute=1"
+    },
+    {
       "source": "/api/social/feed",
       "destination": "/api/admin/opinions?socialFeedRoute=1"
     },
@@ -75,6 +115,12 @@
           "value": "no-cache"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/editorial/auto-post",
+      "schedule": "0 8 * * *"
     }
   ]
 }

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createMusicUploadUrl, verifyArtworkUpload, resolveMusicAssetUrl } from "./music-storage.js";
 import { requireActiveUser } from "./neon-auth.js";
 
 const ACCOUNT_TYPES = new Set(["fan","artist","creator","event_organizer","business","media"]);
@@ -7,49 +9,187 @@ export async function handleAccountType(req, res) {
     res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
-
   const auth = await requireActiveUser(req);
   if (auth.error) return res.status(auth.error.status).json({ ok: false, error: auth.error.message });
 
-  if (req.method === "GET") {
-    try {
-      const artistRows = auth.profile.account_type === "artist" ? await auth.sql`SELECT id, stage_name, slug, bio, avatar_url, verification_status FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1` : [];
-      return res.status(200).json({ ok: true, profile: auth.profile, artistProfile: artistRows[0] || null });
-    } catch (error) {
-      console.error("Nochalant account profile read failed:", error?.message || error);
-      return res.status(503).json({ ok: false, error: "Your profile is temporarily unavailable." });
-    }
-  }
-
-  const accountType = String(req.body?.accountType || "");
-  if (!ACCOUNT_TYPES.has(accountType)) {
-    return res.status(400).json({ ok: false, error: "Choose a valid account type." });
-  }
-
   try {
-    const rows = await auth.sql`
-      UPDATE user_profiles
-      SET account_type = ${accountType}
-      WHERE id = ${auth.profile.id}
-      RETURNING id, display_name, email, account_type, role
-    `;
-    if (!rows.length) return res.status(404).json({ ok: false, error: "Account profile not found." });
-
-    let artistProfile = null;
-    if (accountType === "artist") {
-      const existing = await auth.sql`SELECT id, stage_name, slug, verification_status FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`;
-      artistProfile = existing[0] || null;
-      if (!artistProfile) {
-        const baseSlug = String(rows[0].display_name || "artist").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
-        const slug = baseSlug + "-" + crypto.randomUUID().slice(0, 8);
-        const created = await auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status) VALUES (${auth.profile.id}, ${rows[0].display_name}, ${slug}, 'unverified') RETURNING id, stage_name, slug, verification_status`;
-        artistProfile = created[0] || null;
-      }
+    if (req.method === "GET") {
+      const [memberships, details, artistRows] = await Promise.all([
+        auth.sql`SELECT account_type, status, is_primary, activated_at
+          FROM user_account_types
+          WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+          ORDER BY is_primary DESC, activated_at ASC`,
+        auth.sql`SELECT username, avatar_url, bio, website_url, location
+          FROM user_profile_details WHERE user_profile_id = ${auth.profile.id} LIMIT 1`,
+        auth.profile.account_type === "artist"
+          ? auth.sql`SELECT id, stage_name, slug, bio, avatar_url, verification_status
+              FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`
+          : Promise.resolve([])
+      ]);
+      return res.status(200).json({
+        ok: true,
+        profile: auth.profile,
+        profileDetails: details[0] ? { ...details[0], avatar_url: await resolveMusicAssetUrl(details[0].avatar_url) } : null,
+        accountTypes: memberships,
+        artistProfile: artistRows[0] || null
+      });
     }
 
-    return res.status(200).json({ ok: true, profile: rows[0], artistProfile });
+    if (req.body?.action === "create_profile_avatar_upload") {
+      const contentType = String(req.body?.contentType || "").toLowerCase();
+      const extension = { "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "image/avif":"avif" }[contentType];
+      const size = Number(req.body?.size);
+      if (!extension || !Number.isSafeInteger(size) || size < 1 || size > 5 * 1024 * 1024) {
+        return res.status(400).json({ ok: false, error: "Choose a JPEG, PNG, WebP or AVIF image under 5 MB." });
+      }
+      const objectKey = "members/" + auth.profile.id + "/avatar-" + randomUUID() + "." + extension;
+      const signed = await createMusicUploadUrl(objectKey, contentType);
+      return res.status(200).json({ ok: true, objectKey, ...signed });
+    }
+
+    if (req.body?.action === "save_profile") {
+      const username = String(req.body?.username || "").trim().toLowerCase();
+      const bio = String(req.body?.bio || "").trim();
+      const website = String(req.body?.websiteUrl || "").trim();
+      const location = String(req.body?.location || "").trim();
+      const avatarObjectKey = String(req.body?.avatarObjectKey || "").trim();
+      if (avatarObjectKey && (!avatarObjectKey.startsWith("members/" + auth.profile.id + "/avatar-") || avatarObjectKey.includes(".."))) {
+        return res.status(400).json({ ok: false, error: "Invalid profile photo reference." });
+      }
+      if (avatarObjectKey) {
+        const uploadedAvatar = await verifyArtworkUpload(avatarObjectKey);
+        // Profile-photo uploads have a stricter 5 MB limit than general artwork.
+        // Enforce it against the stored object, not only the client-supplied size.
+        if (uploadedAvatar.size > 5 * 1024 * 1024) {
+          return res.status(400).json({ ok: false, error: "Profile photos must be 5 MB or smaller." });
+        }
+      }
+      if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
+        return res.status(400).json({ ok: false, error: "Username must be 3–24 characters using letters, numbers or underscores." });
+      }
+      if (bio.length > 280 || location.length > 100) {
+        return res.status(400).json({ ok: false, error: "Please shorten your bio or location." });
+      }
+      let websiteUrl = null;
+      if (website) {
+        try {
+          const parsed = new URL(website);
+          if (parsed.protocol !== "https:") throw new Error("https required");
+          websiteUrl = parsed.toString();
+        } catch {
+          return res.status(400).json({ ok: false, error: "Enter a valid secure website address beginning with https://." });
+        }
+      }
+      const saved = await auth.sql`INSERT INTO user_profile_details
+        (user_profile_id, username, bio, website_url, location, avatar_url)
+        VALUES (${auth.profile.id}, ${username || null}, ${bio}, ${websiteUrl}, ${location}, ${avatarObjectKey ? "neon-storage:" + avatarObjectKey : null})
+        ON CONFLICT (user_profile_id) DO UPDATE SET
+          username = EXCLUDED.username, bio = EXCLUDED.bio,
+          website_url = EXCLUDED.website_url, location = EXCLUDED.location,
+          avatar_url = COALESCE(EXCLUDED.avatar_url, user_profile_details.avatar_url),
+          updated_at = now()
+        RETURNING username, avatar_url, bio, website_url, location`;
+      return res.status(200).json({ ok: true, profileDetails: saved[0] ? { ...saved[0], avatar_url: await resolveMusicAssetUrl(saved[0].avatar_url) } : null });
+    }
+
+    if (req.body?.action === "switch_primary") {
+      return res.status(403).json({
+        ok: false,
+        error: "Account type is fixed during registration. Contact Nochalant support if your account type needs to be reviewed."
+      });
+    }
+
+    const accountType = String(req.body?.accountType || "");
+    if (!ACCOUNT_TYPES.has(accountType)) {
+      return res.status(400).json({ ok: false, error: "Choose a valid account type." });
+    }
+
+    // Account type is selected once. The row lock and immutable database
+    // marker make concurrent registration/activation requests deterministic.
+    // Activation and primary selection share the same per-member advisory lock
+    // as workspace switching, preventing concurrent requests from creating
+    // conflicting primary workspaces.
+    const baseSlug = String(auth.profile.display_name || "artist").toLowerCase()
+      .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "artist";
+    const artistSlug = baseSlug + "-" + randomUUID().slice(0, 8);
+    const activationResults = await auth.sql.transaction([
+      auth.sql`SELECT pg_advisory_xact_lock(hashtextextended(${auth.profile.id}::text, 0::bigint))`,
+      auth.sql`WITH locked_profile AS (
+          SELECT id, account_type, account_type_locked_at
+          FROM user_profiles
+          WHERE id = ${auth.profile.id}
+          FOR UPDATE
+        ),
+        decision AS (
+          SELECT id,
+            (account_type_locked_at IS NULL OR account_type = ${accountType}) AS allowed
+          FROM locked_profile
+        ),
+        membership AS (
+          INSERT INTO user_account_types (user_profile_id, account_type, status, is_primary)
+          SELECT id, ${accountType}, 'active', true
+          FROM decision
+          WHERE allowed
+          ON CONFLICT (user_profile_id, account_type) DO NOTHING
+          RETURNING account_type
+        ),
+        updated_profile AS (
+          UPDATE user_profiles
+          SET account_type = ${accountType},
+              account_type_locked_at = COALESCE(account_type_locked_at, now()),
+              updated_at = now()
+          FROM decision
+          WHERE user_profiles.id = decision.id AND decision.allowed
+          RETURNING user_profiles.account_type
+        )
+        SELECT decision.allowed, updated_profile.account_type
+        FROM decision
+        LEFT JOIN updated_profile ON true`,
+      auth.sql`INSERT INTO artist_profiles (owner_user_id, stage_name, slug, verification_status)
+        SELECT id, display_name, ${artistSlug}, 'unverified'
+        FROM user_profiles
+        WHERE id = ${auth.profile.id}
+          AND account_type = 'artist'
+          AND ${accountType === "artist"}
+          AND NOT EXISTS (
+            SELECT 1 FROM artist_profiles
+            WHERE owner_user_id = user_profiles.id
+          )
+        ON CONFLICT DO NOTHING`,
+      auth.sql`SELECT id, stage_name, slug, verification_status
+        FROM artist_profiles WHERE owner_user_id = ${auth.profile.id} LIMIT 1`
+    ]);
+    const activation = activationResults[1]?.[0];
+    if (!activation?.allowed) {
+      return res.status(409).json({
+        ok: false,
+        error: "Your account type was already selected during registration and cannot be changed. Contact Nochalant support if it needs review."
+      });
+    }
+    const primaryType = activation.account_type || auth.profile.account_type || accountType;
+    const accountTypes = await auth.sql`SELECT account_type, status, is_primary, activated_at
+      FROM user_account_types WHERE user_profile_id = ${auth.profile.id} AND status = 'active'
+      ORDER BY is_primary DESC, activated_at ASC`;
+    const artistProfile = accountType === "artist" ? activationResults[3]?.[0] || null : null;
+
+    return res.status(200).json({
+      ok: true,
+      profile: { ...auth.profile, account_type: primaryType },
+      accountTypes,
+      artistProfile
+    });
   } catch (error) {
-    console.error("Nochalant account type update failed:", error?.message || error);
-    return res.status(503).json({ ok: false, error: "Your account type could not be saved yet. Please try again." });
+    if (error?.code === "23505" && error?.constraint === "user_profile_details_username_key") {
+      return res.status(409).json({
+        ok: false,
+        error: "That username is already in use. Please choose another one."
+      });
+    }
+    console.error("Nochalant account profile operation failed:", error?.message || error);
+    return res.status(503).json({
+      ok: false,
+      error: "Account workspaces are not ready yet. The approved account migration must be applied before this feature can be used."
+    });
   }
 }

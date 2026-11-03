@@ -122,17 +122,16 @@ export async function handleArtistStudio(req, res) {
     if (action === "add_track") {
       const releaseId = clean(req.body?.releaseId, 50);
       const title = clean(req.body?.title, 180);
-      const audioUrl = safeHttps(req.body?.audioUrl);
       const audioObjectKey = clean(req.body?.audioObjectKey, 1024);
       const ownedStorageKey = audioObjectKey.startsWith("artists/" + artist.id + "/tracks/") && !audioObjectKey.includes("..");
-      const storedAudio = ownedStorageKey ? "neon-storage:" + audioObjectKey : audioUrl;
+      const storedAudio = ownedStorageKey ? "neon-storage:" + audioObjectKey : null;
       const durationSeconds = Number(req.body?.durationSeconds) || null;
       const isrc = clean(req.body?.isrc, 20) || null;
       if (!/^[0-9a-f-]{36}$/i.test(releaseId) || !title || !storedAudio) {
-        return res.status(400).json({ ok: false, error: "Choose a draft release, enter a track title and upload an audio file." });
+        return res.status(400).json({ ok: false, error: "Choose a draft release, enter a track title and upload an audio file to Nochalant." });
       }
-      if (audioObjectKey && !ownedStorageKey) return res.status(400).json({ ok: false, error: "Invalid uploaded audio file reference." });
-      if (ownedStorageKey) await verifyMusicUpload(audioObjectKey);
+      if (!ownedStorageKey) return res.status(400).json({ ok: false, error: "Invalid uploaded audio file reference." });
+      await verifyMusicUpload(audioObjectKey);
       if (durationSeconds !== null && (!Number.isInteger(durationSeconds) || durationSeconds < 1 || durationSeconds > 86400)) {
         return res.status(400).json({ ok: false, error: "Track duration must be a positive number of seconds." });
       }

@@ -1,0 +1,50 @@
+name: Security and Build Verification
+
+on:
+  push:
+    branches:
+      - fix/member-dashboard-mobile-drawer-light-20261101
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate lockfile from pinned direct dependencies
+        run: npm install --package-lock-only --ignore-scripts --no-audit
+      - name: Clean dependency install
+        run: npm ci --ignore-scripts --no-audit
+      - name: Audit complete dependency tree
+        run: npm audit --audit-level=low
+      - name: Run automated tests
+        run: npm test
+      - name: Build production assets
+        run: npm run build
+      - name: Commit verified dependency lockfile
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Commit verified dependency lockfile"
+            git push
+          fi
+      - name: Upload generated dependency lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: nochalant-package-lock
+          path: package-lock.json
+          if-no-files-found: error

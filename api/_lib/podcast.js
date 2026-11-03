@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { randomUUID } from "node:crypto";
 import { requireActiveUser } from "./neon-auth.js";
 
 const clean = (value, max = 500) => typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -73,7 +74,7 @@ export async function handlePodcast(req, res) {
   try {
     if (action === "create_show") {
       const title = clean(req.body?.title,180);
-      const slug = makeSlug(req.body?.slug || title) || `show-${crypto.randomUUID().slice(0,8)}`;
+      const slug = makeSlug(req.body?.slug || title) || `show-${randomUUID().slice(0,8)}`;
       const cover = req.body?.coverImageUrl ? safeHttps(req.body.coverImageUrl) : null;
       const trailer = req.body?.trailerVideoUrl ? safeHttps(req.body.trailerVideoUrl) : null;
       if (!title) return res.status(400).json({ok:false,error:"Show title is required."});
@@ -112,7 +113,7 @@ export async function handlePodcast(req, res) {
       const showId = clean(req.body?.showId,36);
       const seasonId = clean(req.body?.seasonId,36) || null;
       const title = clean(req.body?.title,180);
-      const slug = makeSlug(req.body?.slug || title) || `episode-${crypto.randomUUID().slice(0,8)}`;
+      const slug = makeSlug(req.body?.slug || title) || `episode-${randomUUID().slice(0,8)}`;
       const videoUrl = req.body?.videoUrl ? safeHttps(req.body.videoUrl) : null;
       const thumbnail = req.body?.thumbnailUrl ? safeHttps(req.body.thumbnailUrl) : null;
       const duration = req.body?.durationSeconds == null || req.body?.durationSeconds === "" ? null : Number(req.body.durationSeconds);
@@ -129,28 +130,34 @@ export async function handlePodcast(req, res) {
     if (action === "create_clip") {
       const episodeId = clean(req.body?.episodeId,36);
       const title = clean(req.body?.title,180);
-      const slug = makeSlug(req.body?.slug || title) || `clip-${crypto.randomUUID().slice(0,8)}`;
+      const slug = makeSlug(req.body?.slug || title) || `clip-${randomUUID().slice(0,8)}`;
       const videoUrl = req.body?.videoUrl ? safeHttps(req.body.videoUrl) : null;
       const thumbnail = req.body?.thumbnailUrl ? safeHttps(req.body.thumbnailUrl) : null;
+      const duration = req.body?.durationSeconds == null || req.body?.durationSeconds === "" ? null : Number(req.body.durationSeconds);
+      const start = req.body?.startSeconds == null || req.body?.startSeconds === "" ? null : Number(req.body.startSeconds);
+      const end = req.body?.endSeconds == null || req.body?.endSeconds === "" ? null : Number(req.body.endSeconds);
       if (!/^[0-9a-f-]{36}$/i.test(episodeId) || !title) return res.status(400).json({ok:false,error:"Choose an episode and enter a clip title."});
       if ((req.body?.videoUrl && !videoUrl) || (req.body?.thumbnailUrl && !thumbnail)) return res.status(400).json({ok:false,error:"Clip media links must use HTTPS."});
+      if (duration !== null && (!Number.isSafeInteger(duration) || duration < 1 || duration > 86400)) return res.status(400).json({ok:false,error:"Clip duration must be between 1 second and 24 hours."});
+      if (start !== null && (!Number.isSafeInteger(start) || start < 0)) return res.status(400).json({ok:false,error:"Clip start time must be zero or greater."});
+      if (end !== null && (!Number.isSafeInteger(end) || end < 1)) return res.status(400).json({ok:false,error:"Clip end time must be a positive number of seconds."});
+      if (start !== null && end !== null && end <= start) return res.status(400).json({ok:false,error:"Clip end time must be after its start time."});
+      if (duration !== null && end !== null && end > duration) return res.status(400).json({ok:false,error:"Clip end time cannot exceed the episode duration."});
       const rows = await auth.sql`INSERT INTO podcast_clips (episode_id,slug,title,description,thumbnail_url,video_url,duration_seconds,start_seconds,end_seconds)
-        VALUES (${episodeId},${slug},${title},${clean(req.body?.description,3000)},${thumbnail},${videoUrl},
-          ${Number.isInteger(Number(req.body?.durationSeconds)) ? Number(req.body.durationSeconds) : null},
-          ${Number.isInteger(Number(req.body?.startSeconds)) ? Number(req.body.startSeconds) : null},
-          ${Number.isInteger(Number(req.body?.endSeconds)) ? Number(req.body.endSeconds) : null})
+        VALUES (${episodeId},${slug},${title},${clean(req.body?.description,3000)},${thumbnail},${videoUrl},${duration},${start},${end})
         RETURNING id,episode_id,slug,title,status`;
       return res.status(201).json({ok:true,clip:rows[0]});
     }
-    if (action === "publish_show" || action === "publish_season" || action === "publish_episode" || action === "publish_clip") {
+    if (action === "publish_episode" || action === "publish_clip") {
+      return res.status(409).json({ok:false,error:"Video publishing is not available yet. Secure upload, storage ownership, malware scanning and moderation must be completed first."});
+    }
+    if (action === "publish_show" || action === "publish_season") {
       const id = clean(req.body?.id,36);
       if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ok:false,error:"Select a valid podcast item."});
-      const table = action === "publish_show" ? "podcast_shows" : action === "publish_season" ? "podcast_seasons" : action === "publish_episode" ? "podcast_episodes" : "podcast_clips";
-      const rows = table === "podcast_shows" ? await auth.sql`UPDATE podcast_shows SET status='published', published_at=COALESCE(published_at,now()) WHERE id=${id} RETURNING id,status`
-        : table === "podcast_seasons" ? await auth.sql`UPDATE podcast_seasons SET status='published', published_at=COALESCE(published_at,now()) WHERE id=${id} RETURNING id,status`
-        : table === "podcast_episodes" ? await auth.sql`UPDATE podcast_episodes SET status='published', published_at=COALESCE(published_at,now()) WHERE id=${id} AND video_url IS NOT NULL RETURNING id,status`
-        : await auth.sql`UPDATE podcast_clips SET status='published', published_at=COALESCE(published_at,now()) WHERE id=${id} AND video_url IS NOT NULL RETURNING id,status`;
-      if (!rows.length) return res.status(409).json({ok:false,error:"Item not found or its video URL is missing."});
+      const rows = action === "publish_show"
+        ? await auth.sql`UPDATE podcast_shows SET status='published', published_at=COALESCE(published_at,now()) WHERE id=${id} RETURNING id,status`
+        : await auth.sql`UPDATE podcast_seasons SET status='published', published_at=COALESCE(published_at,now()) WHERE id=${id} RETURNING id,status`;
+      if (!rows.length) return res.status(404).json({ok:false,error:"Podcast item not found."});
       return res.status(200).json({ok:true,item:rows[0]});
     }
     return res.status(400).json({ok:false,error:"Unsupported podcast action."});

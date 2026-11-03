@@ -1,6 +1,8 @@
 import { neon } from "@neondatabase/serverless";
+import databaseHealthHandler from "./_lib/database-health.js";
 
 export default async function handler(req, res) {
+  if (req.query?.database === "1") return databaseHealthHandler(req, res);
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
