@@ -59,7 +59,7 @@ The workspace migration is additive and backfills each existing member's current
 
 After all migrations in the ordered list above complete on the intended branch, open:
 
-`https://nochalant.vercel.app/api/health/database`
+`https://nochalant.com/api/health/database`
 
 A successful response has:
 - `ok: true`
@@ -78,7 +78,7 @@ If the endpoint says `not_configured`, the server-side Vercel variables are miss
 
 Open:
 
-`https://nochalant.vercel.app/api/community/faces`
+`https://nochalant.com/api/community/faces`
 
 After migration 004, the response should include the ten explicitly marked demo profiles. They are demo records, not real registered users. Do not present them as real community members.
 
