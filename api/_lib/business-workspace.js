@@ -5,6 +5,8 @@ const validHttps=v=>{if(!v)return true;try{return new URL(v).protocol==="https:"
 const emailOk=v=>!v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 export async function handleBusinessWorkspace(req,res){
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  res.setHeader("Vary", "Authorization");
   if(!["GET","POST"].includes(req.method)){res.setHeader("Allow","GET, POST");return res.status(405).json({ok:false,error:"Method not allowed."});}
   const auth=await requireActiveUser(req);
   if(auth.error)return res.status(auth.error.status).json({ok:false,error:auth.error.message});
