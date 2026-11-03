@@ -25,6 +25,10 @@
       "destination": "/api/content?type=sitemap"
     },
     {
+      "source": "/robots.txt",
+      "destination": "/api/content?type=robots"
+    },
+    {
       "source": "/story/:slug",
       "destination": "/api/content?type=story&slug=:slug"
     },
