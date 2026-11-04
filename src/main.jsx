@@ -566,28 +566,39 @@ function App() {
           googleAccountType = window.localStorage.getItem("nochalant_google_signup_account_type") || "";
         } catch {}
         if (googleAccountType) {
-          try {
-            const token = await getAuthToken();
-            if (token) {
-              const response = await fetch("/api/account/type", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-                body: JSON.stringify({ accountType: googleAccountType }),
-                cache: "no-store"
-              });
-              const data = await response.json().catch(() => ({}));
-              if (response.ok && data.ok) {
-                window.localStorage.removeItem("nochalant_google_signup_account_type");
-                setAccountProfileRefresh(value => value + 1);
-              } else if (response.status === 409) {
-                window.localStorage.removeItem("nochalant_google_signup_account_type");
-                setAuthMessage("You are signed in. Your existing account type is unchanged.");
+          const allowedGoogleAccountTypes = new Set(["fan", "artist", "creator", "event_organizer", "business", "media"]);
+          if (!allowedGoogleAccountTypes.has(googleAccountType)) {
+            window.localStorage.removeItem("nochalant_google_signup_account_type");
+            setAuthMessage("Google sign-in succeeded, but the selected account type was invalid. Please contact support.");
+          } else {
+            try {
+              const token = await getAuthToken();
+              if (!token) {
+                // Preserve the pending selection if session-token setup is delayed.
+                setAuthMessage("Google sign-in succeeded. Your selected account type is waiting for secure session setup. Refresh this page to finish.");
               } else {
-                setAuthMessage(data.error || "Google sign-in succeeded, but account setup needs to be retried.");
+                const response = await fetch("/api/account/type", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+                  body: JSON.stringify({ accountType: googleAccountType }),
+                  cache: "no-store"
+                });
+                const data = await response.json().catch(() => ({}));
+                if (response.ok && data.ok && data.profile?.account_type === googleAccountType) {
+                  window.localStorage.removeItem("nochalant_google_signup_account_type");
+                  setAccountProfileRefresh(value => value + 1);
+                } else if (response.status === 409) {
+                  // Existing accounts keep their original immutable account type.
+                  window.localStorage.removeItem("nochalant_google_signup_account_type");
+                  setAuthMessage("You are signed in. Your existing account type has been preserved.");
+                } else {
+                  setAuthMessage(data.error || "Google sign-in succeeded, but your selected account type could not be confirmed. Refresh to retry.");
+                }
               }
+            } catch (error) {
+              // Retain the pending choice on transient API/network errors.
+              setAuthMessage(error?.message || "Google sign-in succeeded, but account setup needs attention. Refresh to retry.");
             }
-          } catch (error) {
-            setAuthMessage(error?.message || "Google sign-in succeeded, but account setup needs attention.");
           }
         }
         if (isControlRoom) await verifyControlRoomAccess();
