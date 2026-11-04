@@ -2514,3 +2514,25 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .promotion-form-selected-price{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 16px;margin:12px 0 18px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}.promotion-form-selected-price strong{font-size:24px;font-variant-numeric:tabular-nums}.promotion-form-selected-price small{color:var(--muted)}
 .promotion-package{display:flex;flex-direction:column;align-items:flex-start}.promotion-package .button{margin-top:auto}
 @media(max-width:620px){.promotion-selection-summary{align-items:flex-start;flex-direction:column;padding:16px}.promotion-selection-summary .button{width:100%}}
+
+/* Hot or Trash is a compact community poll, not a full-width hero. */
+.jury-section{max-width:900px;margin:38px auto 56px}
+.jury-opinion-card{grid-template-columns:minmax(0,1fr) 112px;column-gap:20px;row-gap:12px;padding:20px 24px;border-radius:18px}
+.jury-copy h2{font-size:clamp(25px,2.6vw,34px);margin:7px 0}
+.jury-copy>p{font-size:13px;max-width:460px}
+.jury-opinion-avatar{width:104px;max-width:100%;border-width:4px;box-shadow:0 0 0 5px #d6f66712}
+.jury-options{gap:9px;margin:4px 0 0}
+.jury-option{min-height:44px;padding:10px 12px;font-size:11px;border-radius:9px}
+.jury-slider-controls{margin-top:0}
+.jury-feedback{margin-top:4px}
+@media(min-width:1000px){
+ .jury-section{max-width:820px}
+ .jury-opinion-card{grid-template-columns:minmax(0,1fr) 92px;padding:17px 22px;gap:10px 18px}
+ .jury-opinion-avatar{width:88px}
+}
+@media(max-width:600px){
+ .jury-section{margin:28px auto 42px}
+ .jury-opinion-card{grid-template-columns:minmax(0,1fr) 76px;padding:16px;gap:12px}
+ .jury-opinion-avatar{width:72px}
+ .jury-option{min-height:42px}
+}
