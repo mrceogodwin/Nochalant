@@ -2207,3 +2207,149 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 @media(prefers-reduced-motion:reduce){
   .home-first-screen *,#latest *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
 }
+
+
+/* ==========================================================
+   NOCHALANT LIGHT CULTURE GRID — full brand refresh
+   Warm editorial surfaces, ink typography, electric-lime accents.
+   ========================================================== */
+:root{
+  color-scheme:light;
+  --bg:#f5f5f0;
+  --surface:#fffefa;
+  --surface-2:#f0f0e9;
+  --ink:#171916;
+  --muted:#777b73;
+  --line:#e4e5dc;
+  --lime:#c5ff45;
+  --orange:#ff7048;
+  --gold:#e9bf58;
+  background:var(--bg);color:var(--ink);
+}
+html,body{background:#f5f5f0!important;color:#171916!important}
+body{background:radial-gradient(ellipse at 82% 0%,#e9f1d855 0,transparent 34%),#f5f5f0!important}
+.site-shell{background:#f5f5f0!important;color:#171916!important;overflow:clip}
+.site-shell,.site-shell *{--ink:#171916}
+.site-header{background:#fffefaed!important;border-bottom:1px solid #e4e5dc!important;backdrop-filter:blur(18px)}
+.ticker{background:#171916!important;color:#f5f5f0!important}
+.ticker-label{background:var(--lime)!important;color:#171916!important}
+.ticker-track{color:#fffefa}
+.brand{color:#171916!important}
+.brand:before{background:var(--lime)!important;color:#171916!important}
+.brand small,.brand span{color:#171916!important}
+.main-nav a,.main-nav button,.nav-actions button,.feature-nav a,.feature-nav button{color:#171916}
+.feature-nav{background:#fffefa!important;border-color:#e4e5dc!important}
+.menu-toggle{color:#171916!important}
+.nav-login,.nav-join{background:#171916!important;color:#fff!important}
+.nav-spill,.button-green{background:var(--lime)!important;color:#171916!important}
+.button-dark,.button-outline,.button-small{border-color:#dfe0d8!important}
+.button-dark{background:#171916!important;color:#fff!important}
+.button-outline{background:#fffefa!important;color:#171916!important}
+.eyebrow,.section-heading .eyebrow{color:#718f2c!important}
+.lead-copy{color:#171916!important}
+.lead-copy h1,.section-heading h2,.artists-heading h2,.promo-copy h2,.newsletter-copy h2{color:#171916!important}
+.lead-copy>p,.section-heading p,.artists-heading p,.promo-copy>p,.newsletter-copy p{color:#666b63!important}
+.lead-copy .button{box-shadow:0 4px 0 #d6d8cc}
+.lead-story{box-shadow:0 14px 32px #25291a22!important}
+.value-strip,.agenda-section,.jury-panel,.promo-section,.pricing-card,.newsletter-section,
+.story-card,.artist-card,.artists-empty,.agenda-empty,.empty-state,.promotion-package,
+.home-community-timeline,.social-feed,.opinion-rail,.opinion-chip{
+  background:#fffefa!important;color:#171916!important;border-color:#e5e6de!important;
+  box-shadow:0 5px 16px #242a1410,0 1px 3px #242a1408;
+}
+.agenda-section{padding:24px!important;border:1px solid #e5e6de!important;border-radius:18px!important}
+.agenda-section .section-heading h2,.jury-panel h2,.agenda-empty h3,.pricing-card h3{color:#171916!important}
+.agenda-section .agenda-note,.agenda-section p,.agenda-empty p,.jury-copy>p,.jury-feedback,.pricing-card>p,.pricing-card li{color:#72766e!important}
+.agenda-empty{background:#f6f7f1!important;border:1px solid #e7e8e0!important}
+.face-name{color:#555b51!important}
+.face-avatar{box-shadow:0 0 0 3px #fffefa!important}
+.jury-panel{border-radius:18px!important}
+.jury-copy h2 em,.section-heading h2 em,.lead-copy h1 em{color:#759d22!important}
+.jury-option.hot,.jury-option.selected{background:var(--lime)!important;color:#171916!important;border-color:#c5ff45!important}
+.jury-option.trash{background:#f3f3ee!important;color:#171916!important;border-color:#e1e2d9!important}
+.jury-slider-nav,.jury-pagination button{color:#171916!important}
+.promo-section{border-radius:18px!important;background:#eaf5d0!important;color:#171916!important;padding:26px!important}
+.promo-copy .eyebrow{color:#657f2b!important}
+.promo-copy h2,.pricing-card h3{color:#171916!important}
+.promo-copy>p,.pricing-card>p,.pricing-card ul{color:#4f5941!important}
+.pricing-card{background:transparent!important;box-shadow:none!important;border:0!important}
+.pricing-card .price{color:#171916!important}
+.newsletter-section{background:#f0f8d9!important;border:1px solid #e1edc7!important;border-radius:18px!important}
+.newsletter-copy h2{color:#171916!important}
+.newsletter-form input{background:#fff!important;color:#171916!important;border:1px solid #dfe3d2!important}
+.newsletter-form button{background:#171916!important;color:#fff!important}
+#latest .section-heading h2{color:#171916!important}
+#latest .story-card{background:#fffefa!important;border:1px solid #e5e6de!important;box-shadow:0 5px 14px #242a1410!important}
+#latest .story-content h3{color:#171916!important}
+#latest .story-meta,#latest .story-byline,#latest .story-category-quiet{color:#777b73!important}
+#latest .story-byline span:last-child{color:#718f2c!important}
+#latest .category-tab{background:#fffefa!important;color:#171916!important;border-color:#e2e3db!important}
+#latest .category-tab.active{background:#171916!important;color:#fffefa!important;border-color:#171916!important}
+#latest .search-box{background:#fffefa!important;border-color:#e2e3db!important;color:#171916!important}
+#latest .search-box input{color:#171916!important}
+#latest .story-icon-button{background:#f0f3e9!important;color:#171916!important}
+.artists-section{color:#171916!important}
+.artists-heading h2,.artist-name,.artist-track-title,.artist-track-artist{color:#171916!important}
+.artists-heading p,.artist-track-stats,.artists-empty{color:#777b73!important}
+.artist-card{background:#fffefa!important;border:1px solid #e4e5dc!important;border-radius:15px!important}
+.artist-track-listen{background:#171916!important;color:#fff!important}
+.artist-track-play{background:var(--lime)!important;color:#171916!important}
+.home-community-timeline,.social-feed{color:#171916!important}
+.story-content,.story-card-bottom,.story-foot,.story-byline{color:#171916}
+.story-foot button,.story-icon-stat{color:#68705e!important}
+.story-card h3,.story-content h3{color:#171916!important}
+.pill,.pill-gold{background:#eef2e5!important;color:#526a28!important;border-color:#dce5ca!important}
+.promo-section .button,.pricing-card .button{background:#171916!important;color:#fff!important}
+.footer{background:#171916!important;color:#f5f5f0!important;border-color:#292d25!important}
+.footer-main p,.footer-links,.footer-bottom{color:#b7baae!important}
+.footer .brand{color:#fff!important}
+.footer-credit{color:#a7ad98!important}
+.mini-player,.player-reopen{background:#fffefa!important;color:#171916!important;border:1px solid #dfe2d6!important;box-shadow:0 12px 34px #242a1425!important}
+.mini-player small,.player-progress{color:#777b73!important}
+.player-title b{color:#171916!important}
+.player-close{color:#777b73!important}
+.modal-backdrop{background:#17191677!important}
+.modal-card{background:#fffefa!important;color:#171916!important;border:1px solid #e2e4db!important;box-shadow:0 25px 80px #0003!important}
+.modal-card h2,.modal-card h3{color:#171916!important}
+.modal-intro,.modal-card>p,.modal-card form label{color:#656b60!important}
+.modal-card input,.modal-card textarea,.modal-card select,.opinions-panel select,.opinions-panel textarea{background:#f5f6f0!important;color:#171916!important;border-color:#dfe2d7!important}
+.modal-close{background:#eff1e9!important;color:#171916!important}
+.comment{background:#f5f6f0!important;color:#171916!important;border-color:#e1e3d9!important}
+.toast{background:var(--lime)!important;color:#171916!important}
+.opinion-rail{border-color:#e1e5d6!important}
+.opinion-rail-top,.opinion-topic{color:#718f2c!important}
+.opinion-chip{background:#fffefa!important;color:#171916!important}
+.opinion-quote,.opinion-detail blockquote{color:#171916!important}
+.opinion-detail blockquote{background:#f0f3e9!important}
+.opinion-author,.opinion-author-detail{color:#73786e!important}
+.opinion-status-item,.opinion-report-quote,.opinion-dashboard-list{background:#f6f7f2!important;color:#171916!important;border-color:#e1e4d9!important}
+.opinion-status-item p,.opinion-dashboard-list h3,.opinion-list-heading h3{color:#171916!important}
+.opinion-status-item small{color:#74796f!important}
+.opinion-admin-actions button,.opinion-panel-tabs button{background:#fff!important;color:#171916!important;border-color:#dfe2d7!important}
+.drawer-preferences,.main-nav,.main-nav.open{background:#fffefa!important;border-color:#e4e5dc!important;color:#171916!important}
+.drawer-flagship>a,.drawer-flagship>button,.drawer-quick>a,.drawer-quick>button{background:#f5f6f0!important;color:#171916!important;border-color:#e2e4db!important}
+.main-nav .drawer-kicker,.drawer-flagship .drawer-kicker,.drawer-quick .drawer-kicker{color:#718f2c!important}
+.main-nav .drawer-preference-row,.main-nav .drawer-preference-toggle{color:#171916!important}
+.drawer-backdrop{background:#17191655!important}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline-color:#83a92d!important}
+@media(max-width:760px){
+ .site-header{height:70px!important}
+ .ticker{height:29px!important}
+ .site-shell:not(.header-not-sticky) .feature-nav{top:99px!important}
+ .home-first-screen .lead-copy{background:#fffefa!important;border:1px solid #e4e5dc!important;box-shadow:0 5px 16px #242a1410}
+ .home-first-screen .lead-copy h1{color:#171916!important}
+ .home-first-screen .lead-copy>p{color:#686d64!important}
+ .home-first-screen .lead-story{box-shadow:0 10px 24px #242a1425!important}
+ .home-first-screen>.agenda-section,.home-first-screen .jury-opinion-card{background:#fffefa!important;color:#171916!important}
+ .home-first-screen .jury-copy h2{color:#171916!important}
+ .home-first-screen .jury-copy>p,.home-first-screen .jury-feedback{color:#72766e!important}
+ .home-first-screen .newsletter-section{background:#f0f8d9!important}
+ .home-first-screen .newsletter-copy h2{color:#171916!important}
+ .home-first-screen .newsletter-copy p{color:#656b60!important}
+ .home-first-screen .newsletter-form input{background:#fff!important;color:#171916!important}
+ #latest .story-content{background:#fffefa!important}
+}
+@media(max-width:520px){
+ #latest .story-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #latest .story-image{height:clamp(110px,34vw,155px)!important}
+}
