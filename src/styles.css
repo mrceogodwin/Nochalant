@@ -2550,3 +2550,31 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .home-community-timeline .social-preview-more button { border:1px solid #627344; border-radius:999px; padding:10px 16px; background:var(--lime); color:#10120c; font-size:11px; font-weight:900; }
 .home-community-timeline .social-preview-more button span { color:inherit; font-size:15px; margin-left:8px; }
 @media(max-width:640px){.home-community-timeline .social-network-layout-compact .social-network-post{flex-basis:min(310px,84vw);}.home-community-timeline .social-preview-more{padding:11px 12px;}}
+
+
+/* Nov 4 polish: story cards open in an immersive full-screen reader. */
+.story-reader-backdrop{padding:0!important;display:block!important;background:#070805f5!important;backdrop-filter:blur(12px)!important}
+.story-reader-card{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;min-height:100dvh!important;border:0!important;border-radius:0!important;padding:clamp(22px,4vw,54px) clamp(18px,calc((100vw - 900px)/2),calc((100vw - 900px)/2))!important;box-shadow:none!important;overflow-y:auto!important;overscroll-behavior:contain}
+.story-reader-card h2{max-width:900px;font-size:clamp(30px,4.5vw,54px)!important;line-height:1.08!important}
+.story-reader-card .modal-story-image{display:block;width:100%;max-width:900px;height:auto;max-height:58vh;object-fit:cover;margin:24px 0}
+.story-reader-card>.eyebrow,.story-reader-card .article-byline,.story-reader-card>p,.story-reader-card .comment-area{max-width:900px}
+.story-reader-card .modal-close{position:fixed;top:18px;right:22px;float:none;margin:0;width:42px;height:42px;border:1px solid #59623d;border-radius:50%;background:#171a13;color:#f4f5eb}
+.story-reader-card .comment-area{margin:30px auto 0}
+.story-reader-card .comment-area textarea{min-height:110px}
+@media(max-width:600px){.story-reader-card{padding:68px 18px 32px!important}.story-reader-card .modal-story-image{max-height:42vh}.story-reader-card .modal-close{top:12px;right:12px}}
+/* Hot or Trash: a compact, flat editorial poll rather than a large feature card. */
+.jury-section{max-width:1100px!important;padding-top:54px!important}
+.jury-opinion-card{display:grid!important;grid-template-columns:minmax(0,1.2fr) 64px minmax(260px,.9fr)!important;align-items:center!important;gap:12px 22px!important;padding:17px 20px!important;min-height:0!important;border:1px solid #343a29!important;border-radius:3px!important;background:#10120e!important;box-shadow:none!important}
+.jury-copy{grid-column:1!important;grid-row:1!important}
+.jury-copy h2{margin:5px 0 5px!important;font-size:clamp(22px,2.4vw,30px)!important;letter-spacing:-.04em!important}
+.jury-copy>p{font-size:11px!important;line-height:1.5!important;max-width:480px!important}
+.jury-copy .eyebrow{font-size:8px!important}
+.jury-opinion-avatar{grid-column:2!important;grid-row:1!important;width:60px!important;height:60px!important;border:2px solid var(--lime)!important;box-shadow:none!important}
+.jury-options{grid-column:3!important;grid-row:1!important;display:flex!important;gap:8px!important;margin:0!important}
+.jury-option{flex:1;min-height:40px!important;padding:9px 12px!important;border-radius:2px!important;font-size:12px!important;font-weight:800!important}
+.jury-slider-controls{grid-column:1/3!important;grid-row:2!important;display:flex!important;justify-content:flex-start!important;gap:10px!important;margin:0!important}
+.jury-slider-nav{padding:6px 9px!important;border-radius:2px!important;font-size:8px!important}
+.jury-pagination{gap:6px!important}
+.jury-pagination button{width:7px!important;height:7px!important}
+.jury-feedback{grid-column:3!important;grid-row:2!important;margin:0!important;font-size:8px!important;line-height:1.4!important}
+@media(max-width:700px){.jury-opinion-card{grid-template-columns:1fr 54px!important;gap:12px!important;padding:15px!important}.jury-copy{grid-column:1!important;grid-row:1!important}.jury-opinion-avatar{grid-column:2!important;grid-row:1!important;width:50px!important;height:50px!important}.jury-options{grid-column:1/-1!important;grid-row:2!important}.jury-slider-controls{grid-column:1/-1!important;grid-row:3!important}.jury-feedback{grid-column:1/-1!important;grid-row:4!important}}
