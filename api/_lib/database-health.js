@@ -50,6 +50,12 @@ const REQUIRED_TABLES = [
   "editorial_auto_post_settings",
   "editorial_content_sources",
   "editorial_discovered_items",
+  // Account workspaces must be part of the health contract; otherwise the
+  // API can report a complete schema while creator/business dashboards fail.
+  "creator_profiles",
+  "creator_portfolio_items",
+  "creator_booking_requests",
+  "business_profiles",
 ];
 
 export default async function handler(req, res) {
