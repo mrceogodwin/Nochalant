@@ -3092,3 +3092,78 @@ main#top{max-width:1600px;margin:0 auto;padding:22px 28px 120px}
  .home-first-screen .jury-opinion-card{grid-template-columns:minmax(0,1fr) 76px;padding:14px}
  .home-first-screen .jury-opinion-avatar{width:72px}
 }
+
+/* Reference-matched home page: promotional banner and category row sit in the left rail. */
+.home-first-screen{
+ grid-template-areas:"hero agenda" "promo poll" "categories newsletter";
+ grid-template-rows:minmax(350px,auto) minmax(205px,auto) minmax(175px,auto);
+}
+.home-first-screen>.promo-section{padding:20px 22px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px}
+.home-first-screen .promo-copy{display:none}
+.home-first-screen .pricing-card{order:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"pill pill" "title title" "copy copy" "cta cta";align-content:center;gap:0;min-width:0;width:100%;padding:0;background:transparent}
+.home-first-screen .pricing-top{grid-area:pill}
+.home-first-screen .pricing-card h3{grid-area:title;margin:8px 0 5px;font-size:clamp(24px,2.7vw,36px);letter-spacing:-1.5px;line-height:1.05}
+.home-first-screen .pricing-card>p{grid-area:copy;max-width:560px;margin:0 0 12px;font-size:12px;line-height:1.5}
+.home-first-screen .pricing-card .price,.home-first-screen .pricing-card ul{display:none}
+.home-first-screen .pricing-card .button{grid-area:cta;justify-self:start;margin-top:2px}
+.home-first-screen>.section.jury-section{align-self:stretch}
+.home-first-screen .jury-opinion-card{height:100%;grid-template-columns:minmax(0,1fr) 84px;padding:16px}
+.home-first-screen .jury-options{grid-column:1/-1;display:flex;flex-wrap:nowrap}
+.home-first-screen .jury-feedback{grid-column:1/-1}
+.home-category-placement{grid-area:categories;min-width:0}
+.home-category-placement .deferred-panel-loading{min-height:100px}
+.category-discovery{width:100%;padding:3px 0 0}
+.category-discovery-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.category-discovery-heading h2{margin:0;color:#fff;font:700 19px 'Space Grotesk',sans-serif;letter-spacing:-.6px}
+.category-discovery-heading button{border:0;background:transparent;color:var(--lime);font-size:11px;font-weight:800;white-space:nowrap}
+.category-discovery-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+.category-discovery-tile{display:flex;min-width:0;min-height:78px;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:9px 3px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:#171717;color:#fff;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.category-discovery-tile>span{font-size:23px;line-height:1;color:var(--lime)}
+.category-discovery-tile>b{font-size:10px;font-weight:700;white-space:nowrap}
+.category-discovery-tile:hover,.category-discovery-tile.is-active{transform:translateY(-2px);border-color:var(--lime);background:#20251a}
+.category-discovery-tile:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.home-first-screen>.newsletter-section{grid-area:newsletter;height:100%;justify-content:center;gap:10px;padding:17px;border-radius:18px}
+.home-first-screen .newsletter-copy h2{font-size:22px}
+.home-first-screen .newsletter-form{width:100%;max-width:none}
+.home-first-screen .agenda-section .agenda-empty{min-height:90px}
+.home-first-screen .agenda-section .agenda-empty h3{margin:3px 0 5px}
+.home-first-screen .agenda-section .agenda-empty p{margin:0 0 8px}
+.home-first-screen .agenda-section .agenda-empty .button{padding:7px 10px;font-size:10px}
+.home-first-screen .agenda-section .nochalant-faces{display:none}
+.home-first-screen .agenda-section .section-heading h2{font-size:24px}
+.home-first-screen .agenda-section .section-heading .eyebrow{font-size:8px}
+.home-first-screen .app-hero-copy{bottom:38px;width:min(62%,560px)}
+.home-first-screen .app-hero-copy h1{font-size:clamp(30px,3.4vw,48px);line-height:1.02}
+.home-first-screen .app-hero-meta{display:none}
+.home-first-screen .app-hero-feature{height:clamp(350px,34vw,430px);min-height:350px}
+.home-first-screen .app-hero-slide .app-editorial-label{display:none}
+.home-first-screen .app-hero-slide .app-hero-copy .app-category-pill{margin-bottom:10px}
+.home-first-screen .app-hero-side{display:none}
+.home-culture-expansion>.flagship-section:first-child{padding-top:16px;border-top:1px solid var(--line);margin-top:2px}
+.home-culture-expansion>.flagship-section:first-child .flagship-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.home-culture-expansion>.flagship-section:first-child .flagship-heading h2{font-size:26px;margin:0}
+.home-culture-expansion>.flagship-section:first-child .flagship-heading p,
+.home-culture-expansion>.flagship-section:first-child .flagship-kicker{display:none}
+.home-culture-expansion>.flagship-section:first-child .flagship-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.home-culture-expansion>.flagship-section:first-child .flagship-story{border-radius:16px;padding:0 0 13px;background:#121212}
+.home-culture-expansion>.flagship-section:first-child .flagship-story img{height:150px}
+.home-culture-expansion>.flagship-section:first-child .flagship-story b{font-size:14px;line-height:1.3;min-height:37px}
+@media(max-width:1100px){
+ .home-first-screen{grid-template-areas:"hero agenda" "promo poll" "categories newsletter";grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr)}
+ .category-discovery-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:900px){
+ .home-first-screen{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "agenda" "poll" "promo" "categories" "newsletter";grid-template-rows:auto;gap:16px}
+ .home-first-screen>.promo-section{min-height:190px}
+ .category-discovery-grid{grid-template-columns:repeat(8,minmax(78px,1fr));overflow-x:auto;padding-bottom:6px}
+ .home-category-placement{overflow:hidden}
+}
+@media(max-width:760px){
+ .home-first-screen .app-hero-feature{min-height:390px}
+ .home-first-screen .pricing-card h3{font-size:26px}
+ .home-first-screen .pricing-card>p{font-size:11px}
+ .home-culture-expansion>.flagship-section:first-child .flagship-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+ .category-discovery-tile{transition:none}
+}
