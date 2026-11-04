@@ -42,6 +42,15 @@ function timeAgo(value) {
 }
 
 export default function SocialFeed({ currentUser, onJoin, onLogin }) {
+  const accountType = currentUser?.account_type || currentUser?.profile?.account_type || "fan";
+  const feedIdentity = {
+    fan: { forYou: "For you", following: "Following", eyebrow: "YOUR CULTURE FEED" },
+    artist: { forYou: "Industry pulse", following: "Your circle", eyebrow: "ARTIST COMMUNITY" },
+    creator: { forYou: "Creator pulse", following: "Your circle", eyebrow: "CREATOR COMMUNITY" },
+    event_organizer: { forYou: "Event pulse", following: "Your circle", eyebrow: "EVENT COMMUNITY" },
+    business: { forYou: "Brand pulse", following: "Your circle", eyebrow: "BRAND COMMUNITY" },
+    media: { forYou: "Media pulse", following: "Your circle", eyebrow: "PUBLISHER COMMUNITY" }
+  }[accountType] || { forYou: "For you", following: "Following", eyebrow: "YOUR CULTURE FEED" };
   const [feed, setFeed] = useState("for-you");
   const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
@@ -348,10 +357,10 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
 
     <div className="social-feed-toolbar">
       <div className="social-feed-tabs" role="tablist" aria-label="Choose your feed">
-        <button type="button" role="tab" aria-selected={feed === "for-you"} className={feed === "for-you" ? "active" : ""} onClick={() => setFeed("for-you")}>For you</button>
-        <button type="button" role="tab" aria-selected={feed === "following"} className={feed === "following" ? "active" : ""} onClick={() => setFeed("following")}>Following</button>
+        <button type="button" role="tab" aria-selected={feed === "for-you"} className={feed === "for-you" ? "active" : ""} onClick={() => setFeed("for-you")}>{feedIdentity.forYou}</button>
+        <button type="button" role="tab" aria-selected={feed === "following"} className={feed === "following" ? "active" : ""} onClick={() => setFeed("following")}>{feedIdentity.following}</button>
       </div>
-      <span className="social-feed-live"><i/> COMMUNITY FEED</span>
+      <span className="social-feed-live"><i/> {feedIdentity.eyebrow}</span>
     </div>
 
     {notificationsOpen && <section className="social-notification-panel" aria-label="Notifications">
