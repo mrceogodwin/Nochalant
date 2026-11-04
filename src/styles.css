@@ -2456,3 +2456,54 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .skin-light .fan-shortcut-card{background:#fffdf7;border-color:#dedfce;color:#292b25}
 .skin-light .fan-shortcut-card small{color:#686b5f}
 @media(max-width:620px){.fan-shortcut-grid{grid-template-columns:1fr}.fan-shortcut-card{min-height:104px;padding:15px}}
+
+/* Unified role-workspace overview and progressive disclosure. */
+.workspace-overview-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:18px 0 24px;
+}
+.workspace-overview-grid .account-dashboard-card{min-width:0}
+.workspace-overview-grid .account-dashboard-card h3{font-size:clamp(24px,3vw,34px);font-variant-numeric:tabular-nums}
+.workspace-edit-details{
+  margin:14px 0;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface);
+  overflow:hidden;
+}
+.workspace-edit-details>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:15px 18px;
+  min-height:52px;
+  cursor:pointer;
+  list-style:none;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:800;
+}
+.workspace-edit-details>summary::-webkit-details-marker{display:none}
+.workspace-edit-details>summary:after{content:"＋";font-size:18px;color:var(--lime)}
+.workspace-edit-details[open]>summary:after{content:"−"}
+.workspace-edit-details>.artist-studio-form{
+  margin:0;
+  border:0;
+  border-top:1px solid var(--line);
+  border-radius:0;
+}
+.fan-home-heading{margin:0 0 18px}
+.fan-home-heading h2{margin:7px 0;font-size:clamp(25px,4vw,38px);letter-spacing:-.04em}
+.fan-home-heading h2 em{color:var(--lime);font-style:normal}
+.fan-home-heading p{max-width:580px;color:var(--muted);line-height:1.6}
+.skin-light .workspace-edit-details{background:#fffdf7;border-color:var(--line)}
+.skin-light .workspace-edit-details>summary{color:var(--ink)}
+@media(max-width:700px){
+ .workspace-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .workspace-overview-grid .account-dashboard-card:last-child:nth-child(odd){grid-column:1/-1}
+ .workspace-edit-details>summary{padding:13px 14px}
+}
+@media(max-width:390px){.workspace-overview-grid{grid-template-columns:1fr}}
