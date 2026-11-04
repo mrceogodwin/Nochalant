@@ -1237,6 +1237,30 @@ function App() {
     </section>
       </div>
 
+      <section className="container home-discovery-dock" aria-label="Explore Nochalant">
+        <div className="home-dock-heading"><div><span className="eyebrow">YOUR CULTURE DASHBOARD</span><h2>Explore <em>everything.</em></h2></div><span className="home-dock-note">QUICK ACCESS · FRESH DISCOVERY</span></div>
+        <div className="home-dock-grid">
+          <button type="button" onClick={() => document.getElementById("latest")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">▤</span><b>News</b><small>Latest headlines</small></button>
+          <button type="button" onClick={() => document.getElementById("artists")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">♫</span><b>Music</b><small>Artists & releases</small></button>
+          <button type="button" onClick={() => {setCategory("Movies");document.getElementById("latest")?.scrollIntoView({behavior:"smooth"});}}><span className="dock-icon">▣</span><b>Movies</b><small>Nollywood & film</small></button>
+          <button type="button" onClick={() => document.getElementById("artists")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">☆</span><b>Celebrity</b><small>People & profiles</small></button>
+          <button type="button" onClick={() => document.getElementById("agenda")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">▦</span><b>Events</b><small>What's happening</small></button>
+          <button type="button" onClick={() => document.getElementById("hot-or-trash")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">♨</span><b>Hot or Trash</b><small>Cast your vote</small></button>
+          <button type="button" onClick={() => document.querySelector(".mini-player")?.scrollIntoView({behavior:"smooth",block:"center"})}><span className="dock-icon">◖</span><b>Listen</b><small>Audio & sessions</small></button>
+          <button type="button" onClick={() => {setModal(currentUser ? "submit" : "login");window.scrollTo({top:0,behavior:"smooth"});}}><span className="dock-icon">＋</span><b>Submit gist</b><small>Share a story</small></button>
+        </div>
+        <div className="home-pulse-grid">
+          <div className="home-pulse-card home-pulse-trending">
+            <div className="home-pulse-title"><div><span className="eyebrow">THE CULTURE PULSE</span><h3>People are talking about</h3></div><span className="pulse-live"><i></i> LIVE FEED</span></div>
+            <div className="home-pulse-list">{filtered.slice(0,4).map((item,index) => <button type="button" key={"pulse-"+item.id} onClick={() => openStory(item)}><span className="pulse-number">{String(index+1).padStart(2,"0")}</span><span className="pulse-copy"><b>{item.title}</b><small>{item.category} · {item.read}</small></span><span className="pulse-arrow">↗</span></button>)}</div>
+          </div>
+          <div className="home-pulse-card home-pulse-submit">
+            <span className="eyebrow">HAVE SOMETHING FOR US?</span><h3>Your story could be next.</h3><p>Send in your music, event, entertainment update or culture story for editorial review.</p>
+            <button type="button" className="button button-dark" onClick={() => {setFormCategory("General");setModal(currentUser ? "submit" : "login");}}>Submit to Nochalant <span>→</span></button>
+          </div>
+        </div>
+      </section>
+
       {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
         <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
         <DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
