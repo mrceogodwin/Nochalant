@@ -2989,3 +2989,37 @@ main#top{max-width:1600px;margin:0 auto;padding:22px 28px 120px}
  .app-hero-slide>img,#latest .story-card,#latest .story-image img{transition:none!important}
  .app-hero-slide.is-active>img,#latest .story-card:hover,#latest .story-card:hover .story-image img{transform:none!important}
 }
+
+
+/* AGENDA / EVENT DISCOVERY SURFACE */
+#agenda{scroll-margin-top:90px;padding:clamp(42px,6vw,78px) 0!important;border-top:1px solid #292e23;border-bottom:1px solid #292e23;background:radial-gradient(ellipse at 12% 0%,#c9ff3d0b,transparent 38%),#0d100c}
+#agenda>.container{max-width:1320px}
+#agenda .section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:25px}
+#agenda .section-heading h2{font-size:clamp(30px,4vw,48px);letter-spacing:-.055em;line-height:1.04}
+#agenda .agenda-note{padding:9px 12px;border:1px solid #343a2b;border-radius:999px;color:#c9ff3d;font-size:9px;font-weight:900;letter-spacing:.12em}
+#agenda .nochalant-faces{padding:20px 0 22px;border-top:1px solid #282e22;border-bottom:1px solid #282e22}
+#agenda .faces-heading{margin-bottom:14px}
+#agenda .faces-title{display:flex;align-items:center;gap:10px}
+#agenda .faces-title h3{font-size:16px;letter-spacing:-.025em}
+#agenda .faces-brand-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#c9ff3d}
+#agenda .faces-brand-mark span{width:9px;height:9px;border-radius:50%;background:#11140b}
+#agenda .faces-viewport{overflow:hidden}
+#agenda .faces-track{display:flex;gap:18px;overflow-x:auto;padding:3px 1px 9px;scrollbar-width:thin;scrollbar-color:#465032 transparent}
+#agenda .face-item{flex:0 0 82px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;background:transparent;border:0;color:#dce0d2}
+#agenda .face-avatar{display:grid;place-items:center;width:58px;height:58px;border:1px solid #424b32;border-radius:50%;background:#1a2114;color:#d9ff7c;font-size:13px;font-weight:900}
+#agenda .face-name{max-width:82px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aeb5a1;font-size:9px}
+#agenda .agenda-empty{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;overflow:hidden;margin-top:22px;padding:clamp(22px,4vw,38px);border:1px solid #3b452b;border-radius:18px;background:linear-gradient(110deg,#171d11,#10130e 72%)}
+#agenda .agenda-empty:after{content:"";position:absolute;right:12%;top:-100px;width:230px;height:230px;border:1px solid #c9ff3d1c;border-radius:50%;box-shadow:0 0 0 28px #c9ff3d08,0 0 0 58px #c9ff3d05;pointer-events:none}
+#agenda .agenda-empty h3{margin:0 0 8px;font-size:clamp(20px,2.5vw,28px);letter-spacing:-.04em}
+#agenda .agenda-empty p{max-width:510px;margin:0;color:#aeb5a1;font-size:12px;line-height:1.7}
+#agenda .agenda-empty .button{position:relative;z-index:1;flex:0 0 auto;min-height:42px;border-radius:999px}
+.app-nav-icon[aria-label="Community activity"]{position:relative}
+.app-nav-icon[aria-label="Community activity"]:focus-visible{outline:2px solid #c9ff3d;outline-offset:3px}
+@media(max-width:600px){
+ #agenda{padding:38px 0!important}
+ #agenda .section-heading{align-items:flex-start;flex-direction:column;gap:12px}
+ #agenda .agenda-note{font-size:8px}
+ #agenda .agenda-empty{align-items:flex-start;flex-direction:column;gap:18px;padding:22px}
+ #agenda .agenda-empty:after{right:-80px;top:-80px}
+ #agenda .faces-track{gap:13px}
+}
