@@ -1302,6 +1302,7 @@ function App() {
           {musicTab === "library" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">YOUR PERSONAL COLLECTION</span><h2>My <em>library.</em></h2></div></div><div className="music-hub-empty">Your saved songs, liked releases and followed artists will appear here when Music Library saving is enabled.</div></section>}
         </section>;
       })() : activeScreen === "home" ? <>
+      <div className="home-first-screen container">
       <section className="container app-hero-layout" aria-label="Featured culture stories">
         <article className="app-hero-feature" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
           {leadSlides.map((slide,index)=><div className={"app-hero-slide"+(index===leadSlide?" is-active":"")} key={slide.story.id} aria-hidden={index!==leadSlide}>
@@ -1317,6 +1318,55 @@ function App() {
           </button>)}
         </aside>
       </section>
+
+      
+      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
+        <div className="nochalant-faces">
+          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
+          <div className="faces-viewport" aria-label="Nochalant community profiles">
+            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
+          </div>
+          
+        </div>
+        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
+
+
+      <section className="section container jury-section" id="hot-or-trash">
+        <div className="jury-panel jury-opinion-card">
+          <div className="jury-copy">
+            <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
+            <h2>Hot or <em>trash?</em></h2>
+            <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
+          </div>
+          <div className="jury-opinion-avatar" aria-hidden="true">
+            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" loading="lazy" decoding="async" />
+          </div>
+          <div className="jury-options">
+            <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
+            <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
+          </div>
+          <div className="jury-slider-controls">
+            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(-1)} disabled={opinions.length < 2} aria-label="Previous opinion">‹ <span>PREVIOUS</span></button>
+            <div className="jury-pagination" aria-label="Choose community opinion">
+              {opinions.map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
+            </div>
+            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(1)} disabled={opinions.length < 2} aria-label="Next opinion"><span>NEXT</span> ›</button>
+          </div>
+          <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
+        </div>
+      </section>
+
+      <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
+      
+      {activeScreen === "home" && <section className="newsletter-section container" aria-labelledby="newsletter-title">
+      <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
+      <form className="newsletter-form" onSubmit={e => {e.preventDefault();setModal("newsletter-success");}}>
+        <label className="sr-only" htmlFor="newsletter-email">Your email address</label>
+        <input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} placeholder="Your email address"/>
+        <button type="submit">Gimme Update</button>
+      </form>
+    </section>}
+      </div>
 
       <section className="culture-pulse container" aria-label="Nochalant culture pulse">
         <div className="pulse-heading"><span className="eyebrow">THE CULTURE, AT A GLANCE</span><span className="pulse-live"><i/> LIVE FROM NOCHALANT</span></div>
@@ -1395,43 +1445,6 @@ function App() {
         <div className="wire-grid">{opinions.slice(0,3).map(item=><article className="wire-card" key={item.id}><span className="wire-label">NOCHALANT COMMUNITY</span><p>“{item.body}”</p><div><b>{item.author_name || "Community member"}</b><small>{item.topic || "Culture conversation"}</small></div></article>)}{!opinions.length && <div className="flagship-empty">Community conversations will appear here when members share their opinions. No sample tweets or fabricated social posts are displayed.</div>}</div>
       </section>
 
-      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
-        <div className="nochalant-faces">
-          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
-          <div className="faces-viewport" aria-label="Nochalant community profiles">
-            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
-          </div>
-          
-        </div>
-        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
-
-
-      <section className="section container jury-section" id="hot-or-trash">
-        <div className="jury-panel jury-opinion-card">
-          <div className="jury-copy">
-            <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
-            <h2>Hot or <em>trash?</em></h2>
-            <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
-          </div>
-          <div className="jury-opinion-avatar" aria-hidden="true">
-            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" loading="lazy" decoding="async" />
-          </div>
-          <div className="jury-options">
-            <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
-            <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
-          </div>
-          <div className="jury-slider-controls">
-            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(-1)} disabled={opinions.length < 2} aria-label="Previous opinion">‹ <span>PREVIOUS</span></button>
-            <div className="jury-pagination" aria-label="Choose community opinion">
-              {opinions.map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
-            </div>
-            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(1)} disabled={opinions.length < 2} aria-label="Next opinion"><span>NEXT</span> ›</button>
-          </div>
-          <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
-        </div>
-      </section>
-
-      <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
       <DeferredPanel><HomeCultureDiscovery onChooseCategory={name => { const map = {Trending:"All Gist",Afrobeats:"Afrobeats & Jamz",Nollywood:"Nollywood Drama",Celebrity:"Nollywood Drama",BBNaija:"BBNaija / Reality",Gossip:"Street Buzz","Hip-Hop":"Afrobeats & Jamz","Street Culture":"Street Buzz",Fashion:"Fashion & Swag",Lifestyle:"Lifestyle",Comedy:"Street Buzz",Sports:"All Gist",Events:"Agenda",Podcasts:"All Gist",Technology:"All Gist","Viral Videos":"All Gist",Relationships:"Lifestyle",Influencers:"Street Buzz",Business:"Lifestyle",Politics:"All Gist"}; setCategory(map[name] || "All Gist"); document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"}); }} /></DeferredPanel>
       </> : activeScreen === "promotions" ? <section className="promotions-page container screen-page">
         <div className="promotions-hero"><span className="eyebrow">NOCHALANT FOR BRANDS</span><h1>Make some <em>noise.</em></h1><p>Promote your brand, event, product, video or creative work to the Nochalant audience.</p></div>
@@ -1571,14 +1584,7 @@ function App() {
       </section>
     )}
 
-    {activeScreen === "home" && <section className="newsletter-section container" aria-labelledby="newsletter-title">
-      <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
-      <form className="newsletter-form" onSubmit={e => {e.preventDefault();setModal("newsletter-success");}}>
-        <label className="sr-only" htmlFor="newsletter-email">Your email address</label>
-        <input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} placeholder="Your email address"/>
-        <button type="submit">Gimme Update</button>
-      </form>
-    </section>}
+    
     {!currentUser?.id && <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>}
 
     <audio ref={audioRef} preload="metadata" />
