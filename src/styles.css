@@ -2275,3 +2275,13 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  .site-header .main-nav.open > .drawer-quick{display:flex!important}
  .site-header .main-nav.open > .drawer-preferences{display:block!important}
 }
+
+/* Keep drawer-only sections hidden in the desktop header; the open drawer explicitly reveals them. */
+.site-header .main-nav>.drawer-account,
+.site-header .main-nav>.drawer-flagship,
+.site-header .main-nav>.drawer-quick,
+.site-header .main-nav>.drawer-preferences{display:none}
+.site-header .main-nav.open>.drawer-account{display:grid!important}
+.site-header .main-nav.open>.drawer-flagship,
+.site-header .main-nav.open>.drawer-quick{display:flex!important}
+.site-header .main-nav.open>.drawer-preferences{display:block!important}
