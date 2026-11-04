@@ -982,13 +982,22 @@ function App() {
   }, []);
 
   useEffect(() => {
-    demoStories.forEach(item => {
-      fetch(`/api/posts/${encodeURIComponent(item.id)}/views`)
+    if (!editorialStories.length) return;
+    const controller = new AbortController();
+    // Only request view totals for real published stories; demo placeholders are not posts.
+    editorialStories.slice(0, 8).forEach(item => {
+      if (!item?.id) return;
+      fetch(`/api/posts/${encodeURIComponent(item.id)}/views`, { signal: controller.signal })
         .then(response => response.ok ? response.json() : null)
-        .then(data => { if (data?.ok) setViewCounts(current => ({ ...current, [item.id]: data.views })); })
-        .catch(() => {});
+        .then(data => {
+          if (data?.ok && !controller.signal.aborted) {
+            setViewCounts(current => ({ ...current, [item.id]: data.views }));
+          }
+        })
+        .catch(error => { if (error?.name !== "AbortError") console.warn("Story view count unavailable:", error); });
     });
-  }, []);
+    return () => controller.abort();
+  }, [editorialStories]);
 
   const openStory = (item) => {
     // Published editorial stories use the dedicated full-screen, SEO article route.
@@ -1346,7 +1355,7 @@ function App() {
 
       <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div></div>
         <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
-        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-card-bottom"><span className="story-category-quiet">{item.category}</span><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]} aria-label={likes[item.id] ? "Unlike story" : "Like story"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/></svg></button><span className="story-icon-stat" aria-label={`${comments[item.id]?.length || 0} comments`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.7-.8L4 20l1.3-3.4A7.1 7.1 0 0 1 4 12c0-4.1 3.6-7.5 8-7.5s8 3.1 8 7Z"/></svg><small>{comments[item.id]?.length || 0}</small></span><span className="story-icon-stat" aria-label={`${typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0} views`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><small>{typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0}</small></span><button className="story-icon-button" type="button" aria-label="Read full story" onClick={e => {e.stopPropagation();openStory(item);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
+        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt="" loading="lazy" decoding="async"/></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-card-bottom"><span className="story-category-quiet">{item.category}</span><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]} aria-label={likes[item.id] ? "Unlike story" : "Like story"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/></svg></button><span className="story-icon-stat" aria-label={`${comments[item.id]?.length || 0} comments`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.7-.8L4 20l1.3-3.4A7.1 7.1 0 0 1 4 12c0-4.1 3.6-7.5 8-7.5s8 3.1 8 7Z"/></svg><small>{comments[item.id]?.length || 0}</small></span><span className="story-icon-stat" aria-label={`${typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0} views`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><small>{typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0}</small></span><button className="story-icon-button" type="button" aria-label="Read full story" onClick={e => {e.stopPropagation();openStory(item);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
       </section>
 
       <section className="culture-pulse container" aria-label="Nochalant culture pulse">
@@ -1405,7 +1414,7 @@ function App() {
             <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
           </div>
           <div className="jury-opinion-avatar" aria-hidden="true">
-            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" />
+            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" loading="lazy" decoding="async" />
           </div>
           <div className="jury-options">
             <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
