@@ -70,7 +70,7 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 46`
+- `present_tables: 55`
 - `missing_columns: []`
 - `missing_tables: []`
 - `missing_triggers: []`
@@ -174,3 +174,13 @@ The initial feeds are BellaNaija, NotJustOk and BBC Africa. RSS availability and
 Migration `022_editorial_seo_metadata.sql` adds per-article slug, SEO title/description, focus keyword, canonical URL, Open Graph image and indexability metadata. Public article URLs use `/story/:slug`, rendered server-side with NewsArticle JSON-LD, canonical and social metadata. `/sitemap.xml` is generated from published, indexable articles and `/robots.txt` advertises it to crawlers. Apply 022 on preflight before testing; production remains untouched until the full migration sequence is approved.
 
 Important: sitemap inclusion and crawlable HTML improve discovery, but cannot guarantee Google/Bing indexing or rankings. Search Console and Bing Webmaster Tools ownership verification and sitemap submission remain external setup steps.
+
+
+## 15. Media / Publisher workspace
+
+Migration `024_media_workspace.sql` adds the publisher identity and editorial pitch workflow:
+- `media_profiles` stores the publication name, outlet type, contact details, coverage beats and public profile.
+- `media_pitch_submissions` stores story pitches submitted by authenticated Media / Publisher accounts. New pitches enter `pending` and only editors can decide their editorial status.
+- The workspace API is routed through the existing consolidated admin function so the Vercel Hobby serverless-function budget is preserved.
+
+Apply migration 024 only to the isolated preview/test branch first. The media workspace health check includes both tables. Do not apply this migration to Production until the feature branch, editorial review flow and production migration plan have been approved.
