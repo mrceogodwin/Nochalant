@@ -41,7 +41,7 @@ function timeAgo(value) {
   return days < 7 ? days + "d" : date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
-export default function SocialFeed({ currentUser, onJoin, onLogin }) {
+export default function SocialFeed({ currentUser, onJoin, onLogin, compactPreview = false, onLoadMore }) {
   const accountType = currentUser?.account_type || currentUser?.profile?.account_type || "fan";
   const feedIdentity = {
     fan: { forYou: "For you", following: "Following", eyebrow: "YOUR CULTURE FEED" },
@@ -327,14 +327,14 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   }
 
   return <div className="social-feed-shell">
-    <header className="social-network-header">
+    <header className={"social-network-header" + (compactPreview ? " is-compact-hidden" : "")}>
       <div><span className="eyebrow">THE PEOPLE · THE CULTURE</span><h1 id="social-title">Nochalant <em>Social.</em></h1><p>What's happening in your world?</p></div>
       <button className="social-create-top" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋ <span>Create post</span></button>
       <button className="social-profile-top" type="button" onClick={openProfile}>Profile</button>
       <button className="social-notification-toggle" type="button" onClick={openNotifications} aria-expanded={notificationsOpen} aria-label="Notifications">🔔<span>Notifications</span></button>
     </header>
 
-    {suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
+    {!compactPreview && suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
       <div className="social-rail-heading"><div><span className="eyebrow">FIND YOUR PEOPLE</span><h2>Creators & community</h2></div><span>MEMBERS TO DISCOVER</span></div>
       <div className="social-people-list">
         {suggestedMembers.map(member => <article className="social-person" key={member.id}>
@@ -346,16 +346,16 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       </div>
     </section>}
 
-    <section className="social-stories-rail" aria-label="Stories">
+    {!compactPreview && <section className="social-stories-rail" aria-label="Stories">
       <button type="button" className="social-story-bubble social-story-add" onClick={() => setStoryComposerOpen(true)}>
         <span className="social-story-avatar">＋</span><strong>Your story</strong>
       </button>
       {stories.map(story => <button type="button" className={"social-story-bubble" + (story.viewer_seen ? " seen" : "")} key={story.id} onClick={() => openStory(story)}>
         <span className="social-story-avatar">{avatarContent(story.author_name, story.avatar_url)}</span><strong>{story.author_name || "Member"}</strong>
       </button>)}
-    </section>
+    </section>}
 
-    <div className="social-feed-toolbar">
+    <div className={"social-feed-toolbar" + (compactPreview ? " is-compact-hidden" : "")}>
       <div className="social-feed-tabs" role="tablist" aria-label="Choose your feed">
         <button type="button" role="tab" aria-selected={feed === "for-you"} className={feed === "for-you" ? "active" : ""} onClick={() => setFeed("for-you")}>{feedIdentity.forYou}</button>
         <button type="button" role="tab" aria-selected={feed === "following"} className={feed === "following" ? "active" : ""} onClick={() => setFeed("following")}>{feedIdentity.following}</button>
@@ -437,9 +437,9 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       </form>
     </div>}
 
-    <div className="social-network-layout">
+    <div className={"social-network-layout" + (compactPreview ? " social-network-layout-compact" : "")}>
       <main className="social-network-posts">
-        {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? posts.map(post => <article className="social-network-post" key={post.id}>
+        {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? (compactPreview ? posts.slice(0, 3) : posts).map(post => <article className="social-network-post" key={post.id}>
           <div className="social-network-post-head"><span className="social-avatar">{avatarContent(post.author_name, post.avatar_url)}</span><div className="social-author-copy"><button type="button" className="social-author-profile-link" onClick={() => openMemberProfile(post.author_id)}>{post.author_name || "Nochalant member"}</button><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
           <p className="social-network-post-body">{post.body}</p>
           <div className="social-network-post-actions">
@@ -453,12 +453,13 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
           </section>}
         </article>) : <div className="social-feed-state"><span className="eyebrow">{feedIdentity.eyebrow}</span><strong>{feed === "following" ? "Your circle is quiet for now." : ({fan:"Your culture feed starts here.",artist:"Your industry circle starts here.",creator:"Your creator community starts here.",event_organizer:"Your event community starts here.",business:"Your brand community starts here.",media:"Your publisher community starts here."}[accountType] || "Your community feed starts here.")}</strong><p>{feed === "following" ? "Follow members whose updates you want to see. Their new posts will appear here." : ({fan:"Follow artists and creators, discover conversations and share what you love.",artist:"Connect with fans, collaborators, creators and media. Share a release or studio update.",creator:"Meet creators, artists and potential collaborators. Share your work and grow your circle.",event_organizer:"Connect with artists, venues, fans and organisers. Share an event update.",business:"Meet creators, artists and event organisers. Share news about your brand or campaign.",media:"Connect with artists, creators and event organisers. Share coverage and editorial updates."}[accountType] || "Follow people you like or share an update with your community.")}</p><div className="social-role-empty-actions"><button className="button button-green" type="button" onClick={() => setComposerOpen(true)}>＋ Create a post</button><button className="button button-outline" type="button" onClick={() => setFeed("for-you")}>Explore community</button></div></div>}
       </main>
-      <aside className="social-network-aside">
+      {!compactPreview && <aside className="social-network-aside">
         <div className="social-aside-card"><span className="social-aside-mark">N<span>.</span></span><span className="eyebrow">NOCHALANT SOCIAL</span><h2>Your voice moves culture.</h2><p>Connect with creators, artists and people shaping entertainment, music and everyday life.</p><button type="button" className="button button-outline full-width" onClick={() => setComposerOpen(true)}>Start a conversation</button></div>
         <div className="social-aside-note"><strong>Keep it respectful.</strong><p>Build the culture. Credit creators. Make room for different voices.</p></div>
-      </aside>
+      </aside>}
     </div>
+    {compactPreview && !loading && !error && posts.length > 0 && <div className="social-preview-more"><span>Showing {Math.min(posts.length,3)} recent conversations</span><button type="button" onClick={onLoadMore}>Load more <span aria-hidden="true">→</span></button></div>}
 
-    <button className="social-floating-create" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋</button>
+    {!compactPreview && <button className="social-floating-create" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋</button>}
   </div>;
 }
