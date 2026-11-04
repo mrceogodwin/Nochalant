@@ -72,6 +72,10 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [comments, setComments] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [busyAction, setBusyAction] = useState("");
+  const [bookingDraft, setBookingDraft] = useState({ name: "", email: "", message: "", requestedFor: "", website: "" });
+  const [bookingBusy, setBookingBusy] = useState(false);
+  const [bookingNotice, setBookingNotice] = useState("");
+  const [bookingError, setBookingError] = useState("");
 
   const loadFeed = useCallback(async (signal, selectedFeed = feed) => {
     setLoading(true);
@@ -172,6 +176,23 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     } finally {
       if (requestId === memberProfileRequest.current) setMemberProfileLoading(false);
     }
+  };
+
+  const submitCreatorBooking = async event => {
+    event.preventDefault();
+    if (!memberProfile?.id || bookingBusy) return;
+    setBookingBusy(true); setBookingError(""); setBookingNotice("");
+    try {
+      const response = await fetch("/api/creator/bookings", {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ creatorId: memberProfile.id, ...bookingDraft })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || "Your booking enquiry could not be sent.");
+      setBookingDraft({ name: "", email: "", message: "", requestedFor: "", website: "" });
+      setBookingNotice(result.message || "Your booking enquiry has been sent.");
+    } catch (err) { setBookingError(err.message || "Your booking enquiry could not be sent."); }
+    finally { setBookingBusy(false); }
   };
 
   const closeMemberProfile = () => {
@@ -361,6 +382,24 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
         <div className="social-profile-stats"><span><strong>{Number(memberProfile.follower_count || 0).toLocaleString()}</strong><small>Followers</small></span><span><strong>{Number(memberProfile.following_count || 0).toLocaleString()}</strong><small>Following</small></span><span><strong>{(memberProfile.posts || []).length}</strong><small>Posts</small></span></div>
         {(memberProfile.location || memberProfile.website_url) && <div className="social-public-profile-meta">{memberProfile.location && <span>{memberProfile.location}</span>}{memberProfile.website_url && <a href={memberProfile.website_url} target="_blank" rel="noreferrer">Visit website </a>}</div>}
         {memberProfile.id !== viewerProfileId && <button type="button" className="button button-green full-width" onClick={toggleMemberProfileFollow} disabled={busyAction === "profile-follow"}>{memberProfile.viewer_follows ? "Following · Unfollow" : "＋ Follow"}</button>}
+        {memberProfile.account_type === "creator" && memberProfile.creator_profile && <section className="social-creator-public-work">
+          <div className="social-public-profile-posts"><h3>{memberProfile.creator_profile.display_title || memberProfile.display_name}</h3>
+            {memberProfile.creator_profile.creator_category && <small>{memberProfile.creator_profile.creator_category.replaceAll("_"," ")}</small>}
+            {memberProfile.creator_profile.bio && <p>{memberProfile.creator_profile.bio}</p>}
+            {memberProfile.creator_profile.location && <p>{memberProfile.creator_profile.location}</p>}
+            {memberProfile.creator_portfolio?.length > 0 && <><h3>Portfolio</h3>{memberProfile.creator_portfolio.map(item=><article key={item.id}><strong>{item.title}</strong>{item.description&&<p>{item.description}</p>}{item.media_url&&<a href={item.media_url} target="_blank" rel="noreferrer">View media </a>}{item.external_url&&<a href={item.external_url} target="_blank" rel="noreferrer">View project </a>}</article>)}</>}
+          </div>
+          {memberProfile.creator_profile.booking_enabled && <form className="social-creator-booking-form" onSubmit={submitCreatorBooking}>
+            <h3>Book this creator</h3><p>Send a booking enquiry directly to this creator.</p>
+            {bookingError&&<p className="artist-studio-error" role="alert">{bookingError}</p>}{bookingNotice&&<p className="dashboard-status" role="status">{bookingNotice}</p>}
+            <label>Your name<input required minLength="2" maxLength="120" value={bookingDraft.name} onChange={e=>setBookingDraft(v=>({...v,name:e.target.value}))}/></label>
+            <label>Email address<input type="email" required maxLength="254" value={bookingDraft.email} onChange={e=>setBookingDraft(v=>({...v,email:e.target.value}))}/></label>
+            <label>Preferred date (optional)<input type="datetime-local" value={bookingDraft.requestedFor} onChange={e=>setBookingDraft(v=>({...v,requestedFor:e.target.value}))}/></label>
+            <label>Tell them about your booking<textarea required minLength="10" maxLength="3000" rows="4" value={bookingDraft.message} onChange={e=>setBookingDraft(v=>({...v,message:e.target.value}))} placeholder="What would you like to book them for?"/></label>
+            <label className="social-booking-honeypot" aria-hidden="true">Leave this field empty<input tabIndex="-1" autoComplete="off" value={bookingDraft.website} onChange={e=>setBookingDraft(v=>({...v,website:e.target.value}))}/></label>
+            <button className="button button-green full-width" disabled={bookingBusy}>{bookingBusy?"Sending…":"Send booking enquiry"}</button>
+          </form>}
+        </section>}
         <div className="social-public-profile-posts"><h3>Recent posts</h3>{(memberProfile.posts || []).length ? memberProfile.posts.map(item => <article key={item.id}><p>{item.body}</p><small>{timeAgo(item.created_at)} · {Number(item.like_count || 0)} likes · {Number(item.comment_count || 0)} comments</small></article>) : <p className="social-notification-empty">No public posts yet.</p>}</div>
       </article>}
     </div>}
