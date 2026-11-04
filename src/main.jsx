@@ -1198,6 +1198,15 @@ function App() {
     <div className="ticker"><span className="ticker-label">NOCHALANT LIVE</span><div className="ticker-window"><div className="ticker-track"><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>FREE DAILY SUBMISSIONS</span><span>WHAT'S HAPPENING? CHECK THE AGENDA</span><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
     <header className="site-header"><div className="nav-wrap">
       <a className="brand header-brand" href="#top">NOCHALANT<span>.</span></a>
+      <nav className="app-primary-nav" aria-label="Explore Nochalant">
+        <button type="button" className={activeScreen==="home"?"is-active":""} onClick={()=>{setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("latest")?.scrollIntoView({behavior:"smooth"}),40);}}>News</button>
+        <button type="button" className={activeScreen==="music"?"is-active":""} onClick={()=>{setActiveScreen("music");window.scrollTo({top:0,behavior:"smooth"});}}>Music</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"}),40);setCategory("Nollywood");}}>Movies</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("celebrity-radar")?.scrollIntoView({behavior:"smooth"}),40);}}>Celebs</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("latest")?.scrollIntoView({behavior:"smooth"}),40);setCategory("Gossip");}}>Gist</button>
+        <button type="button" className={activeScreen==="social"?"is-active":""} onClick={()=>{setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Socials<span className="app-nav-live-dot"/></button>
+      </nav>
       <button className="menu-toggle" aria-controls="nochalant-mobile-menu" aria-expanded={mobileMenu} onClick={() => setMobileMenu(!mobileMenu)} aria-label={mobileMenu ? "Close navigation" : "Open navigation"}>{mobileMenu ? "×" : "☰"}</button>
       {mobileMenu && <button className="drawer-backdrop" type="button" aria-label="Close navigation menu" onClick={() => setMobileMenu(false)} />}
       <nav id="nochalant-mobile-menu" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation">
@@ -1239,7 +1248,7 @@ function App() {
           <label className="drawer-preference-toggle"><span><strong>Bottom app dock</strong><small>Keep quick navigation at the bottom</small></span><input type="checkbox" checked={memberDockEnabled} onChange={e=>setMemberDockEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
         </section>
       </nav>
-      <div className="nav-actions">{currentUser && <button className="text-button nav-login" onClick={() => {setActiveScreen("dashboard");setMobileMenu(false);window.scrollTo({top:0,behavior:"smooth"});}}>My dashboard</button>}{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
+      <div className="nav-actions app-nav-actions"><button className="app-nav-icon" type="button" aria-label="Search stories" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.querySelector(".search-box input")?.focus(),50);}}>⌕</button><button className="app-nav-icon" type="button" aria-label="Notifications" onClick={()=>{if(!currentUser){setModal("login");return;}setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>♧</button><button className="app-nav-avatar" type="button" aria-label={currentUser?"Open your dashboard":"Log in"} onClick={()=>{if(currentUser){setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}else setModal("login");}}>{accountProfile?.profileDetails?.avatar_url?<img src={accountProfile.profileDetails.avatar_url} alt=""/>:(accountProfile?.profile?.display_name||currentUser?.name||"N").trim().charAt(0).toUpperCase()}</button></div>
     </div></header>
     
 
@@ -1294,26 +1303,31 @@ function App() {
           {musicTab === "library" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">YOUR PERSONAL COLLECTION</span><h2>My <em>library.</em></h2></div></div><div className="music-hub-empty">Your saved songs, liked releases and followed artists will appear here when Music Library saving is enabled.</div></section>}
         </section>;
       })() : activeScreen === "home" ? <>
-      <section className="container lead-layout">
-        <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
-          <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
-          <p>Your plug for Nigerian entertainment, music, nightlife, lifestyle and everything happening around you. No long talk — just the gist that matters.</p>
-          <div className="hero-actions"><button className="button button-green" onClick={() => setModal("submit")}>Spill the gist</button><a className="button button-outline" href="#latest">Catch up on gist</a></div>
-          
-        </div>
-        <article className="lead-story" aria-label="Featured Nochalant carousel" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
-          {leadSlides.map((slide, index) => <div className={index === leadSlide ? "lead-slide active" : "lead-slide"} key={slide.story.id} aria-hidden={index !== leadSlide}>
-            <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>
-            <div className="lead-overlay"></div>
-            <div className="lead-story-top"><span className="pill pill-hot">HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span><button className="lead-next-overlay" type="button" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT »</button></div>
-            <div className="lead-story-bottom"><div className="story-meta"><span>{slide.story.category}</span><span>· {slide.story.read}</span></div><h2>{slide.story.title}</h2><p>{slide.story.excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); openStory(slide.story);}}>Read story</button><b>{index + 1} / {leadSlides.length}</b></div></div>
+      <section className="container app-hero-layout" aria-label="Featured culture stories">
+        <article className="app-hero-feature" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
+          {leadSlides.map((slide,index)=><div className={"app-hero-slide"+(index===leadSlide?" is-active":"")} key={slide.story.id} aria-hidden={index!==leadSlide}>
+            <img src={slide.story.image} alt={slide.story.title} fetchPriority={index===leadSlide?"high":"auto"} loading={index===leadSlide?"eager":"lazy"}/>
+            <div className="app-hero-shade"/>
+            <div className="app-hero-copy"><span className="app-category-pill">{slide.story.category || "CULTURE"}</span><span className="app-editorial-label">NOCHALANT EXCLUSIVE</span><h1>{slide.story.title}</h1><p>{slide.story.excerpt}</p><div className="app-hero-meta"><span>◷ {slide.story.read || "3 min read"}</span><span>·</span><span>{slide.story.author || "Nochalant Editorial"}</span></div><button type="button" className="app-read-story" onClick={()=>openStory(slide.story)}>Read story <span aria-hidden="true">→</span></button></div>
           </div>)}
-          <div className="lead-carousel-controls">
-            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>PREV</button>
-            <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
-            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT</button>
-          </div>
+          <div className="app-hero-pagination">{leadSlides.map((slide,index)=><button key={slide.story.id} type="button" className={index===leadSlide?"active":""} onClick={()=>changeLeadSlide(index)} aria-label={"Show featured story "+(index+1)}/>)}</div>
         </article>
+        <aside className="app-hero-side" aria-label="More featured stories">
+          {leadSlides.filter((_,index)=>index!==leadSlide).slice(0,2).map((slide,index)=><button type="button" className={"app-hero-side-card app-hero-side-"+index} key={slide.story.id} onClick={()=>openStory(slide.story)}>
+            <img src={slide.story.image} alt="" loading="lazy"/><span className="app-side-shade"/><span className="app-category-pill">{slide.story.category || "CULTURE"}</span><strong>{slide.story.title}</strong><span className="app-side-play" aria-hidden="true">▶</span>
+          </button>)}
+        </aside>
+      </section>
+
+      <section className="culture-pulse container" aria-label="Nochalant culture pulse">
+        <div className="pulse-heading"><span className="eyebrow">THE CULTURE, AT A GLANCE</span><span className="pulse-live"><i/> LIVE FROM NOCHALANT</span></div>
+        <div className="pulse-grid">
+          <a href="#latest"><b>{editorialStories.length}</b><span>Latest stories</span></a>
+          <a href="#social-wire"><b>{opinions.length}</b><span>Community voices</span></a>
+          <a href="#culture-charts"><b>{artists.flatMap(item => item.tracks || []).length}</b><span>Released tracks</span></a>
+          <a href="#agenda"><b>Explore</b><span>What's on next</span></a>
+        </div>
+        <div className="pulse-shortcuts">{["Now","Rising","Viral meter","Movers","Social pulse","What's on","Listen now","Watch now","Fan voice","Reading list","60-sec brief","Hashtag tracker"].map((item,index)=><a key={item} href={["#latest","#trending-now","#trending-now","#culture-charts","#social-wire","#agenda","#artists","#agenda","#buzzboard","#latest","#latest","#categories"][index]}>{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index] && <span aria-hidden="true">{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index]}</span>}{item}</a>)}</div>
       </section>
 
       <DeferredPanel><HomeCultureExpansion stories={[...editorialStories,...demoStories.filter(story=>story.label==="EDITORIAL PREVIEW" && !editorialStories.length)]} artists={artists} onOpenStory={openStory} /></DeferredPanel>\n\n      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
@@ -1347,17 +1361,6 @@ function App() {
             </article>;
           })}</div> : <div className="artists-empty">{artistsLoading ? "Loading verified artist releases…" : "No artist releases have been published yet. Verified artist releases will appear here with their original cover art."}</div>}
         </div>
-      </section>
-
-      <section className="culture-pulse container" aria-label="Nochalant culture pulse">
-        <div className="pulse-heading"><span className="eyebrow">THE CULTURE, AT A GLANCE</span><span className="pulse-live"><i/> LIVE FROM NOCHALANT</span></div>
-        <div className="pulse-grid">
-          <a href="#latest"><b>{editorialStories.length}</b><span>Latest stories</span></a>
-          <a href="#social-wire"><b>{opinions.length}</b><span>Community voices</span></a>
-          <a href="#culture-charts"><b>{artists.flatMap(item => item.tracks || []).length}</b><span>Released tracks</span></a>
-          <a href="#agenda"><b>Explore</b><span>What's on next</span></a>
-        </div>
-        <div className="pulse-shortcuts">{["Now","Rising","Viral meter","Movers","Social pulse","What's on","Listen now","Watch now","Fan voice","Reading list","60-sec brief","Hashtag tracker"].map((item,index)=><a key={item} href={["#latest","#trending-now","#trending-now","#culture-charts","#social-wire","#agenda","#artists","#agenda","#buzzboard","#latest","#latest","#categories"][index]}>{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index] && <span aria-hidden="true">{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index]}</span>}{item}</a>)}</div>
       </section>
 
       <section className="flagship-section container" id="trending-now">
@@ -1605,8 +1608,8 @@ function App() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14V10M8 18V6M12 15V9M16 19V5M20 14V10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
     </button>}
 
-    {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
-      <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
+    {memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
+      <button type="button" className={(memberDockTab==="home"||(!currentUser?.id&&activeScreen==="home"))?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
       <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       <button type="button" className={memberDockTab==="socials"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
