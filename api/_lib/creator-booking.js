@@ -59,3 +59,29 @@ export async function handlePublicCreatorBooking(req,res) {
     return res.status(503).json({ok:false,error:"Your enquiry could not be sent right now. Please try again."});
   }
 }
+
+
+export async function handlePublicCreatorProfile(req,res) {
+  res.setHeader("Cache-Control","no-store, max-age=0");
+  res.setHeader("Referrer-Policy","strict-origin-when-cross-origin");
+  if(req.method!=="GET"){res.setHeader("Allow","GET");return res.status(405).json({ok:false,error:"Method not allowed."});}
+  const creatorId=clean(req.query?.id,36);
+  if(!uuid.test(creatorId))return res.status(400).json({ok:false,error:"A valid creator profile is required."});
+  const connectionString=process.env.DATABASE_URL_POOLED||process.env.DATABASE_URL;
+  if(!connectionString)return res.status(503).json({ok:false,error:"Creator profiles are temporarily unavailable."});
+  try{
+    const sql=neon(connectionString);
+    const profiles=await sql`SELECT cp.user_profile_id AS id,cp.display_title,cp.creator_category,cp.bio,cp.location,cp.website_url,cp.booking_enabled
+      FROM creator_profiles cp JOIN user_profiles up ON up.id=cp.user_profile_id
+      WHERE cp.user_profile_id=${creatorId} AND up.account_type='creator' AND up.account_status='active'
+      LIMIT 1`;
+    if(!profiles.length)return res.status(404).json({ok:false,error:"Creator profile not found."});
+    const portfolio=await sql`SELECT id,title,description,media_url,external_url,sort_order,created_at
+      FROM creator_portfolio_items WHERE creator_user_id=${creatorId}
+      ORDER BY sort_order ASC,created_at DESC LIMIT 50`;
+    return res.status(200).json({ok:true,profile:profiles[0],portfolio});
+  }catch(error){
+    console.error("Public creator profile failed:",error?.message||error);
+    return res.status(503).json({ok:false,error:"Creator profile is temporarily unavailable."});
+  }
+}
