@@ -36,17 +36,33 @@ async function proxyNeonAuth(req, res) {
   // can be the deployment's canonical hostname even when the visitor uses a
   // branch alias; using it here causes an origin mismatch in Safari.
   const requestOrigin = typeof req.headers.origin === "string" ? req.headers.origin : "";
-  const requestHost = typeof req.headers.host === "string" ? req.headers.host.toLowerCase() : "";
+  const requestHost = typeof req.headers.host === "string" ? req.headers.host.split(",")[0].trim().toLowerCase() : "";
+  // Vercel can expose the incoming public hostname separately from the
+  // function host. Accept the browser origin only when it matches one of
+  // those request-scoped host values; never substitute a deployment URL
+  // for the visitor's actual origin.
+  const forwardedHost = typeof req.headers["x-forwarded-host"] === "string"
+    ? req.headers["x-forwarded-host"].split(",")[0].trim().toLowerCase()
+    : "";
+  const allowedRequestHosts = new Set([requestHost, forwardedHost].filter(Boolean));
   let authOrigin = null;
   if (requestOrigin) {
     try {
       const parsedOrigin = new URL(requestOrigin);
-      if (parsedOrigin.protocol === "https:" && parsedOrigin.host.toLowerCase() === requestHost) {
+      if (
+        parsedOrigin.protocol === "https:" &&
+        allowedRequestHosts.has(parsedOrigin.host.toLowerCase())
+      ) {
         authOrigin = parsedOrigin.origin;
       }
     } catch {}
     if (!authOrigin) {
-      return res.status(403).json({ message: "Authentication origin does not match this site." });
+      console.warn("Nochalant auth origin rejected", {
+        originHost: (() => { try { return new URL(requestOrigin).host; } catch { return "invalid"; } })(),
+        requestHost,
+        forwardedHost
+      });
+      return res.status(403).json({ message: "Authentication origin does not match this site. Reload Nochalant and try again." });
     }
   } else if (process.env.VERCEL_ENV === "production") {
     authOrigin = "https://nochalant.com";
@@ -57,6 +73,8 @@ async function proxyNeonAuth(req, res) {
     return res.status(503).json({ message: "Preview authentication origin is not configured." });
   }
   headers.set("origin", authOrigin);
+  headers.set("x-forwarded-host", new URL(authOrigin).host);
+  headers.set("x-forwarded-proto", "https");
 
   const init = { method: req.method, headers, redirect: "manual" };
   if (!["GET", "HEAD"].includes(req.method) && req.body !== undefined) {
