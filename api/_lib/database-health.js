@@ -58,6 +58,7 @@ const REQUIRED_TABLES = [
   "business_profiles",
   "media_profiles",
   "media_pitch_submissions",
+  "creator_booking_rate_limits",
 ];
 
 export default async function handler(req, res) {
