@@ -184,3 +184,8 @@ Migration `024_media_workspace.sql` adds the publisher identity and editorial pi
 - The workspace API is routed through the existing consolidated admin function so the Vercel Hobby serverless-function budget is preserved.
 
 Apply migration 024 only to the isolated preview/test branch first. The media workspace health check includes both tables. Do not apply this migration to Production until the feature branch, editorial review flow and production migration plan have been approved.
+
+
+## 16. Public creator booking intake
+
+Migration `025_creator_booking_rate_limits.sql` adds hashed-IP fixed-window counters for public booking enquiries. `POST /api/creator/bookings` accepts requests only for active Creator accounts with booking enabled, validates the requester and date, uses a honeypot field, and limits each connection to five attempts per 15-minute window. The Creator member-profile view exposes only the creator's public profile and portfolio fields and includes the enquiry form when booking is enabled. No requester data is returned publicly. Apply migration 025 to preview/test before production rollout approval.
