@@ -2507,3 +2507,10 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  .workspace-edit-details>summary{padding:13px 14px}
 }
 @media(max-width:390px){.workspace-overview-grid{grid-template-columns:1fr}}
+
+/* Promotion package prices remain visible while visitors proceed. */
+.promotion-selection-summary{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:18px 0 28px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.promotion-selection-summary>div{display:flex;flex-direction:column;gap:5px}.promotion-selection-summary>strong{font-size:20px}.promotion-selection-summary small{color:var(--muted);font-size:12px}
+.promotion-form-selected-price{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 16px;margin:12px 0 18px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}.promotion-form-selected-price strong{font-size:24px;font-variant-numeric:tabular-nums}.promotion-form-selected-price small{color:var(--muted)}
+.promotion-package{display:flex;flex-direction:column;align-items:flex-start}.promotion-package .button{margin-top:auto}
+@media(max-width:620px){.promotion-selection-summary{align-items:flex-start;flex-direction:column;padding:16px}.promotion-selection-summary .button{width:100%}}
