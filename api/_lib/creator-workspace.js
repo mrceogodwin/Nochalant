@@ -31,7 +31,7 @@ export async function handleCreatorWorkspace(req, res) {
           FROM creator_booking_requests WHERE creator_user_id = ${auth.profile.id}
           ORDER BY created_at DESC LIMIT 100`
       ]);
-      return res.status(200).json({ ok: true, profile: profiles[0] || null, portfolio, bookings,
+      return res.status(200).json({ ok: true, creatorId: auth.profile.id, profile: profiles[0] || null, portfolio, bookings,
         stats: { portfolioItems: portfolio.length, pendingBookings: bookings.filter(item => item.status === "pending").length } });
     }
 
