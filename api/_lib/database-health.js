@@ -56,6 +56,8 @@ const REQUIRED_TABLES = [
   "creator_portfolio_items",
   "creator_booking_requests",
   "business_profiles",
+  "media_profiles",
+  "media_pitch_submissions",
 ];
 
 export default async function handler(req, res) {
