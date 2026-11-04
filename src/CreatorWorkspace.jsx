@@ -7,7 +7,7 @@ const categories = [
 ];
 
 export default function CreatorWorkspace() {
-  const [data, setData] = useState({ profile: null, portfolio: [], bookings: [], stats: { portfolioItems: 0, pendingBookings: 0 } });
+  const [data, setData] = useState({ creatorId: null, profile: null, portfolio: [], bookings: [], stats: { portfolioItems: 0, pendingBookings: 0 } });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -62,7 +62,7 @@ export default function CreatorWorkspace() {
 
   const profile = data.profile || {};
   return <section className="creator-workspace-tools" aria-label="Creator workspace">
-    <div className="artist-studio-heading"><div><span className="eyebrow">CREATOR WORKSPACE</span><h2>Build your <em>presence.</em></h2><p>Manage your public creator identity, showcase your work and handle booking enquiries.</p></div></div>
+    <div className="artist-studio-heading"><div><span className="eyebrow">CREATOR WORKSPACE</span><h2>Build your <em>presence.</em></h2><p>Manage your public creator identity, showcase your work and handle booking enquiries.</p></div>{data.profile&&data.creatorId&&<a className="button button-outline" href={"/creators/"+data.creatorId} target="_blank" rel="noreferrer">View public profile ↗</a>}</div>
     {loading && <p className="account-dashboard-loading" role="status">Loading your creator workspace…</p>}
     {error && <p className="artist-studio-error" role="alert">{error}</p>}
     {notice && <p className="dashboard-status" role="status">{notice}</p>}
