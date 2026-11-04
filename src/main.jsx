@@ -1586,5 +1586,6 @@ function App() {
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
 }
-const publicCreatorMatch = window.location.pathname.match(/^\/creators\/([0-9a-f-]{36})\/?$/i);
-createRoot(document.getElementById("root")).render(publicCreatorMatch ? <PublicCreatorProfile creatorId={publicCreatorMatch[1]} /> : <App />);
+const publicCreatorParts = window.location.pathname.split("/");
+const publicCreatorId = publicCreatorParts.length === 3 && publicCreatorParts[1] === "creators" && /^[0-9a-f-]{36}$/i.test(publicCreatorParts[2]) ? publicCreatorParts[2] : null;
+createRoot(document.getElementById("root")).render(publicCreatorId ? <PublicCreatorProfile creatorId={publicCreatorId} /> : <App />);
