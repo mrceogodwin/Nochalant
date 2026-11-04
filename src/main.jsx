@@ -1169,73 +1169,66 @@ function App() {
         </section>;
       })() : activeScreen === "home" ? <>
       <div className="home-first-screen container">
-      <section className="lead-layout app-hero-layout">
-        <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
-          <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
-          <p>Your plug for Nigerian entertainment, music, nightlife, lifestyle and everything happening around you. No long talk — just the gist that matters.</p>
-          <div className="hero-actions"><button className="button button-green" onClick={() => setModal("submit")}>Spill the gist</button><a className="button button-outline" href="#latest">Catch up on gist</a></div>
-          
-        </div>
-        <article className="lead-story" aria-label="Featured Nochalant carousel" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
-          {leadSlides.map((slide, index) => <div className={index === leadSlide ? "lead-slide active" : "lead-slide"} key={slide.story.id} aria-hidden={index !== leadSlide}>
-            <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>
-            <div className="lead-overlay"></div>
-            <div className="lead-story-top"><span className="pill pill-hot">HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span><button className="lead-next-overlay" type="button" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT »</button></div>
-            <div className="lead-story-bottom"><div className="story-meta"><span>{slide.story.category}</span><span>· {slide.story.read}</span></div><h2>{slide.story.title}</h2><p>{slide.story.excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); openStory(slide.story);}}>Read story</button><b>{index + 1} / {leadSlides.length}</b></div></div>
-          </div>)}
-          <div className="lead-carousel-controls">
-            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>PREV</button>
-            <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
-            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT</button>
+        <section className="editorial-front" aria-label="Nochalant featured stories">
+          <div className="editorial-front-top">
+            <div><span className="eyebrow"><i className="live-dot"></i> THE NOCHALANT EDITION · NIGERIA</span><p>Culture moves fast. We keep you in the know.</p></div>
+            <span className="front-date">MUSIC / FILM / PEOPLE / STREET</span>
           </div>
-        </article>
-      </section>
-
-      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
-        <div className="nochalant-faces">
-          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
-          <div className="faces-viewport" aria-label="Nochalant community profiles">
-            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
+          <div className="editorial-front-grid">
+            <article className="front-lead" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
+              {leadSlides.map((slide,index)=><div className={index===leadSlide?"front-slide active":"front-slide"} key={slide.story.id} aria-hidden={index!==leadSlide}>
+                <img src={slide.story.image} alt={slide.story.title}/>
+                <div className="front-image-shade"></div>
+                <div className="front-lead-content"><span className="front-kicker">✳ EDITOR'S PICK <i>·</i> {slide.story.category}</span><h1>{slide.story.title}</h1><p>{slide.story.excerpt}</p><button type="button" onClick={()=>openStory(slide.story)}>Read the story <span>↗</span></button></div>
+              </div>)}
+              <div className="front-slide-controls"><span>0{leadSlide+1} <i>/</i> 0{leadSlides.length}</span><button type="button" aria-label="Previous feature" onClick={()=>changeLeadSlide(leadSlide-1)}>←</button><button type="button" aria-label="Next feature" onClick={()=>changeLeadSlide(leadSlide+1)}>→</button></div>
+            </article>
+            <aside className="front-side-rail">
+              <div className="front-rail-heading"><span>THE LATEST</span><b>ON THE RADAR <i></i></b></div>
+              {filtered.slice(0,3).map((item,index)=><button className="front-rail-story" type="button" key={"front-"+item.id} onClick={()=>openStory(item)}>
+                <span className="front-rail-index">0{index+1}</span><span className="front-rail-copy"><small>{item.category}</small><b>{item.title}</b><em>{item.read || "3 min read"} <span>↗</span></em></span>
+                {item.image?<img src={item.image} alt="" loading="lazy"/>:<span className="front-rail-placeholder">N.</span>}
+              </button>)}
+              <button type="button" className="front-rail-all" onClick={()=>document.getElementById("latest")?.scrollIntoView({behavior:"smooth"})}>All stories <span>→</span></button>
+            </aside>
           </div>
-          
-        </div>
-        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
-
-      <section className="section jury-section" id="hot-or-trash">
-        <div className="jury-panel jury-opinion-card">
-          <div className="jury-copy">
-            <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
-            <h2>Hot or <em>trash?</em></h2>
-            <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
-          </div>
-          <div className="jury-opinion-avatar" aria-hidden="true">
-            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" />
-          </div>
-          <div className="jury-options">
-            <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
-            <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
-          </div>
-          <div className="jury-slider-controls">
-            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(-1)} disabled={opinions.length < 2} aria-label="Previous opinion">‹ <span>PREVIOUS</span></button>
-            <div className="jury-pagination" aria-label="Choose community opinion">
-              {opinions.map((item, index) => <button key={item.id} type="button" aria-label={`Show opinion ${index + 1}`} aria-current={index === opinionSlide ? "true" : undefined} className={index === opinionSlide ? "active" : ""} onClick={() => setOpinionSlide(index)} />)}
-            </div>
-            <button className="jury-slider-nav" type="button" onClick={() => moveOpinion(1)} disabled={opinions.length < 2} aria-label="Next opinion"><span>NEXT</span> ›</button>
-          </div>
-          <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
-        </div>
-      </section>
-
-      <section className="promo-section"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
-      <section className="newsletter-section" aria-labelledby="newsletter-title">
-      <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
-      <form className="newsletter-form" onSubmit={e => {e.preventDefault();setModal("newsletter-success");}}>
-        <label className="sr-only" htmlFor="newsletter-email">Your email address</label>
-        <input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} placeholder="Your email address"/>
-        <button type="submit">Gimme Update</button>
-      </form>
-    </section>
+          <nav className="front-category-bar" aria-label="Explore culture categories">
+            <span>EXPLORE</span>
+            {["Music","Movies","Celebrity","Street Buzz","Lifestyle","Events"].map((name,index)=><button type="button" key={name} onClick={()=>{if(name==="Events")document.getElementById("agenda")?.scrollIntoView({behavior:"smooth"});else {setCategory(name==="Music"?"Afrobeats & Jamz":name==="Movies"?"Nollywood Drama":name==="Celebrity"?"BBNaija / Reality":name);document.getElementById("latest")?.scrollIntoView({behavior:"smooth"});}}}>{name}<i>{index===0?"♫":index===1?"▣":index===2?"☆":index===3?"✳":index===4?"⌂":"↗"}</i></button>)}
+            <button className="front-submit-link" type="button" onClick={()=>setModal(currentUser?"submit":"login")}>Submit a story <b>＋</b></button>
+          </nav>
+        </section>
+        <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
+          <div className="nochalant-faces"><div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div><div className="faces-viewport" aria-label="Nochalant community profiles"><div className="faces-track">{[...communityFaces,...communityFaces].map((face,index)=><button className="face-item" key={face.username+"-"+index} type="button" aria-label={face.display_name+" demo profile"} title={face.display_name}><span className={"face-avatar tone-"+(face.tone||"lime")}><span>{face.initials||face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div></div></div>
+          <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={()=>{setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
+        <section className="section jury-section" id="hot-or-trash"><div className="jury-panel jury-opinion-card"><div className="jury-copy"><div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div><h2>Hot or <em>trash?</em></h2><p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p></div><div className="jury-opinion-avatar" aria-hidden="true"><img src={opinions[opinionSlide]?.avatar_url||"https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt=""/></div><div className="jury-options"><button className={vote==="hot"?"jury-option hot selected":"jury-option hot"} onClick={()=>castVote("hot")} disabled={voteBusy||!!vote||pollLoading||!poll}>🔥 Pure fire</button><button className={vote==="trash"?"jury-option trash selected":"jury-option trash"} onClick={()=>castVote("trash")} disabled={voteBusy||!!vote||pollLoading||!poll}>✕ Off key</button></div><div className="jury-slider-controls"><button className="jury-slider-nav" type="button" onClick={()=>moveOpinion(-1)} disabled={opinions.length<2} aria-label="Previous opinion">‹ <span>PREVIOUS</span></button><div className="jury-pagination" aria-label="Choose community opinion">{opinions.map((item,index)=><button key={item.id} type="button" aria-label={"Show opinion "+(index+1)} aria-current={index===opinionSlide?"true":undefined} className={index===opinionSlide?"active":""} onClick={()=>setOpinionSlide(index)}/>)}</div><button className="jury-slider-nav" type="button" onClick={()=>moveOpinion(1)} disabled={opinions.length<2} aria-label="Next opinion"><span>NEXT</span> ›</button></div><small className="muted jury-feedback">{pollError||(pollLoading?"Loading community results…":(vote?"Your vote has been recorded. Thanks for having your say.":(currentUser?"One vote per account. Your choice is saved securely.":"Log in to vote. Community results update as votes are counted.")))}</small></div></section>
+        <section className="promo-section"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={()=>setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={()=>{setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
+        <section className="newsletter-section" aria-labelledby="newsletter-title"><div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2>The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div><form className="newsletter-form" onSubmit={e=>{e.preventDefault();setModal("newsletter-success");}}><label className="sr-only" htmlFor="newsletter-email">Your email address</label><input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e=>setNewsletterEmail(e.target.value)} placeholder="Your email address"/><button type="submit">Gimme Update</button></form></section>
       </div>
+
+      <section className="container home-discovery-dock" aria-label="Explore Nochalant">
+        <div className="home-dock-heading"><div><span className="eyebrow">YOUR CULTURE DASHBOARD</span><h2>Explore <em>everything.</em></h2></div><span className="home-dock-note">QUICK ACCESS · FRESH DISCOVERY</span></div>
+        <div className="home-dock-grid">
+          <button type="button" onClick={() => document.getElementById("latest")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">▤</span><b>News</b><small>Latest headlines</small></button>
+          <button type="button" onClick={() => document.getElementById("artists")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">♫</span><b>Music</b><small>Artists & releases</small></button>
+          <button type="button" onClick={() => {setCategory("Movies");document.getElementById("latest")?.scrollIntoView({behavior:"smooth"});}}><span className="dock-icon">▣</span><b>Movies</b><small>Nollywood & film</small></button>
+          <button type="button" onClick={() => document.getElementById("artists")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">☆</span><b>Celebrity</b><small>People & profiles</small></button>
+          <button type="button" onClick={() => document.getElementById("agenda")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">▦</span><b>Events</b><small>What's happening</small></button>
+          <button type="button" onClick={() => document.getElementById("hot-or-trash")?.scrollIntoView({behavior:"smooth"})}><span className="dock-icon">♨</span><b>Hot or Trash</b><small>Cast your vote</small></button>
+          <button type="button" onClick={() => document.querySelector(".mini-player")?.scrollIntoView({behavior:"smooth",block:"center"})}><span className="dock-icon">◖</span><b>Listen</b><small>Audio & sessions</small></button>
+          <button type="button" onClick={() => {setModal(currentUser ? "submit" : "login");window.scrollTo({top:0,behavior:"smooth"});}}><span className="dock-icon">＋</span><b>Submit gist</b><small>Share a story</small></button>
+        </div>
+        <div className="home-pulse-grid">
+          <div className="home-pulse-card home-pulse-trending">
+            <div className="home-pulse-title"><div><span className="eyebrow">THE CULTURE PULSE</span><h3>People are talking about</h3></div><span className="pulse-live"><i></i> LIVE FEED</span></div>
+            <div className="home-pulse-list">{filtered.slice(0,4).map((item,index) => <button type="button" key={"pulse-"+item.id} onClick={() => openStory(item)}><span className="pulse-number">{String(index+1).padStart(2,"0")}</span><span className="pulse-copy"><b>{item.title}</b><small>{item.category} · {item.read}</small></span><span className="pulse-arrow">↗</span></button>)}</div>
+          </div>
+          <div className="home-pulse-card home-pulse-submit">
+            <span className="eyebrow">HAVE SOMETHING FOR US?</span><h3>Your story could be next.</h3><p>Send in your music, event, entertainment update or culture story for editorial review.</p>
+            <button type="button" className="button button-dark" onClick={() => {setFormCategory("General");setModal(currentUser ? "submit" : "login");}}>Submit to Nochalant <span>→</span></button>
+          </div>
+        </div>
+      </section>
 
       {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
         <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
@@ -1425,7 +1418,7 @@ function App() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14V10M8 18V6M12 15V9M16 19V5M20 14V10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
     </button>}
 
-    {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
+    {memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
       <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
       <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>

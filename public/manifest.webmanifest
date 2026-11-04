@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Nochalant — Culture, News, Music",
+  "short_name": "Nochalant",
+  "description": "Your daily destination for Nigerian entertainment, music and culture.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["entertainment", "news", "music"],
+  "icons": [
+    { "src": "/nochalant-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
