@@ -52,6 +52,11 @@ The numbered SQL files are committed to GitHub; that does **not** mean they have
 22. `019_social_stories.sql`
 23. `020_immutable_account_type.sql`
 24. `021_editorial_auto_post.sql`
+25. `022_editorial_seo_metadata.sql`
+26. `021_creator_workspace.sql` (workspace preflight only)
+27. `023_business_workspace.sql` (workspace preflight only)
+
+Note: migration filenames have legacy duplicate numeric prefixes. Apply the full filenames in dependency order, not lexical order. The creator and business workspace migrations are currently present on the isolated `nochalant-creator-workspace-test-20261103` branch only. They are not part of the production schema yet. Event Organizer currently reuses `agenda_events`; there is no separate event-organizer migration in this branch.
 
 The workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Migration 019 adds text-only 24-hour stories and story-view tracking. Migration 020 adds the immutable registration-time account-type lock. It locks existing members only when they already have a non-empty account type; members with no selected type remain eligible to make their first selection, which is locked at activation. Verify this behavior on the isolated preflight branch before production rollout. Do not run these migrations on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
