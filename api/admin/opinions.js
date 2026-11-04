@@ -176,6 +176,14 @@ async function handleSocialNetwork(req, res) {
           WHERE s.status = 'published' AND s.expires_at > now()
             AND (s.author_id = ${auth.profile.id} OR s.visibility = 'public'
               OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = s.author_id))
+            AND (s.author_id = ${auth.profile.id} OR CASE ${auth.profile.account_type}
+              WHEN 'fan' THEN true
+              WHEN 'artist' THEN u.account_type IN ('artist','fan','creator','media')
+              WHEN 'creator' THEN u.account_type IN ('creator','fan','artist','media')
+              WHEN 'event_organizer' THEN u.account_type IN ('event_organizer','fan','business','artist')
+              WHEN 'business' THEN u.account_type IN ('business','fan','creator','event_organizer')
+              WHEN 'media' THEN u.account_type IN ('media','fan','artist','creator','event_organizer')
+              ELSE true END)
           ORDER BY s.created_at DESC
           LIMIT 100
         `;
@@ -275,6 +283,14 @@ async function handleSocialNetwork(req, res) {
         WHERE p.status = 'published' AND u.account_status = 'active'
           AND (p.author_id = ${auth.profile.id} OR p.visibility = 'public'
             OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
+          AND (p.author_id = ${auth.profile.id} OR CASE ${auth.profile.account_type}
+            WHEN 'fan' THEN true
+            WHEN 'artist' THEN u.account_type IN ('artist','fan','creator','media')
+            WHEN 'creator' THEN u.account_type IN ('creator','fan','artist','media')
+            WHEN 'event_organizer' THEN u.account_type IN ('event_organizer','fan','business','artist')
+            WHEN 'business' THEN u.account_type IN ('business','fan','creator','event_organizer')
+            WHEN 'media' THEN u.account_type IN ('media','fan','artist','creator','event_organizer')
+            ELSE true END)
           AND (${feed} <> 'following' OR p.author_id = ${auth.profile.id}
             OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
         ORDER BY p.created_at DESC LIMIT 40
@@ -284,6 +300,14 @@ async function handleSocialNetwork(req, res) {
         FROM user_profiles u
         LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
         WHERE u.id <> ${auth.profile.id} AND u.account_status = 'active'
+          AND CASE ${auth.profile.account_type}
+            WHEN 'fan' THEN true
+            WHEN 'artist' THEN u.account_type IN ('artist','fan','creator','media')
+            WHEN 'creator' THEN u.account_type IN ('creator','fan','artist','media')
+            WHEN 'event_organizer' THEN u.account_type IN ('event_organizer','fan','business','artist')
+            WHEN 'business' THEN u.account_type IN ('business','fan','creator','event_organizer')
+            WHEN 'media' THEN u.account_type IN ('media','fan','artist','creator','event_organizer')
+            ELSE true END
           AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = u.id)
         ORDER BY u.created_at DESC LIMIT 8
       `;
