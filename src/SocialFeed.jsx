@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getAuthToken } from "./auth.js";
+import { localDateTimeToIso } from "./event-date-time.js";
 
 async function socialRequest({ method = "GET", query = "", body, signal }) {
   const token = await getAuthToken();
@@ -185,7 +186,7 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     try {
       const response = await fetch("/api/creator/bookings", {
         method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ creatorId: memberProfile.id, ...bookingDraft })
+        body: JSON.stringify({ creatorId: memberProfile.id, ...bookingDraft, requestedFor: localDateTimeToIso(bookingDraft.requestedFor) })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok) throw new Error(result.error || "Your booking enquiry could not be sent.");
