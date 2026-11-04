@@ -1321,8 +1321,8 @@ function App() {
       </section>
 
       <DeferredPanel><HomeCultureExpansion stories={[...editorialStories,...demoStories.filter(story=>story.label==="EDITORIAL PREVIEW" && !editorialStories.length)]} artists={artists} onOpenStory={openStory} /></DeferredPanel>\n\n      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
-        <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
-        <DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
+        <div className="section-heading"><div><span className="eyebrow">YOUR COMMUNITY · LIVE</span><h2>Your <em>social wire.</em></h2><p>A quick pulse of conversations from your Nochalant community.</p></div></div>
+        <DeferredPanel><SocialFeed currentUser={currentUser} compactPreview onLoadMore={() => {setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
       </section>}
 
       <section className="artists-section container" id="artists" aria-labelledby="artists-title">
