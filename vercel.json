@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/creators/:creatorId",
+      "destination": "/"
+    },
+    {
+      "source": "/api/creator/profile",
+      "destination": "/api/admin/opinions?creatorPublicProfileRoute=1"
+    },
+    {
       "source": "/api/creator/bookings",
       "destination": "/api/admin/opinions?creatorPublicBookingRoute=1"
     },
