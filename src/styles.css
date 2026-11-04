@@ -2673,3 +2673,81 @@ main#top{max-width:1600px;margin:0 auto;padding:22px 28px 120px}
  .member-app-dock{bottom:8px!important;width:calc(100vw - 16px)!important;border-radius:18px!important}
  .member-app-dock button span{font-size:8px!important}
 }
+
+
+/* NOCHALANT WORKSPACE UX PASS — role dashboards and content surfaces */
+.account-dashboard{max-width:1320px!important;padding-top:36px!important;padding-bottom:90px!important}
+.account-dashboard-head{display:flex!important;flex-direction:row!important;align-items:flex-end!important;justify-content:space-between!important;gap:24px!important;margin:0 0 28px!important;padding:28px 30px!important;border:1px solid #30352a!important;border-radius:22px!important;background:radial-gradient(ellipse at 90% 0%,rgba(201,255,61,.10),transparent 42%),linear-gradient(135deg,#141711,#0d100c)!important}
+.account-dashboard-head .eyebrow{color:#c9ff3d!important;letter-spacing:.14em!important}
+.account-dashboard-head h1{margin:10px 0 9px!important;font-size:clamp(34px,5vw,54px)!important;line-height:1!important;letter-spacing:-.055em!important}
+.account-dashboard-head h1 span{color:#c9ff3d}
+.account-dashboard-head p{max-width:650px!important;color:#b9beae!important;font-size:14px!important;line-height:1.65!important}
+.dashboard-account-type{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:0 0 auto}
+.account-type-chip{display:inline-flex!important;align-items:center;gap:8px;padding:9px 13px!important;border:1px solid #53632d!important;border-radius:999px!important;background:#c9ff3d12!important;color:#d7ff78!important;font-size:11px!important;font-weight:850!important}
+.dashboard-account-type small{max-width:190px;text-align:right;color:#858b7b!important;font-size:10px!important;line-height:1.45}
+.account-dashboard-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;margin:20px 0 28px!important}
+.account-dashboard-card{position:relative;min-width:0;min-height:170px!important;padding:22px!important;overflow:hidden;border:1px solid #30352a!important;border-radius:17px!important;background:linear-gradient(145deg,#151912,#0d100c)!important;transition:transform .2s ease,border-color .2s ease,background .2s ease}
+.account-dashboard-card:hover{transform:translateY(-2px);border-color:#697c37!important}
+.account-dashboard-card .eyebrow{color:#a9b58d!important;font-size:9px!important;letter-spacing:.13em!important}
+.account-dashboard-card h2,.account-dashboard-card h3{margin:12px 0 8px!important;color:#f5f6ee!important;font-size:clamp(20px,2vw,27px)!important;line-height:1.12!important;letter-spacing:-.035em!important}
+.account-dashboard-card p{color:#aeb3a4!important;font-size:12px!important;line-height:1.6!important}
+.account-dashboard-primary{background:radial-gradient(ellipse at 100% 0%,rgba(201,255,61,.13),transparent 55%),linear-gradient(145deg,#1b2113,#11140e)!important;border-color:#4b5b2d!important}
+.account-dashboard-primary h2{color:#d7ff75!important}
+.dashboard-status{display:inline-flex!important;align-items:center;gap:6px;width:max-content;max-width:100%;margin-top:12px;padding:6px 9px!important;border:1px solid #343d2a!important;border-radius:999px!important;background:#c9ff3d0c!important;color:#c8e88b!important;font-size:9px!important;font-weight:850!important;letter-spacing:.06em!important}
+.member-profile-settings,.workspace-edit-details{margin:14px 0!important;border:1px solid #30352a!important;border-radius:15px!important;background:#10130e!important;overflow:hidden}
+.member-profile-settings>summary,.workspace-edit-details>summary{display:flex!important;align-items:center;justify-content:space-between;gap:14px;min-height:56px!important;padding:16px 19px!important;color:#f0f2e8!important;font-size:13px!important;font-weight:800!important;cursor:pointer;list-style:none}
+.member-profile-settings>summary::-webkit-details-marker,.workspace-edit-details>summary::-webkit-details-marker{display:none}
+.member-profile-settings>summary:after,.workspace-edit-details>summary:after{content:"+";color:#c9ff3d;font-size:20px;font-weight:500}
+.member-profile-settings[open]>summary:after,.workspace-edit-details[open]>summary:after{content:"−"}
+.member-profile-settings[open]>summary,.workspace-edit-details[open]>summary{border-bottom:1px solid #30352a}
+.member-profile-editor{padding:20px!important;border:0!important;background:transparent!important}
+.account-dashboard .artist-studio-tools{margin-top:34px!important;padding:28px 0 0!important;border-top:1px solid #30352a!important}
+.account-dashboard .artist-studio-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:0 0 16px}
+.account-dashboard .artist-studio-heading h2{font-size:clamp(26px,3.5vw,38px)!important;letter-spacing:-.05em!important}
+.account-dashboard .artist-studio-form{padding:22px!important;border:1px solid #30352a!important;border-radius:16px!important;background:linear-gradient(145deg,#141711,#0e110d)!important}
+.account-dashboard .artist-studio-form h3{font-size:18px!important}
+.account-dashboard .artist-studio-form label{font-size:11px!important;color:#c9cebd!important}
+.account-dashboard .artist-studio-form input,.account-dashboard .artist-studio-form select,.account-dashboard .artist-studio-form textarea{min-height:44px!important;border-radius:9px!important;border:1px solid #353d2c!important;background:#090c08!important;padding:12px 13px!important;color:#f4f5ed!important;font-size:13px!important;transition:border-color .15s ease,box-shadow .15s ease}
+.account-dashboard .artist-studio-form textarea{min-height:100px;resize:vertical}
+.account-dashboard .artist-studio-form input:focus,.account-dashboard .artist-studio-form select:focus,.account-dashboard .artist-studio-form textarea:focus{border-color:#c9ff3d!important;box-shadow:0 0 0 3px #c9ff3d18!important;outline:none!important}
+.account-dashboard .artist-studio-form .button,.account-dashboard .artist-studio-tools .button{min-height:43px;border-radius:999px!important;padding:11px 18px!important;font-weight:850!important}
+.account-dashboard .workspace-overview-grid{gap:13px!important;margin:20px 0 25px!important}
+.account-dashboard .workspace-overview-grid .account-dashboard-card{min-height:132px!important}
+.account-dashboard .artist-studio-forms{gap:14px!important;margin-top:18px!important}
+.account-dashboard .event-organizer-list,.account-dashboard .creator-portfolio-list{margin-top:20px}
+.account-dashboard .creator-portfolio-list .account-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.fan-member-shortcuts,.fan-member-feed{margin-top:30px!important}
+.fan-shortcut-grid{gap:14px!important}
+.fan-shortcut-card{min-height:148px!important;border-radius:17px!important;background:linear-gradient(145deg,#151912,#0d100c)!important;border-color:#30352a!important;color:#f5f6ee!important;padding:21px!important}
+.fan-shortcut-card .eyebrow{color:#c9ff3d!important}
+.fan-shortcut-card small{color:#aeb4a3!important}
+.fan-shortcut-card strong{font-size:19px!important}
+.fan-shortcut-arrow{color:#c9ff3d!important}
+.fan-home-heading h2{letter-spacing:-.055em!important}
+.fan-member-feed .artist-studio-heading{margin-bottom:16px}
+.account-dashboard-loading{padding:22px!important;border:1px solid #30352a!important;border-radius:14px!important;background:#11140f!important;color:#c2c8b5!important}
+.account-dashboard .dashboard-status[role="status"]{border-color:#526b32!important;color:#d8ff86!important}
+@media(max-width:850px){
+ .account-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .account-dashboard-head{align-items:flex-start!important;flex-direction:column!important;padding:23px!important}
+ .dashboard-account-type{align-items:flex-start}
+ .dashboard-account-type small{text-align:left}
+}
+@media(max-width:620px){
+ .account-dashboard{padding-top:18px!important;padding-bottom:75px!important}
+ .account-dashboard-head{gap:15px!important;padding:20px!important;border-radius:17px!important;margin-bottom:18px!important}
+ .account-dashboard-head h1{font-size:34px!important}
+ .account-dashboard-head p{font-size:12px!important}
+ .account-dashboard-grid{grid-template-columns:1fr!important;gap:10px!important}
+ .account-dashboard-card{min-height:unset!important;padding:18px!important}
+ .account-dashboard .workspace-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .account-dashboard .workspace-overview-grid .account-dashboard-card{min-height:115px!important;padding:15px!important}
+ .account-dashboard .workspace-overview-grid .account-dashboard-card h3{font-size:25px!important}
+ .account-dashboard .artist-studio-forms{grid-template-columns:1fr!important}
+ .account-dashboard .artist-studio-heading{align-items:flex-start;flex-direction:column}
+ .account-dashboard .creator-portfolio-list .account-dashboard-grid{grid-template-columns:1fr!important}
+ .fan-shortcut-grid{grid-template-columns:1fr!important}
+ .fan-shortcut-card{min-height:110px!important}
+ .member-profile-editor{padding:14px!important}
+}
+@media(prefers-reduced-motion:reduce){.account-dashboard-card,.fan-shortcut-card{transition:none!important}.account-dashboard-card:hover,.fan-shortcut-card:hover{transform:none!important}}
