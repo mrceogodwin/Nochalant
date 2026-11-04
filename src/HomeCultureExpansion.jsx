@@ -2,7 +2,7 @@ import React from "react";
 
 const discoveryCategories = ["Trending","Afrobeats","Nollywood","Celebrity","BBNaija","Gossip","Hip-Hop","Street Culture","Fashion","Lifestyle","Comedy","Sports","Events","Podcasts","Technology","Viral Videos","Relationships","Influencers","Business","Politics"];
 const sectionStory = (stories, terms, fallbackIndex=0) => stories.find(story => terms.some(term => (story.category||"").toLowerCase().includes(term))) || stories[fallbackIndex];
-const StoryTile = ({story,onOpen,rank}) => story ? <button type="button" className="flagship-story" onClick={()=>onOpen?.(story)}><img src={story.image || ""} alt="" loading="lazy"/><span>{story.category || "CULTURE"}</span><b>{story.title}</b><small>{story.read || "3 min read"} · {story.time || "Latest"}</small></button> : null;
+const StoryTile = ({story,onOpen,rank}) => story ? <button type="button" className="flagship-story" onClick={()=>onOpen?.(story)}><img src={story.image || ""} alt="" loading="lazy"/><span className="flagship-story-category">{story.category || "CULTURE"}</span><b>{story.title}</b><small>{story.read || "3 min read"} · {story.time || "Latest"}</small></button> : null;
 
 export default function HomeCultureExpansion({stories=[],artists=[],onOpenStory,onChooseCategory}) {
   const published = stories.filter(s=>s && s.title && s.image);
@@ -40,7 +40,7 @@ export default function HomeCultureExpansion({stories=[],artists=[],onOpenStory,
 
     <section className="flagship-section container" aria-labelledby="buzzboard-title">
       <div className="flagship-heading"><div><span className="eyebrow">THE CULTURE HAS THE FLOOR</span><h2 id="buzzboard-title">The <em>Buzzboard.</em></h2><p>Stories worth debating, with community participation coming through the live discussion tools.</p></div><span className="flagship-kicker">05 / FAN VOICE</span></div>
-      <div className="buzzboard-grid">{buzz.length ? buzz.map((s,i)=><button type="button" className="buzz-card" key={s.id||s.slug||i} onClick={()=>onOpenStory?.(s)}><span>{s.category || "THE CONVERSATION"}</span><b>{s.title}</b><small>Read the story and join the conversation ↗</small></button>) : <div className="flagship-empty">Community debates will be featured here as published stories and approved discussion prompts become available.</div>}</div>
+      <div className="buzzboard-grid">{buzz.length ? buzz.map((s,i)=><button type="button" className="buzz-card" key={s.id||s.slug||i} onClick={()=>onOpenStory?.(s)}><span>{s.category || "THE CONVERSATION"}</span><b>{s.title}</b></button>) : <div className="flagship-empty">Community debates will be featured here as published stories and approved discussion prompts become available.</div>}</div>
     </section>
   </div>;
 }
