@@ -19,14 +19,15 @@ export default function MediaWorkspace(){
  return <section className="artist-studio-tools media-workspace">
   <div className="artist-studio-heading"><div><span className="eyebrow">MEDIA & PUBLISHER WORKSPACE</span><h2>Bring your <em>coverage.</em></h2><p>Manage your publication identity and send story pitches directly to the Nochalant editorial desk.</p></div></div>
   {error&&<p className="artist-studio-error" role="alert">{error}</p>}{notice&&<p className="fine-print" role="status">{notice}</p>}
-  <form className="artist-studio-form" onSubmit={save}><h3>Publication profile</h3>
+  <div className="workspace-overview-grid"><article className="account-dashboard-card"><span className="eyebrow">TOTAL PITCHES</span><h3>{pitches.length}</h3><p>Submitted story pitches</p></article><article className="account-dashboard-card"><span className="eyebrow">AWAITING REVIEW</span><h3>{pitches.filter(p=>p.status==="pending"||p.status==="in_review").length}</h3><p>Editorial queue status</p></article><article className="account-dashboard-card"><span className="eyebrow">ACCEPTED</span><h3>{pitches.filter(p=>p.status==="accepted").length}</h3><p>Accepted pitches</p></article></div>
+  <details className="workspace-edit-details"><summary>Manage publication profile</summary><form className="artist-studio-form" onSubmit={save}><h3>Publication profile</h3>
    <label>Publication / media brand<input name="publicationName" value={profile.publicationName} onChange={change} required minLength="2" maxLength="160" placeholder="Your outlet name"/></label>
    <label>Outlet type<select name="outletType" value={profile.outletType} onChange={change}>{[["digital_publication","Digital publication"],["blog","Blog"],["radio","Radio"],["television","Television"],["print","Print"],["podcast","Podcast"],["other","Other"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
    <label>About your publication<textarea name="bio" value={profile.bio} onChange={change} rows="4" maxLength="3000" placeholder="What does your outlet cover?"/></label>
    <div className="artist-studio-form-grid"><label>Website (HTTPS)<input name="websiteUrl" type="url" value={profile.websiteUrl} onChange={change} placeholder="https://"/></label><label>Editorial contact email<input name="contactEmail" type="email" value={profile.contactEmail} onChange={change}/></label><label>Location<input name="location" value={profile.location} onChange={change} maxLength="140" placeholder="City, country"/></label></div>
    <fieldset className="media-beats"><legend>Coverage beats (up to 8)</legend><div className="media-beats-grid">{beatOptions.map(beat=><label key={beat}><input type="checkbox" checked={profile.beats.includes(beat)} onChange={()=>toggleBeat(beat)}/>{beat}</label>)}</div></fieldset>
    <button className="button button-green" disabled={busy}>{busy?"Saving…":"Save publication profile"}</button>
-  </form>
+  </form></details>
   <div className="artist-studio-heading"><div><span className="eyebrow">EDITORIAL RELATIONSHIP</span><h2>Submit a <em>story pitch.</em></h2><p>Pitches enter the editorial queue. Acceptance and publication remain subject to editorial review.</p></div></div>
   <form className="artist-studio-form" onSubmit={submit}>
    <label>Pitch headline<input value={pitch.title} onChange={e=>setPitch(v=>({...v,title:e.target.value}))} minLength="8" maxLength="180" required placeholder="What is the story?"/></label>
