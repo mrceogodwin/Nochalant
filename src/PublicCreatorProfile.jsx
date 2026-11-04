@@ -14,7 +14,8 @@ export default function PublicCreatorProfile({creatorId}){
   },[creatorId]);
   const submit=async event=>{
     event.preventDefault();if(busy)return;
-    const form=new FormData(event.currentTarget);
+    const formElement=event.currentTarget;
+    const form=new FormData(formElement);
     setBusy(true);setError("");setNotice("");
     try{
       const response=await fetch("/api/creator/bookings",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({
@@ -25,7 +26,7 @@ export default function PublicCreatorProfile({creatorId}){
       const result=await response.json().catch(()=>({}));
       if(!response.ok||!result.ok)throw new Error(result.error||"Your enquiry could not be sent.");
       setNotice(result.message||"Your enquiry has been sent.");
-      event.currentTarget.reset();
+      formElement.reset();
     }catch(err){setError(err.message);}
     finally{setBusy(false);}
   };
