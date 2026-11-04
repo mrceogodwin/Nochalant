@@ -1418,7 +1418,7 @@ function App() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14V10M8 18V6M12 15V9M16 19V5M20 14V10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
     </button>}
 
-    {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
+    {memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
       <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
       <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
