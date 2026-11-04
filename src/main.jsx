@@ -1330,7 +1330,9 @@ function App() {
         <div className="pulse-shortcuts">{["Now","Rising","Viral meter","Movers","Social pulse","What's on","Listen now","Watch now","Fan voice","Reading list","60-sec brief","Hashtag tracker"].map((item,index)=><a key={item} href={["#latest","#trending-now","#trending-now","#culture-charts","#social-wire","#agenda","#artists","#agenda","#buzzboard","#latest","#latest","#categories"][index]}>{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index] && <span aria-hidden="true">{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index]}</span>}{item}</a>)}</div>
       </section>
 
-      <DeferredPanel><HomeCultureExpansion stories={[...editorialStories,...demoStories.filter(story=>story.label==="EDITORIAL PREVIEW" && !editorialStories.length)]} artists={artists} onOpenStory={openStory} /></DeferredPanel>\n\n      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
+      <DeferredPanel><HomeCultureExpansion stories={[...editorialStories,...demoStories.filter(story=>story.label==="EDITORIAL PREVIEW" && !editorialStories.length)]} artists={artists} onOpenStory={openStory} /></DeferredPanel>
+
+      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
         <div className="section-heading"><div><span className="eyebrow">YOUR COMMUNITY · LIVE</span><h2>Your <em>social wire.</em></h2><p>A quick pulse of conversations from your Nochalant community.</p></div></div>
         <DeferredPanel><SocialFeed currentUser={currentUser} compactPreview onLoadMore={() => {setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
       </section>}
