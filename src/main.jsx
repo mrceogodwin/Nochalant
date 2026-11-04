@@ -1231,15 +1231,14 @@ function App() {
         <div className="drawer-flagship"><span className="drawer-kicker">NOCHALANT FLAGSHIP</span>
           {currentUser?.id && <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");setMemberDockTab("home");window.scrollTo({top:0,behavior:"smooth"});}}>My Feed <span>01</span></button>}
           <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Discover <span>02</span></button>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>02</span></button>
-          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>04</span></button>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>04</span></button>
-          {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>05</span></button> : <a href="#artists" onClick={() => setMobileMenu(false)}>Artists <span>05</span></a>}
-          <a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda <span>06</span></a>
-          <a href="#agenda" onClick={() => setMobileMenu(false)}>Events <span>07</span></a>
-          <a href="#artists" onClick={() => setMobileMenu(false)}>Bookings <span>08</span></a>
-          <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>09</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>03</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("music");window.scrollTo({top:0,behavior:"smooth"});}}>Music <span>04</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>05</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>06</span></button>
+          {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>07</span></button> : <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth"}),80);}}>Artists <span>07</span></button>}
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("agenda")?.scrollIntoView({behavior:"smooth"}),80);}}>Agenda & events <span>08</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth"}),80);}}>Bookings <span>09</span></button>
+          <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>10</span></button>
         </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
         <section className="drawer-preferences" aria-label="App preferences">
           <span className="drawer-kicker">YOUR APP EXPERIENCE</span>
