@@ -2183,3 +2183,21 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .social-creator-booking-form label{display:grid;gap:6px;font-size:13px;font-weight:600}
 .social-creator-booking-form input,.social-creator-booking-form textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:11px;background:var(--background,transparent);color:inherit;font:inherit}
 .social-booking-honeypot{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important}
+
+
+/* Flagship podcast play action — a clear, tactile playback affordance. */
+.podcast-play-cta{position:relative;display:flex;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-width:88px;padding:0;border:0;background:transparent;color:var(--lime,#d6f667);cursor:pointer;isolation:isolate}
+.podcast-play-disc{position:relative;display:grid;place-items:center;width:76px;height:76px;border:1px solid #e6ff9b;border-radius:50%;background:radial-gradient(circle at 34% 26%,#f0ffb5 0%,#d6f667 42%,#a8c943 100%);box-shadow:inset 0 2px 0 #ffffffa6,inset 0 -5px 12px #61772b55,0 0 0 5px #d6f66716,0 10px 25px #0009;transition:transform .22s ease,box-shadow .22s ease}
+.podcast-play-disc:before{content:"";position:absolute;inset:-9px;border:1px solid #d6f66736;border-radius:50%;transition:inset .22s ease,border-color .22s ease}
+.podcast-play-disc svg{width:100%;height:100%;overflow:visible}
+.podcast-play-orbit{fill:none;stroke:#17200d;stroke-opacity:.32;stroke-width:1.2}
+.podcast-play-triangle{fill:#10140b;filter:drop-shadow(0 1px 0 #ffffff35)}
+.podcast-play-label{display:flex;align-items:center;gap:5px;color:#d6f667;font-size:8px;font-weight:900;letter-spacing:.16em;white-space:nowrap}
+.podcast-play-label span{font-size:11px;transition:transform .2s ease}
+.podcast-play-cta:hover .podcast-play-disc{transform:translateY(-2px) scale(1.045);box-shadow:inset 0 2px 0 #ffffffb8,inset 0 -5px 12px #61772b55,0 0 0 7px #d6f66720,0 14px 30px #000b}
+.podcast-play-cta:hover .podcast-play-disc:before{inset:-12px;border-color:#d6f66770}
+.podcast-play-cta:hover .podcast-play-label span{transform:translate(2px,-2px)}
+.podcast-play-cta:active .podcast-play-disc{transform:scale(.97)}
+.podcast-play-cta:focus-visible{outline:2px solid var(--lime,#d6f667);outline-offset:7px;border-radius:12px}
+@media(max-width:640px){.podcast-play-cta{min-width:78px;gap:6px}.podcast-play-disc{width:66px;height:66px}}
+@media(prefers-reduced-motion:reduce){.podcast-play-disc,.podcast-play-disc:before,.podcast-play-label span{transition:none}}
