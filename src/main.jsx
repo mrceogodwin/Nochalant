@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import PublicCreatorProfile from "./PublicCreatorProfile.jsx";
 import { authClient, getAuthToken, rememberAuthSession, clearRememberedAuthSession } from "./auth.js";
 const OpinionsPanel = lazy(() => import("./OpinionsPanel.jsx"));
 const SocialFeed = lazy(() => import("./SocialFeed.jsx"));
@@ -1585,4 +1586,4 @@ function App() {
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
 }
-createRoot(document.getElementById("root")).render(<App />);
+const publicCreatorMatch = window.location.pathname.match(/^\\/creators\\/([0-9a-f-]{36})\\/?$/i);\ncreateRoot(document.getElementById("root")).render(publicCreatorMatch ? <PublicCreatorProfile creatorId={publicCreatorMatch[1]} /> : <App />);
