@@ -2578,3 +2578,5 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .jury-pagination button{width:7px!important;height:7px!important}
 .jury-feedback{grid-column:3!important;grid-row:2!important;margin:0!important;font-size:8px!important;line-height:1.4!important}
 @media(max-width:700px){.jury-opinion-card{grid-template-columns:1fr 54px!important;gap:12px!important;padding:15px!important}.jury-copy{grid-column:1!important;grid-row:1!important}.jury-opinion-avatar{grid-column:2!important;grid-row:1!important;width:50px!important;height:50px!important}.jury-options{grid-column:1/-1!important;grid-row:2!important}.jury-slider-controls{grid-column:1/-1!important;grid-row:3!important}.jury-feedback{grid-column:1/-1!important;grid-row:4!important}}
+
+/* Keep the full-screen reader and flat poll overrides as the latest homepage polish. */
