@@ -7,6 +7,7 @@ import { handleCreatorWorkspace } from "../_lib/creator-workspace.js";
 import { handleEventOrganizer } from "../_lib/event-organizer.js";
 import { handleBusinessWorkspace } from "../_lib/business-workspace.js";
 import { handleMediaWorkspace } from "../_lib/media-workspace.js";
+import creatorBookingHandler from "../creator-booking.js";
 import { handlePodcast } from "../_lib/podcast.js";
 import { handlePromotions } from "../_lib/promotions.js";
 import { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
@@ -185,7 +186,20 @@ async function handleSocialNetwork(req, res) {
               OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
           ORDER BY p.created_at DESC LIMIT 20
         `;
-        return res.status(200).json({ ok: true, profile: members[0], posts: memberPosts });
+        let creatorProfile = null;
+        let creatorPortfolio = [];
+        if (members[0].account_type === "creator") {
+          const [creatorRows, portfolioRows] = await Promise.all([
+            auth.sql`SELECT display_title,creator_category,bio,location,website_url,booking_enabled
+              FROM creator_profiles WHERE user_profile_id=${memberId} LIMIT 1`,
+            auth.sql`SELECT id,title,description,media_url,external_url,sort_order,created_at
+              FROM creator_portfolio_items WHERE creator_user_id=${memberId}
+              ORDER BY sort_order ASC,created_at DESC LIMIT 30`
+          ]);
+          creatorProfile = creatorRows[0] || null;
+          creatorPortfolio = portfolioRows;
+        }
+        return res.status(200).json({ ok: true, profile: { ...members[0], creator_profile: creatorProfile, creator_portfolio: creatorPortfolio }, posts: memberPosts });
       }
       if (req.query?.profile === "1") {
         const rows = await auth.sql`
@@ -500,6 +514,7 @@ export default async function handler(req, res) {
   if (req.query?.accountTypeRoute) return handleAccountType(req, res);
   if (req.query?.artistStudioRoute) return handleArtistStudio(req, res);
   if (req.query?.creatorWorkspaceRoute) return handleCreatorWorkspace(req, res);
+  if (req.query?.creatorPublicBookingRoute) return creatorBookingHandler(req, res);
   if (req.query?.eventOrganizerRoute) return handleEventOrganizer(req, res);
   if (req.query?.businessWorkspaceRoute) return handleBusinessWorkspace(req, res);
   if (req.query?.mediaWorkspaceRoute) return handleMediaWorkspace(req, res);
