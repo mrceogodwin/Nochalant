@@ -1000,12 +1000,8 @@ function App() {
   }, [editorialStories]);
 
   const openStory = (item) => {
-    // Published editorial stories use the dedicated full-screen, SEO article route.
-    // Keep the in-app modal only for local editorial preview/demo cards without a published slug.
-    if (item?.slug && /^[a-z0-9-]{1,120}$/.test(item.slug)) {
-      window.location.assign(`/story/${item.slug}`);
-      return;
-    }
+    // Open every homepage story in the immersive full-screen reader.
+    // Published stories retain their canonical URL as a secondary shareable destination.
     setStory(item);
     setCommentDraft("");
     setModal("story");
@@ -1616,7 +1612,7 @@ function App() {
       <button type="button" className={memberDockTab==="socials"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
       <button type="button" className={"dock-more"+(memberDockTab==="more"?" active":"")} onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>MORE</span></button>
     </nav>}
-    {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
+    {modal && <div className={"modal-backdrop"+(modal === "story" ? " story-reader-backdrop" : "")} onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className={"modal-card"+(modal === "story" ? " story-reader-card" : "")} role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "artist-profile" && <div className="artist-profile-modal">
         {artistProfileLoading ? <p className="artist-profile-loading">Loading artist profile…</p> : artistProfileError ? <p className="artist-profile-loading" role="alert">{artistProfileError}</p> : selectedArtist && <>
           <div className="artist-profile-hero" style={selectedArtist.banner_url ? {backgroundImage: 'linear-gradient(0deg,#0b0d09 0%,#0b0d0988 100%),url("' + selectedArtist.banner_url + '")'} : undefined}>
