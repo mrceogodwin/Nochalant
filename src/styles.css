@@ -2444,3 +2444,15 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 @media(max-width:620px){
   .member-profile-settings>summary{min-height:48px;padding:12px 14px}
 }
+
+/* Fan / Listener home shortcuts */
+.fan-member-shortcuts{margin:18px 0 28px}
+.fan-shortcut-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fan-shortcut-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:132px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease}
+.fan-shortcut-card:hover{transform:translateY(-2px);border-color:var(--lime)}
+.fan-shortcut-card strong{font-size:17px;letter-spacing:-.025em}
+.fan-shortcut-card small{max-width:90%;color:var(--muted);font-size:12px;line-height:1.5}
+.fan-shortcut-arrow{position:absolute;right:16px;bottom:15px;color:var(--lime);font-size:18px}
+.skin-light .fan-shortcut-card{background:#fffdf7;border-color:#dedfce;color:#292b25}
+.skin-light .fan-shortcut-card small{color:#686b5f}
+@media(max-width:620px){.fan-shortcut-grid{grid-template-columns:1fr}.fan-shortcut-card{min-height:104px;padding:15px}}
