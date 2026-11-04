@@ -6,6 +6,8 @@ on:
       - fix/member-dashboard-mobile-drawer-light-20261101
       - feat/complete-account-workspaces-20261103
       - main
+      - feat/complete-account-workspaces-20261103
+      - main
   pull_request:
 
 permissions:
