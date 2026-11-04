@@ -7,7 +7,7 @@ import { handleCreatorWorkspace } from "../_lib/creator-workspace.js";
 import { handleEventOrganizer } from "../_lib/event-organizer.js";
 import { handleBusinessWorkspace } from "../_lib/business-workspace.js";
 import { handleMediaWorkspace } from "../_lib/media-workspace.js";
-import creatorBookingHandler from "../creator-booking.js";
+import { handlePublicCreatorBooking } from "../_lib/creator-booking.js";
 import { handlePodcast } from "../_lib/podcast.js";
 import { handlePromotions } from "../_lib/promotions.js";
 import { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
@@ -514,7 +514,7 @@ export default async function handler(req, res) {
   if (req.query?.accountTypeRoute) return handleAccountType(req, res);
   if (req.query?.artistStudioRoute) return handleArtistStudio(req, res);
   if (req.query?.creatorWorkspaceRoute) return handleCreatorWorkspace(req, res);
-  if (req.query?.creatorPublicBookingRoute) return creatorBookingHandler(req, res);
+  if (req.query?.creatorPublicBookingRoute) return handlePublicCreatorBooking(req, res);
   if (req.query?.eventOrganizerRoute) return handleEventOrganizer(req, res);
   if (req.query?.businessWorkspaceRoute) return handleBusinessWorkspace(req, res);
   if (req.query?.mediaWorkspaceRoute) return handleMediaWorkspace(req, res);
