@@ -1345,11 +1345,6 @@ function App() {
         {!editorialStories.length && <p className="flagship-note">Editorial preview cards are shown until approved stories are published.</p>}
       </section>
 
-      <section className="flagship-section container" id="social-wire">
-        <div className="flagship-heading"><div><span className="eyebrow">02 / THE PEOPLE HAVE A SAY</span><h2>The Social <em>Wire.</em></h2><p>Community opinions and public conversations submitted to Nochalant.</p></div><button type="button" onClick={()=>{if(!currentUser){setModal("login");return;}setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}>Join the conversation </button></div>
-        <div className="wire-grid">{opinions.slice(0,3).map(item=><article className="wire-card" key={item.id}><span className="wire-label">NOCHALANT COMMUNITY</span><p>“{item.body}”</p><div><b>{item.author_name || "Community member"}</b><small>{item.topic || "Culture conversation"}</small></div></article>)}{!opinions.length && <div className="flagship-empty">Community conversations will appear here when members share their opinions. No sample tweets or fabricated social posts are displayed.</div>}</div>
-      </section>
-
       <section className="flagship-section container" id="celebrity-radar">
         <div className="flagship-heading"><div><span className="eyebrow">03 / PEOPLE TO WATCH</span><h2>Celebrity <em>Radar.</em></h2><p>Artist and creator profiles published on Nochalant.</p></div><a href="#artists">All artists </a></div>
         <div className="radar-grid">{artists.slice(0,5).map(person=><button type="button" className="radar-card" key={person.id || person.slug} onClick={()=>openArtistProfile(person.slug)}>{person.image_url?<img src={person.image_url} alt="" loading="lazy"/>:<span className="radar-placeholder">{String(person.name || "N").slice(0,1)}</span>}<b>{person.name}</b><small>{person.genre || "Artist profile"}</small></button>)}{!artists.length && <div className="flagship-empty">Verified artist and creator profiles will appear here after publication.</div>}</div>
@@ -1363,6 +1358,11 @@ function App() {
       <section className="flagship-section container" id="buzzboard">
         <div className="flagship-heading"><div><span className="eyebrow">05 / FAN VOICE & CULTURE DEBATES</span><h2>The <em>Buzzboard.</em></h2><p>Opinions, fan debates and polls from the Nochalant community.</p></div><button type="button" onClick={()=>document.getElementById("hot-or-trash")?.scrollIntoView({behavior:"smooth"})}>Vote on a debate </button></div>
         <div className="buzzboard-grid">{opinions.slice(0,4).map(item=><button type="button" className="buzz-card" key={"buzz-"+item.id} onClick={()=>setSelectedOpinion(item)}><span>{item.topic || "COMMUNITY TAKE"}</span><b>{item.body}</b><small>By {item.author_name || "Community member"} · Read the take </small></button>)}{!opinions.length && <div className="flagship-empty">The Buzzboard opens up as soon as the community publishes its first opinions.</div>}</div>
+      </section>
+
+      <section className="flagship-section container" id="social-wire">
+        <div className="flagship-heading"><div><span className="eyebrow">02 / THE PEOPLE HAVE A SAY</span><h2>The Social <em>Wire.</em></h2><p>Community opinions and public conversations submitted to Nochalant.</p></div><button type="button" onClick={()=>{if(!currentUser){setModal("login");return;}setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}>Join the conversation </button></div>
+        <div className="wire-grid">{opinions.slice(0,3).map(item=><article className="wire-card" key={item.id}><span className="wire-label">NOCHALANT COMMUNITY</span><p>“{item.body}”</p><div><b>{item.author_name || "Community member"}</b><small>{item.topic || "Culture conversation"}</small></div></article>)}{!opinions.length && <div className="flagship-empty">Community conversations will appear here when members share their opinions. No sample tweets or fabricated social posts are displayed.</div>}</div>
       </section>
 
       <section className="section container jury-section" id="hot-or-trash">
