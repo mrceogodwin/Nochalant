@@ -24,7 +24,7 @@ export async function handlePublicCreatorBooking(req,res) {
   if(message.length<10)return res.status(400).json({ok:false,error:"Please add a little more detail to your enquiry."});
   if(requestedForInput&&(!requestedFor||!Number.isFinite(requestedFor.getTime())||requestedFor.getTime()<Date.now()||requestedFor.getTime()>Date.now()+366*86400000))
     return res.status(400).json({ok:false,error:"Choose a future date within the next 12 months."});
-  const rawIp=String(req.headers["x-real-ip"]||req.headers["x-forwarded-for"]||"").split(",").at(-1).trim();
+  const rawIp=String(req.headers["x-real-ip"]||String(req.headers["x-forwarded-for"]||"").split(",")[0]||"").trim();
   if(!rawIp)return res.status(429).json({ok:false,error:"Please try again later."});
   const secret=process.env.AUTH_SECRET||process.env.NEON_AUTH_SECRET||process.env.DATABASE_URL_POOLED||process.env.DATABASE_URL;
   const connectionString=process.env.DATABASE_URL_POOLED||process.env.DATABASE_URL;
