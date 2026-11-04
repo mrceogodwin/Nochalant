@@ -3300,3 +3300,122 @@ main#top{max-width:1600px;margin:0 auto;padding:22px 28px 120px}
   .home-culture-expansion>.flagship-section:first-child .flagship-story{grid-template-columns:96px minmax(0,1fr)}
   .home-culture-expansion>.flagship-section:first-child .flagship-story img{width:96px}
 }
+
+
+/* Nochalant mobile hierarchy refinement — keep the approved desktop grid intact. */
+@media (max-width: 760px) {
+  .home-first-screen {
+    gap: 14px !important;
+  }
+  .home-first-screen > .app-hero-layout { order: 1 !important; }
+  .home-first-screen > .promo-section { order: 2 !important; }
+  .home-first-screen > .home-category-placement,
+  .home-first-screen > .home-category-placement { order: 3 !important; }
+  .home-first-screen > .agenda-section { order: 4 !important; }
+  .home-first-screen > .jury-section { order: 5 !important; }
+  .home-first-screen > .newsletter-section { order: 6 !important; }
+
+  .home-first-screen .app-hero-feature {
+    aspect-ratio: 4 / 4.05;
+    max-height: 470px;
+    border-radius: 18px;
+  }
+  .home-first-screen .app-hero-copy {
+    left: 18px;
+    right: 18px;
+    bottom: 25px;
+  }
+  .home-first-screen .app-hero-copy h1 {
+    max-width: 19ch;
+    font-size: clamp(28px, 7.4vw, 37px);
+    letter-spacing: -1.35px;
+    text-wrap: balance;
+  }
+  .home-first-screen .app-hero-copy p {
+    max-width: 34ch;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .home-first-screen > .promo-section {
+    min-height: 0 !important;
+    padding: 18px 17px !important;
+    border-radius: 15px;
+    box-shadow: 5px 5px 0 #d5f36a18;
+  }
+  .home-first-screen .pricing-card h3 {
+    max-width: 22ch;
+    margin: 9px 0 6px;
+    font-size: clamp(23px, 6vw, 27px) !important;
+    line-height: 1.04;
+    text-wrap: balance;
+  }
+  .home-first-screen .pricing-card > p {
+    max-width: 42ch;
+    margin-bottom: 11px;
+    line-height: 1.45;
+  }
+
+  .home-category-placement {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 2px 0 1px;
+  }
+  .category-discovery-heading {
+    margin-bottom: 10px;
+  }
+  .category-discovery-heading h2 {
+    font-size: 18px;
+    letter-spacing: -.45px;
+  }
+  .category-discovery-grid {
+    display: flex !important;
+    width: 100%;
+    gap: 8px;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    padding: 2px 2px 10px;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .category-discovery-grid::-webkit-scrollbar { display: none; }
+  .category-discovery-tile {
+    flex: 0 0 88px;
+    min-height: 78px;
+    scroll-snap-align: start;
+    border-radius: 13px;
+  }
+  .category-discovery-tile > span { font-size: 22px; }
+  .category-discovery-tile > b { font-size: 10px; }
+
+  .home-first-screen > .agenda-section {
+    padding: 18px 15px !important;
+    border-radius: 16px;
+  }
+  .home-first-screen > .agenda-section .section-heading h2 {
+    font-size: 23px;
+    letter-spacing: -.8px;
+  }
+  .home-first-screen .agenda-empty {
+    padding: 18px 15px;
+    border-radius: 13px;
+  }
+  .home-first-screen .jury-opinion-card {
+    padding: 16px !important;
+    border-radius: 16px;
+  }
+  .home-first-screen > .newsletter-section {
+    padding: 17px !important;
+    border-radius: 16px;
+  }
+}
+@media (max-width: 390px) {
+  .home-first-screen { width: calc(100% - 24px); }
+  .home-first-screen .app-hero-feature { aspect-ratio: 4 / 4.35; }
+  .category-discovery-tile { flex-basis: 82px; }
+}
