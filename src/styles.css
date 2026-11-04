@@ -2165,3 +2165,11 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
   .flagship-story b{font-size:11px;line-height:1.35;margin-inline:10px}
   .flagship-story small{font-size:8px;margin-inline:10px}
 }
+
+
+/* Media publisher workspace */
+.media-beats{border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 16px;min-width:0}
+.media-beats legend{padding:0 7px;color:var(--muted);font-size:12px;font-weight:700}
+.media-beats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px 14px}
+.media-beats-grid label{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px}
+.media-beats-grid input{accent-color:var(--lime)}
