@@ -3023,3 +3023,72 @@ main#top{max-width:1600px;margin:0 auto;padding:22px 28px 120px}
  #agenda .agenda-empty:after{right:-80px;top:-80px}
  #agenda .faces-track{gap:13px}
 }
+
+/* Desktop first-screen editorial layout inspired by the approved Nochalant reference. */
+.home-first-screen{
+ display:grid;
+ grid-template-columns:minmax(0,1.72fr) minmax(310px,.88fr);
+ grid-template-areas:
+  "hero agenda"
+  "promo poll"
+  "promo newsletter";
+ grid-template-rows:minmax(350px,auto) auto auto;
+ gap:18px 20px;
+ align-items:stretch;
+ max-width:1440px;
+ padding-top:24px;
+ padding-bottom:18px;
+}
+.home-first-screen>.app-hero-layout{grid-area:hero;width:100%;max-width:none;margin:0;min-width:0}
+.home-first-screen .app-hero-feature{height:100%;min-height:380px;max-height:470px;border-radius:18px}
+.home-first-screen .app-hero-side{display:none}
+.home-first-screen>.agenda-section{grid-area:agenda;margin:0;padding:20px 18px;border:1px solid var(--line);border-radius:18px;background:#10120e;min-width:0}
+.home-first-screen .agenda-section>.container{width:100%;max-width:none;padding:0}
+.home-first-screen .agenda-section .section-heading{margin-bottom:14px;gap:8px}
+.home-first-screen .agenda-section .section-heading h2{font-size:clamp(20px,2vw,27px)}
+.home-first-screen .agenda-section .agenda-note{display:none}
+.home-first-screen .agenda-section .nochalant-faces{margin:0 0 12px}
+.home-first-screen .agenda-section .faces-track{gap:10px}
+.home-first-screen .agenda-section .face-avatar{width:48px;height:48px}
+.home-first-screen .agenda-section .agenda-empty{padding:16px 12px}
+.home-first-screen .agenda-section .agenda-empty h3{font-size:16px}
+.home-first-screen .agenda-section .agenda-empty p{font-size:11px}
+.home-first-screen>.jury-section{grid-area:poll;width:100%;max-width:none;margin:0}
+.home-first-screen .jury-opinion-card{grid-template-columns:minmax(0,1fr) 92px;gap:10px 14px;padding:17px;border-radius:18px}
+.home-first-screen .jury-copy h2{font-size:clamp(21px,2vw,27px);margin:6px 0}
+.home-first-screen .jury-copy>p{font-size:11px;line-height:1.45}
+.home-first-screen .jury-opinion-avatar{width:86px;border-width:3px}
+.home-first-screen .jury-options{gap:7px}
+.home-first-screen .jury-option{min-height:38px;padding:8px 10px;font-size:10px}
+.home-first-screen .jury-feedback{font-size:9px}
+.home-first-screen>.promo-section{grid-area:promo;width:100%;max-width:none;margin:0;padding:25px;display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:10px;background:var(--lime);color:#11140b;border-radius:18px;overflow:hidden}
+.home-first-screen .promo-copy{order:2}
+.home-first-screen .promo-copy .eyebrow{color:#202716}
+.home-first-screen .promo-copy h2{font-size:clamp(24px,3vw,38px);line-height:1.05;letter-spacing:-1.6px;margin:8px 0}
+.home-first-screen .promo-copy>p{font-size:12px;color:#303a21;max-width:540px}
+.home-first-screen .promo-copy .button{background:#10120e;color:#f4f5eb}
+.home-first-screen .pricing-card{order:1;background:transparent;color:#11140b;padding:0;box-shadow:none;border-radius:0}
+.home-first-screen .pricing-card .pricing-top{justify-content:flex-start}
+.home-first-screen .pricing-card h3{font-size:clamp(26px,3vw,40px);line-height:1.04;margin:15px 0 8px;max-width:650px}
+.home-first-screen .pricing-card h3 em{color:#46572a}
+.home-first-screen .pricing-card>p{max-width:560px;font-size:13px;color:#344020}
+.home-first-screen .pricing-card .price{font-size:clamp(30px,4vw,48px);margin:15px 0}
+.home-first-screen .pricing-card ul{font-size:12px;line-height:1.9}
+.home-first-screen .pricing-card .button{background:#10120e;color:#f4f5eb}
+.home-first-screen>.newsletter-section{grid-area:newsletter;width:100%;max-width:none;margin:0;padding:20px;display:flex;flex-direction:column;align-items:stretch;gap:12px;border-radius:18px}
+.home-first-screen .newsletter-copy h2{font-size:23px}
+.home-first-screen .newsletter-copy p{font-size:11px}
+.home-first-screen .newsletter-form{width:100%}
+@media(max-width:900px){
+ .home-first-screen{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "agenda" "poll" "promo" "newsletter";grid-template-rows:auto;gap:16px;padding-top:16px}
+ .home-first-screen .app-hero-feature{min-height:340px}
+ .home-first-screen>.agenda-section{padding:18px}
+ .home-first-screen .jury-opinion-card{grid-template-columns:minmax(0,1fr) 96px}
+ .home-first-screen>.promo-section{padding:22px}
+ .home-first-screen>.newsletter-section{padding:18px}
+}
+@media(max-width:520px){
+ .home-first-screen .app-hero-feature{min-height:390px}
+ .home-first-screen .jury-opinion-card{grid-template-columns:minmax(0,1fr) 76px;padding:14px}
+ .home-first-screen .jury-opinion-avatar{width:72px}
+}
