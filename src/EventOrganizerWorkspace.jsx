@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { getAuthToken } from "./auth.js";
+import { localDateTimeToIso, toLocalDateTimeInput } from "./event-date-time.js";
 
 const empty = { title:"", description:"", category:"Music", venue:"", city:"", startsAt:"", endsAt:"", ticketUrl:"", imageUrl:"" };
-const dateValue = value => value ? new Date(value).toISOString().slice(0,16) : "";
+const dateValue = value => toLocalDateTimeInput(value);
 
 export default function EventOrganizerWorkspace() {
   const [events,setEvents] = useState([]);
@@ -40,7 +41,7 @@ export default function EventOrganizerWorkspace() {
   const save = async e => {
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
-      const data = await request({action:editing ? "update_event" : "create_event", ...(editing ? {id:editing} : {}), ...draft});
+      const data = await request({action:editing ? "update_event" : "create_event", ...(editing ? {id:editing} : {}), ...draft, startsAt:localDateTimeToIso(draft.startsAt), endsAt:localDateTimeToIso(draft.endsAt)});
       if (editing) setEvents(items=>items.map(item=>item.id===editing ? data.event : item));
       else setEvents(items=>[data.event,...items]);
       reset(); setNotice("Event draft saved. It is not publicly published yet.");
