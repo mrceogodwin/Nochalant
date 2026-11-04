@@ -2639,3 +2639,30 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(prefers-reduced-motion:reduce){
  *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* Native-feeling app navigation and mobile safe-area treatment */
+@media(max-width:800px){
+ body{padding-bottom:calc(94px + env(safe-area-inset-bottom))!important}
+ .member-app-dock{position:fixed!important;z-index:1200!important;left:12px!important;right:12px!important;bottom:max(10px,env(safe-area-inset-bottom))!important;transform:none!important;width:auto!important;min-height:72px!important;padding:7px 9px!important;border:1px solid #414638!important;border-radius:22px!important;background:linear-gradient(180deg,#191b16f5,#080908f7)!important;box-shadow:0 16px 48px #000e,0 4px 15px #000c,inset 0 1px #ffffff20,0 0 24px #9aa77a13!important;backdrop-filter:blur(28px) saturate(150%)!important;-webkit-backdrop-filter:blur(28px) saturate(150%)!important}
+ .member-app-dock.is-hidden{transform:translateY(calc(100% + 30px))!important;opacity:0!important}
+ .member-app-dock button{min-height:54px!important;border-radius:15px!important;color:#a8aa9e!important;gap:4px!important}
+ .member-app-dock button svg{width:21px!important;height:21px!important}
+ .member-app-dock button span{font-size:8px!important;letter-spacing:.1em!important}
+ .member-app-dock button.active{background:linear-gradient(145deg,#242b1b,#151910)!important;color:#c4d39d!important;box-shadow:inset 0 1px #ffffff1c,0 4px 12px #0008!important}
+ .member-app-dock button.dock-create{width:49px!important;height:49px!important;min-height:49px!important;justify-self:center!important;align-self:center!important;border:1px solid #b5c58d!important;border-radius:17px!important;background:linear-gradient(145deg,#b7c68f,#829363)!important;color:#080a06!important;box-shadow:0 7px 20px #8b9d5b55,inset 0 1px #ffffff8a!important}
+ .member-app-dock button.dock-create svg{width:24px!important;height:24px!important;stroke-width:2.5!important}
+ .member-app-dock button:active{transform:scale(.94)!important}
+ .site-header{top:0!important;z-index:1100!important;padding-top:env(safe-area-inset-top)!important}
+ .site-header .nav-wrap{min-height:62px!important}
+ .home-first-screen,.container{scroll-margin-top:82px}
+ main{overflow:clip}
+ .front-lead,.front-side-rail,.home-pulse-card,.newsletter-section,.home-dock-grid>button,.artist-card{box-shadow:0 14px 34px #000b,0 3px 10px #0008,inset 0 1px #ffffff12!important}
+}
+@media(max-width:480px){
+ .member-app-dock{left:9px!important;right:9px!important;min-height:68px!important;border-radius:20px!important}
+ .member-app-dock button span{font-size:7px!important}
+ body{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}
+}
+@media(min-width:801px){
+ .member-app-dock{border-color:#42483a!important;background:linear-gradient(145deg,#151811f7,#070807f7)!important;box-shadow:0 18px 55px #000d,0 4px 15px #0009,inset 0 1px #ffffff20,0 0 26px #9aa77a18!important}
+}
