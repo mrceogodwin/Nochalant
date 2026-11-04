@@ -1395,8 +1395,6 @@ function App() {
       </section>
     )}
 
-section>
-    )}
 
     {activeScreen === "home" && <section className="newsletter-section container" aria-labelledby="newsletter-title">
       <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
