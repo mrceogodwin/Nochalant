@@ -72,9 +72,10 @@ async function proxyNeonAuth(req, res) {
   if (!authOrigin) {
     return res.status(503).json({ message: "Preview authentication origin is not configured." });
   }
+  // The upstream fetch already supplies the Neon Auth endpoint as Host.
+  // Do not forward the public app hostname as x-forwarded-host: Neon Auth
+  // validates its own service hostname separately from the browser Origin.
   headers.set("origin", authOrigin);
-  headers.set("x-forwarded-host", new URL(authOrigin).host);
-  headers.set("x-forwarded-proto", "https");
 
   const init = { method: req.method, headers, redirect: "manual" };
   if (!["GET", "HEAD"].includes(req.method) && req.body !== undefined) {
