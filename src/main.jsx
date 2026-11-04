@@ -1369,6 +1369,17 @@ function App() {
         <div className="wire-grid">{opinions.slice(0,3).map(item=><article className="wire-card" key={item.id}><span className="wire-label">NOCHALANT COMMUNITY</span><p>“{item.body}”</p><div><b>{item.author_name || "Community member"}</b><small>{item.topic || "Culture conversation"}</small></div></article>)}{!opinions.length && <div className="flagship-empty">Community conversations will appear here when members share their opinions. No sample tweets or fabricated social posts are displayed.</div>}</div>
       </section>
 
+      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
+        <div className="nochalant-faces">
+          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
+          <div className="faces-viewport" aria-label="Nochalant community profiles">
+            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
+          </div>
+          
+        </div>
+        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
+
+
       <section className="section container jury-section" id="hot-or-trash">
         <div className="jury-panel jury-opinion-card">
           <div className="jury-copy">
@@ -1393,16 +1404,6 @@ function App() {
           <small className="muted jury-feedback">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
         </div>
       </section>
-
-      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
-        <div className="nochalant-faces">
-          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
-          <div className="faces-viewport" aria-label="Nochalant community profiles">
-            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
-          </div>
-          
-        </div>
-        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
 
       <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
       <DeferredPanel><HomeCultureDiscovery onChooseCategory={name => { const map = {Trending:"All Gist",Afrobeats:"Afrobeats & Jamz",Nollywood:"Nollywood Drama",Celebrity:"Nollywood Drama",BBNaija:"BBNaija / Reality",Gossip:"Street Buzz","Hip-Hop":"Afrobeats & Jamz","Street Culture":"Street Buzz",Fashion:"Fashion & Swag",Lifestyle:"Lifestyle",Comedy:"Street Buzz",Sports:"All Gist",Events:"Agenda",Podcasts:"All Gist",Technology:"All Gist","Viral Videos":"All Gist",Relationships:"Lifestyle",Influencers:"Street Buzz",Business:"Lifestyle",Politics:"All Gist"}; setCategory(map[name] || "All Gist"); document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"}); }} /></DeferredPanel>
