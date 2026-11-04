@@ -2536,3 +2536,17 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
  .jury-opinion-avatar{width:72px}
  .jury-option{min-height:42px}
 }
+
+/* Homepage social wire: compact, flagship horizontal preview rail. */
+.home-community-timeline .social-network-header.is-compact-hidden,
+.home-community-timeline .social-feed-toolbar.is-compact-hidden { display:none !important; }
+.home-community-timeline .social-network-layout-compact { display:block; }
+.home-community-timeline .social-network-layout-compact .social-network-posts { display:flex; gap:14px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; padding:3px 2px 14px; scrollbar-width:thin; }
+.home-community-timeline .social-network-layout-compact .social-network-post { flex:0 0 min(390px, 82vw); min-width:0; scroll-snap-align:start; padding:18px; }
+.home-community-timeline .social-network-layout-compact .social-network-post-body { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; min-height:5.4em; }
+.home-community-timeline .social-network-layout-compact .social-network-aside { display:none; }
+.home-community-timeline .social-preview-more { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px; padding:13px 16px; border:1px solid var(--line); border-radius:13px; background:linear-gradient(110deg,#171b11,#10120e); }
+.home-community-timeline .social-preview-more span { color:var(--muted); font-size:11px; }
+.home-community-timeline .social-preview-more button { border:1px solid #627344; border-radius:999px; padding:10px 16px; background:var(--lime); color:#10120c; font-size:11px; font-weight:900; }
+.home-community-timeline .social-preview-more button span { color:inherit; font-size:15px; margin-left:8px; }
+@media(max-width:640px){.home-community-timeline .social-network-layout-compact .social-network-post{flex-basis:min(310px,84vw);}.home-community-timeline .social-preview-more{padding:11px 12px;}}
