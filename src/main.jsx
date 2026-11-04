@@ -1366,6 +1366,7 @@ function App() {
         <button type="submit">Gimme Update</button>
       </form>
     </section>}
+      <div className="home-category-placement"><DeferredPanel><HomeCultureDiscovery onChooseCategory={name => { const map = {Trending:"All Gist",Afrobeats:"Afrobeats & Jamz",Nollywood:"Nollywood Drama",Celebrity:"Nollywood Drama",BBNaija:"BBNaija / Reality",Gossip:"Street Buzz","Hip-Hop":"Afrobeats & Jamz","Street Culture":"Street Buzz",Fashion:"Fashion & Swag",Lifestyle:"Lifestyle",Comedy:"Street Buzz",Sports:"All Gist",Events:"Agenda",Podcasts:"All Gist",Technology:"All Gist","Viral Videos":"All Gist",Relationships:"Lifestyle",Influencers:"Street Buzz",Business:"Lifestyle",Politics:"All Gist"}; setCategory(map[name] || "All Gist"); document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"}); }} /></DeferredPanel></div>
       </div>
 
       <section className="culture-pulse container" aria-label="Nochalant culture pulse">
@@ -1445,7 +1446,7 @@ function App() {
         <div className="wire-grid">{opinions.slice(0,3).map(item=><article className="wire-card" key={item.id}><span className="wire-label">NOCHALANT COMMUNITY</span><p>“{item.body}”</p><div><b>{item.author_name || "Community member"}</b><small>{item.topic || "Culture conversation"}</small></div></article>)}{!opinions.length && <div className="flagship-empty">Community conversations will appear here when members share their opinions. No sample tweets or fabricated social posts are displayed.</div>}</div>
       </section>
 
-      <DeferredPanel><HomeCultureDiscovery onChooseCategory={name => { const map = {Trending:"All Gist",Afrobeats:"Afrobeats & Jamz",Nollywood:"Nollywood Drama",Celebrity:"Nollywood Drama",BBNaija:"BBNaija / Reality",Gossip:"Street Buzz","Hip-Hop":"Afrobeats & Jamz","Street Culture":"Street Buzz",Fashion:"Fashion & Swag",Lifestyle:"Lifestyle",Comedy:"Street Buzz",Sports:"All Gist",Events:"Agenda",Podcasts:"All Gist",Technology:"All Gist","Viral Videos":"All Gist",Relationships:"Lifestyle",Influencers:"Street Buzz",Business:"Lifestyle",Politics:"All Gist"}; setCategory(map[name] || "All Gist"); document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"}); }} /></DeferredPanel>
+      
       </> : activeScreen === "promotions" ? <section className="promotions-page container screen-page">
         <div className="promotions-hero"><span className="eyebrow">NOCHALANT FOR BRANDS</span><h1>Make some <em>noise.</em></h1><p>Promote your brand, event, product, video or creative work to the Nochalant audience.</p></div>
         <div className="promotion-package-grid">
