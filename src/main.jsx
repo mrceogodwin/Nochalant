@@ -49,7 +49,7 @@ function App() {
   const [story, setStory] = useState(demoStories[0]);
   const [vote, setVote] = useState("");
   const [poll, setPoll] = useState(null);
-  const [pollLoading, setPollLoading] = useState(true);
+  const [pollLoading, setPollLoading] = useState(false);
   const [pollError, setPollError] = useState("");
   const [voteBusy, setVoteBusy] = useState(false);
   const [likes, setLikes] = useState({});
@@ -762,10 +762,16 @@ function App() {
   };
 
   useEffect(() => {
+    const section = document.getElementById("hot-or-trash");
+    if (!section) return;
     const controller = new AbortController();
-    (async () => {
+    let requested = false;
+    const loadPoll = async () => {
+      if (requested) return;
+      requested = true;
+      setPollLoading(true);
       try {
-        // Poll totals are public; do not attach a possibly stale login token.
+        // Defer this public poll request until the compact widget is near the viewport.
         const response = await fetch("/api/hot-or-trash?slug=homepage-fashion-feature", {
           signal: controller.signal,
           cache: "no-store"
@@ -782,8 +788,19 @@ function App() {
       } finally {
         if (!controller.signal.aborted) setPollLoading(false);
       }
-    })();
-    return () => controller.abort();
+    };
+    if (typeof IntersectionObserver === "undefined") {
+      loadPoll();
+      return () => controller.abort();
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect();
+        loadPoll();
+      }
+    }, { rootMargin: "320px 0px" });
+    observer.observe(section);
+    return () => { observer.disconnect(); controller.abort(); };
   }, [currentUser?.id]);
 
   const castVote = async (choice) => {
