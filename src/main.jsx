@@ -960,6 +960,12 @@ function App() {
   }, []);
 
   const openStory = (item) => {
+    // Published editorial stories use the dedicated full-screen, SEO article route.
+    // Keep the in-app modal only for local editorial preview/demo cards without a published slug.
+    if (item?.slug && /^[a-z0-9-]{1,120}$/.test(item.slug)) {
+      window.location.assign(`/story/${item.slug}`);
+      return;
+    }
     setStory(item);
     setCommentDraft("");
     setModal("story");
