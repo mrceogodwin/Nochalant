@@ -67,6 +67,7 @@ export default function EventOrganizerWorkspace() {
     <div className="artist-studio-heading"><div><span className="eyebrow">EVENT ORGANIZER WORKSPACE</span><h2>Bring your <em>event to life.</em></h2><p>Create and manage your event drafts. Publishing remains subject to Nochalant editorial approval.</p></div></div>
     {error && <p className="artist-studio-error" role="alert">{error}</p>}
     {notice && <p className="fine-print" role="status">{notice}</p>}
+    <div className="workspace-overview-grid"><article className="account-dashboard-card"><span className="eyebrow">TOTAL EVENTS</span><h3>{events.length}</h3><p>Events and drafts</p></article><article className="account-dashboard-card"><span className="eyebrow">PUBLISHED</span><h3>{events.filter(item=>item.status==="published"||item.status==="approved").length}</h3><p>Publicly approved events</p></article><article className="account-dashboard-card"><span className="eyebrow">DRAFTS</span><h3>{events.filter(item=>item.status==="draft").length}</h3><p>Awaiting submission or review</p></article></div>
     <form className="artist-studio-form event-organizer-form" onSubmit={save}>
       <h3>{editing ? "Edit event draft" : "Create an event"}</h3>
       <label>Event title<input name="title" value={draft.title} onChange={change} required minLength="4" maxLength="140" placeholder="e.g. Nochalant Live Sessions"/></label>
