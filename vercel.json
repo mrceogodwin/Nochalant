@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/media/workspace",
+      "destination": "/api/admin/opinions?mediaWorkspaceRoute=1"
+    },
+    {
       "source": "/api/business/workspace",
       "destination": "/api/admin/opinions?businessWorkspaceRoute=1"
     },
