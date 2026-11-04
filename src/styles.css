@@ -2407,3 +2407,40 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 }
 .skin-light .flagship-empty,
 .skin-light .flagship-note{color:var(--muted)}
+
+/* Member home: keep profile setup available without pushing the actual feed down. */
+.member-profile-settings{
+  margin:18px 0 8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--surface);
+}
+.member-profile-settings>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:50px;
+  padding:14px 17px;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  list-style:none;
+}
+.member-profile-settings>summary::-webkit-details-marker{display:none}
+.member-profile-settings>summary:after{content:"＋";color:var(--lime);font-size:17px}
+.member-profile-settings[open]>summary:after{content:"−"}
+.member-profile-settings[open] .member-profile-editor{
+  margin:0;
+  border:0;
+  border-top:1px solid var(--line);
+  border-radius:0 0 12px 12px;
+}
+.account-dashboard-head>div:first-child{max-width:760px}
+.account-dashboard-head p{max-width:620px;line-height:1.65}
+.skin-light .member-profile-settings{background:#fffdf7;border-color:var(--line)}
+.skin-light .member-profile-settings>summary{color:#292b25}
+@media(max-width:620px){
+  .member-profile-settings>summary{min-height:48px;padding:12px 14px}
+}
