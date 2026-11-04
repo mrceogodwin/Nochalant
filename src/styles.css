@@ -2054,6 +2054,7 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 
 /* Flagship homepage composition: real grid children, deliberate responsive order. */
 .home-first-screen{
+  display:grid;
   width:min(1440px,calc(100% - 56px));
   grid-template-columns:minmax(0,1.72fr) minmax(300px,.88fr);
   grid-template-areas:"hero agenda" "promo poll" "promo newsletter";
