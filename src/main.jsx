@@ -1,15 +1,22 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import PublicCreatorProfile from "./PublicCreatorProfile.jsx";
 import { authClient, getAuthToken, rememberAuthSession, clearRememberedAuthSession } from "./auth.js";
 const OpinionsPanel = lazy(() => import("./OpinionsPanel.jsx"));
 const SocialFeed = lazy(() => import("./SocialFeed.jsx"));
 const PodcastAdmin = lazy(() => import("./PodcastAdmin.jsx"));
 const SocialSettingsAdmin = lazy(() => import("./SocialSettingsAdmin.jsx"));
 const EditorialAutoPostAdmin = lazy(() => import("./EditorialAutoPostAdmin.jsx"));
+const CreatorWorkspace = lazy(() => import("./CreatorWorkspace.jsx"));
+const EventOrganizerWorkspace = lazy(() => import("./EventOrganizerWorkspace.jsx"));
+const BusinessWorkspace = lazy(() => import("./BusinessWorkspace.jsx"));
+const MediaWorkspace = lazy(() => import("./MediaWorkspace.jsx"));
+const HomeCultureExpansion = lazy(() => import("./HomeCultureExpansion.jsx"));
+const HomeCultureDiscovery = lazy(() => import("./HomeCultureExpansion.jsx").then(module => ({ default: module.HomeCultureDiscovery })));
 const DeferredPanel = ({ children }) => <Suspense fallback={<div className="deferred-panel-loading" role="status">Loading Nochalant…</div>}>{children}</Suspense>;
 
-const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
+const categories = ["All Gist", "Trending", "Afrobeats", "Nollywood", "Celebrity", "BBNaija", "Gossip", "Hip-Hop", "Street Culture", "Fashion", "Lifestyle", "Comedy", "Sports", "Events", "Podcasts", "Technology", "Viral Videos", "Relationships", "Influencers", "Business", "Politics"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
 const ACCOUNT_TYPE_LABELS = { fan: "Fan / Listener", artist: "Artist / Musician", creator: "Creator / Influencer", event_organizer: "Event Organizer", business: "Business / Brand", media: "Media / Publisher" };
 const demoFaces = [
@@ -42,7 +49,7 @@ function App() {
   const [story, setStory] = useState(demoStories[0]);
   const [vote, setVote] = useState("");
   const [poll, setPoll] = useState(null);
-  const [pollLoading, setPollLoading] = useState(true);
+  const [pollLoading, setPollLoading] = useState(false);
   const [pollError, setPollError] = useState("");
   const [voteBusy, setVoteBusy] = useState(false);
   const [likes, setLikes] = useState({});
@@ -153,7 +160,7 @@ function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [viewCounts, setViewCounts] = useState({});
-  const [communityFaces, setCommunityFaces] = useState(demoFaces);
+  const [communityFaces, setCommunityFaces] = useState([]);
   const [artists, setArtists] = useState([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [selectedArtist, setSelectedArtist] = useState(null);
@@ -197,6 +204,10 @@ function App() {
   const [reportOpinion, setReportOpinion] = useState(null);
   const [podcastSelection, setPodcastSelection] = useState(0);
   const [activePodcastEpisode, setActivePodcastEpisode] = useState(null);
+  const podcastVideoRef = useRef(null);
+  const [podcastVideoPlaying, setPodcastVideoPlaying] = useState(false);
+  const [podcastVideoCurrent, setPodcastVideoCurrent] = useState(0);
+  const [podcastVideoDuration, setPodcastVideoDuration] = useState(0);
   const [podcastCatalogue, setPodcastCatalogue] = useState({ shows: [], seasons: [], episodes: [], clips: [] });
   const [podcastCatalogueLoading, setPodcastCatalogueLoading] = useState(false);
   const [selectedPodcastHost, setSelectedPodcastHost] = useState(null);
@@ -214,6 +225,24 @@ function App() {
   ];
   const podcastDisplayItems = podcastCatalogue.shows.length ? podcastCatalogue.shows.map((show,index) => ({ id: show.id, title: show.title, subtitle: show.host_name || "Nochalant original series", label: show.title.toUpperCase(), description: show.description || "Original Nochalant conversations and culture.", art: index % 3 === 1 ? "podcast-library-art art-two" : index % 3 === 2 ? "podcast-library-art art-three" : "podcast-library-art", slug: show.slug })) : podcastLibraryItems;
   const selectedPodcastIndex = podcastSelection % Math.max(1,podcastDisplayItems.length);
+  const selectedShowEpisodes = (podcastCatalogue.episodes || []).filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex]?.id && episode.video_url);
+  const activePodcastEpisodeIndex = selectedShowEpisodes.findIndex(episode => episode.id === activePodcastEpisode?.id);
+  const movePodcastEpisode = direction => {
+    if (!selectedShowEpisodes.length) return;
+    const currentIndex = activePodcastEpisodeIndex < 0 ? 0 : activePodcastEpisodeIndex;
+    const nextIndex = currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= selectedShowEpisodes.length) return;
+    setActivePodcastEpisode(selectedShowEpisodes[nextIndex]);
+    setPodcastVideoPlaying(false);
+    setPodcastVideoCurrent(0);
+    setPodcastVideoDuration(0);
+  };
+  const togglePodcastVideo = async () => {
+    const video = podcastVideoRef.current;
+    if (!video) return;
+    if (video.paused) { try { await video.play(); } catch { setPodcastVideoPlaying(false); } }
+    else video.pause();
+  };
   useEffect(() => {
     const controller = new AbortController();
     setPodcastCatalogueLoading(true);
@@ -532,6 +561,49 @@ function App() {
       if (!active) return;
       if (result?.data?.user) {
         setCurrentUser(result.data.user);
+        setMemberDockTab("home");
+        setActiveScreen("dashboard");
+        // Complete the account type selected before the Google OAuth redirect.
+        let googleAccountType = "";
+        try {
+          googleAccountType = window.localStorage.getItem("nochalant_google_signup_account_type") || "";
+        } catch {}
+        if (googleAccountType) {
+          const allowedGoogleAccountTypes = new Set(["fan", "artist", "creator", "event_organizer", "business", "media"]);
+          if (!allowedGoogleAccountTypes.has(googleAccountType)) {
+            window.localStorage.removeItem("nochalant_google_signup_account_type");
+            setAuthMessage("Google sign-in succeeded, but the selected account type was invalid. Please contact support.");
+          } else {
+            try {
+              const token = await getAuthToken();
+              if (!token) {
+                // Preserve the pending selection if session-token setup is delayed.
+                setAuthMessage("Google sign-in succeeded. Your selected account type is waiting for secure session setup. Refresh this page to finish.");
+              } else {
+                const response = await fetch("/api/account/type", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+                  body: JSON.stringify({ accountType: googleAccountType }),
+                  cache: "no-store"
+                });
+                const data = await response.json().catch(() => ({}));
+                if (response.ok && data.ok && data.profile?.account_type === googleAccountType) {
+                  window.localStorage.removeItem("nochalant_google_signup_account_type");
+                  setAccountProfileRefresh(value => value + 1);
+                } else if (response.status === 409) {
+                  // Existing accounts keep their original immutable account type.
+                  window.localStorage.removeItem("nochalant_google_signup_account_type");
+                  setAuthMessage("You are signed in. Your existing account type has been preserved.");
+                } else {
+                  setAuthMessage(data.error || "Google sign-in succeeded, but your selected account type could not be confirmed. Refresh to retry.");
+                }
+              }
+            } catch (error) {
+              // Retain the pending choice on transient API/network errors.
+              setAuthMessage(error?.message || "Google sign-in succeeded, but account setup needs attention. Refresh to retry.");
+            }
+          }
+        }
         if (isControlRoom) await verifyControlRoomAccess();
       } else if (isControlRoom) {
         setControlRoomStatus("login");
@@ -599,7 +671,7 @@ function App() {
   }, [currentUser?.id]);
 
   const navigateMemberDock = destination => {
-    if (destination === "home") { setMemberDockTab("home"); setActiveScreen("home"); window.scrollTo({top:0,behavior:"smooth"}); }
+    if (destination === "home") { setMemberDockTab("home"); setActiveScreen(currentUser?.id ? "dashboard" : "home"); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "music") { setMemberDockTab("music"); setActiveScreen("music"); setMobileMenu(false); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "socials") { setMemberDockTab("socials"); setActiveScreen("social"); window.scrollTo({top:0,behavior:"smooth"}); }
     else if (destination === "create") { setModal("submit"); }
@@ -690,10 +762,16 @@ function App() {
   };
 
   useEffect(() => {
+    const section = document.getElementById("hot-or-trash");
+    if (!section) return;
     const controller = new AbortController();
-    (async () => {
+    let requested = false;
+    const loadPoll = async () => {
+      if (requested) return;
+      requested = true;
+      setPollLoading(true);
       try {
-        // Poll totals are public; do not attach a possibly stale login token.
+        // Defer this public poll request until the compact widget is near the viewport.
         const response = await fetch("/api/hot-or-trash?slug=homepage-fashion-feature", {
           signal: controller.signal,
           cache: "no-store"
@@ -710,8 +788,19 @@ function App() {
       } finally {
         if (!controller.signal.aborted) setPollLoading(false);
       }
-    })();
-    return () => controller.abort();
+    };
+    if (typeof IntersectionObserver === "undefined") {
+      loadPoll();
+      return () => controller.abort();
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect();
+        loadPoll();
+      }
+    }, { rootMargin: "320px 0px" });
+    observer.observe(section);
+    return () => { observer.disconnect(); controller.abort(); };
   }, [currentUser?.id]);
 
   const castVote = async (choice) => {
@@ -893,15 +982,26 @@ function App() {
   }, []);
 
   useEffect(() => {
-    demoStories.forEach(item => {
-      fetch(`/api/posts/${encodeURIComponent(item.id)}/views`)
+    if (!editorialStories.length) return;
+    const controller = new AbortController();
+    // Only request view totals for real published stories; demo placeholders are not posts.
+    editorialStories.slice(0, 8).forEach(item => {
+      if (!item?.id) return;
+      fetch(`/api/posts/${encodeURIComponent(item.id)}/views`, { signal: controller.signal })
         .then(response => response.ok ? response.json() : null)
-        .then(data => { if (data?.ok) setViewCounts(current => ({ ...current, [item.id]: data.views })); })
-        .catch(() => {});
+        .then(data => {
+          if (data?.ok && !controller.signal.aborted) {
+            setViewCounts(current => ({ ...current, [item.id]: data.views }));
+          }
+        })
+        .catch(error => { if (error?.name !== "AbortError") console.warn("Story view count unavailable:", error); });
     });
-  }, []);
+    return () => controller.abort();
+  }, [editorialStories]);
 
   const openStory = (item) => {
+    // Open every homepage story in the immersive full-screen reader.
+    // Published stories retain their canonical URL as a secondary shareable destination.
     setStory(item);
     setCommentDraft("");
     setModal("story");
@@ -932,6 +1032,31 @@ function App() {
       notify("You have been signed out.");
     } catch (error) {
       notify(error?.message || "Unable to sign out. Please try again.");
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    if (!authClient) {
+      setAuthMessage("Google sign-in is not configured yet. Please try again later.");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      if (modal === "signup") {
+        const accountType = document.querySelector('select[name="accountType"]')?.value || "fan";
+        window.localStorage.setItem("nochalant_google_signup_account_type", accountType);
+      } else {
+        window.localStorage.removeItem("nochalant_google_signup_account_type");
+      }
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: window.location.origin
+      });
+      if (result?.error) throw new Error(result.error.message || "Google sign-in could not start.");
+    } catch (error) {
+      setAuthMessage(error?.message || "Google sign-in could not start. Please try again.");
+      setAuthBusy(false);
     }
   };
 
@@ -1019,7 +1144,7 @@ function App() {
         setMemberDockTab("home");
         setMemberDockHidden(false);
         setAudioPlayerVisible(true);
-        setActiveScreen("home");
+        setActiveScreen("dashboard");
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
       closeModal();
@@ -1063,7 +1188,7 @@ function App() {
       {controlRoomStatus === "denied" && <section className="control-room-gate"><span className="eyebrow">ACCESS RESTRICTED</span><h1>Administrator access required.</h1><p>{controlRoomError || "This account does not have permission to enter the Control Room."}</p><a className="button button-outline" href="/">Return to Nochalant</a></section>}
       {controlRoomStatus === "error" && <section className="control-room-gate"><span className="eyebrow">SECURE ACCESS UNAVAILABLE</span><h1>We couldn't verify access.</h1><p>{controlRoomError}</p><button className="button button-green" onClick={verifyControlRoomAccess}>Try again</button></section>}
       {controlRoomStatus === "authorized" && <><div className="control-room-welcome"><span className="eyebrow">PRIVATE · AUTHORIZED SESSION</span><h1>Control Room</h1><p>Signed in as {currentUser?.name || currentUser?.email || "authorized administrator"}.</p></div><DeferredPanel><OpinionsPanel open={true} mode="admin" onClose={() => { window.location.href = "/"; }} onNotice={notify} /></DeferredPanel><DeferredPanel><PodcastAdmin /></DeferredPanel><DeferredPanel><SocialSettingsAdmin /></DeferredPanel><DeferredPanel><EditorialAutoPostAdmin /></DeferredPanel><section className="promotion-admin-panel"><div className="artists-heading"><div><span className="eyebrow">ADVERTISING REVIEW</span><h2>Promotion <em>queue.</em></h2><p>Only confirmed, paid campaigns can be approved.</p></div><button className="button button-outline" onClick={() => loadPromotionAdminQueue().catch(error => notify(error.message))}>Refresh queue</button></div>
-        {promotionAdminQueue.length ? <div className="promotion-admin-list">{promotionAdminQueue.map(campaign => <article className="promotion-admin-row" key={campaign.id}>{campaign.media_url && (campaign.media_kind === "video" ? <video className="promotion-admin-preview" src={campaign.media_url} controls preload="metadata"/> : <img className="promotion-admin-preview" src={campaign.media_url} alt={campaign.title}/>)}<div><strong>{campaign.title}</strong><p>{campaign.package_code} · {campaign.media_kind} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p><span className="dashboard-status">{campaign.status.replaceAll("_"," ")} · {campaign.payment_status}</span></div><div className="promotion-admin-actions"><button className="button button-green button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"approve")}>Approve</button><button className="button button-outline button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"reject")}>Reject</button></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns awaiting review.</strong><p>Paid campaigns will appear here after payment confirmation.</p></div>}
+        {promotionAdminQueue.length ? <div className="promotion-admin-list">{promotionAdminQueue.map(campaign => <article className="promotion-admin-row" key={campaign.id}>{campaign.media_url && (campaign.media_kind === "video" ? <video className="promotion-admin-preview" src={campaign.media_url} controls preload="metadata"/> : <img className="promotion-admin-preview" src={campaign.media_url} alt={campaign.title}loading="lazy" decoding="async" />)}<div><strong>{campaign.title}</strong><p>{campaign.package_code} · {campaign.media_kind} · {campaign.currency} {(Number(campaign.budget_minor||0)/100).toFixed(2)}</p><span className="dashboard-status">{campaign.status.replaceAll("_"," ")} · {campaign.payment_status}</span></div><div className="promotion-admin-actions"><button className="button button-green button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"approve")}>Approve</button><button className="button button-outline button-small" disabled={promotionAdminBusy || campaign.status!=="pending_review" || campaign.payment_status!=="paid"} onClick={() => moderatePromotion(campaign.id,"reject")}>Reject</button></div></article>)}</div> : <div className="social-feed-state"><strong>No campaigns awaiting review.</strong><p>Paid campaigns will appear here after payment confirmation.</p></div>}
       </section></>}
     </main>
     {toast && <div className="toast" role="status">{toast}</div>}
@@ -1073,6 +1198,15 @@ function App() {
     <div className="ticker"><span className="ticker-label">NOCHALANT LIVE</span><div className="ticker-window"><div className="ticker-track"><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span><span>FREE DAILY SUBMISSIONS</span><span>WHAT'S HAPPENING? CHECK THE AGENDA</span><span>NO DEY FORM, JUST PURE GIST</span><span>YOUR CULTURE. YOUR PEOPLE. YOUR BUZZ.</span></div></div></div>
     <header className="site-header"><div className="nav-wrap">
       <a className="brand header-brand" href="#top">NOCHALANT<span>.</span></a>
+      <nav className="app-primary-nav" aria-label="Explore Nochalant">
+        <button type="button" className={activeScreen==="home"?"is-active":""} onClick={()=>{setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("latest")?.scrollIntoView({behavior:"smooth"}),40);}}>News</button>
+        <button type="button" className={activeScreen==="music"?"is-active":""} onClick={()=>{setActiveScreen("music");window.scrollTo({top:0,behavior:"smooth"});}}>Music</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"}),40);setCategory("Nollywood");}}>Movies</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("celebrity-radar")?.scrollIntoView({behavior:"smooth"}),40);}}>Celebs</button>
+        <button type="button" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.getElementById("latest")?.scrollIntoView({behavior:"smooth"}),40);setCategory("Gossip");}}>Gist</button>
+        <button type="button" className={activeScreen==="social"?"is-active":""} onClick={()=>{setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Socials<span className="app-nav-live-dot"/></button>
+      </nav>
       <button className="menu-toggle" aria-controls="nochalant-mobile-menu" aria-expanded={mobileMenu} onClick={() => setMobileMenu(!mobileMenu)} aria-label={mobileMenu ? "Close navigation" : "Open navigation"}>{mobileMenu ? "×" : "☰"}</button>
       {mobileMenu && <button className="drawer-backdrop" type="button" aria-label="Close navigation menu" onClick={() => setMobileMenu(false)} />}
       <nav id="nochalant-mobile-menu" className={mobileMenu ? "main-nav open" : "main-nav"} aria-label="Main navigation">
@@ -1095,17 +1229,17 @@ function App() {
           <button type="button" className="drawer-account-logout" onClick={() => {setMobileMenu(false);signOutUser();}}>Log out</button>
         </section>}
         <div className="drawer-flagship"><span className="drawer-kicker">NOCHALANT FLAGSHIP</span>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home <span>01</span></button>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>02</span></button>
-          <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>04</span></button>
-          <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>04</span></button>
-          {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>05</span></button> : <a href="#artists" onClick={() => setMobileMenu(false)}>Artists <span>05</span></a>}
-          <a href="#agenda" onClick={() => setMobileMenu(false)}>Agenda <span>06</span></a>
-          <a href="#agenda" onClick={() => setMobileMenu(false)}>Events <span>07</span></a>
-          <a href="#artists" onClick={() => setMobileMenu(false)}>Bookings <span>08</span></a>
-          <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>09</span></button>
-        </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><a href="#latest" onClick={() => setMobileMenu(false)}>Latest gist</a><a href="#categories" onClick={() => setMobileMenu(false)}>Categories</a><a href="#hot-or-trash" onClick={() => setMobileMenu(false)}>Hot or Trash</a><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
+          {currentUser?.id && <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");setMemberDockTab("home");window.scrollTo({top:0,behavior:"smooth"});}}>My Feed <span>01</span></button>}
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Discover <span>02</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>03</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("music");window.scrollTo({top:0,behavior:"smooth"});}}>Music <span>04</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>05</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>06</span></button>
+          {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>07</span></button> : <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth"}),80);}}>Artists <span>07</span></button>}
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("agenda")?.scrollIntoView({behavior:"smooth"}),80);}}>Agenda & events <span>08</span></button>
+          <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("artists")?.scrollIntoView({behavior:"smooth"}),80);}}>Bookings <span>09</span></button>
+          <button onClick={() => {setMobileMenu(false);setModal("submit");}}>Submit <span>10</span></button>
+        </div><div className="drawer-quick"><span className="drawer-kicker">QUICK ACCESS</span><button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("latest")?.scrollIntoView({behavior:"smooth"}),80);}}>Latest gist</button><button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"}),80);}}>Categories</button><button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});window.setTimeout(()=>document.getElementById("hot-or-trash")?.scrollIntoView({behavior:"smooth"}),80);}}>Hot or Trash</button><button onClick={() => {setMobileMenu(false);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>My Opinions</button></div>
         <section className="drawer-preferences" aria-label="App preferences">
           <span className="drawer-kicker">YOUR APP EXPERIENCE</span>
           <div className="drawer-preference-row"><div><strong>App appearance</strong><small>Choose your Nochalant skin</small></div><div className="skin-switch" role="group" aria-label="App appearance"><button type="button" className={appSkin==="dark"?"active":""} onClick={()=>setAppSkin("dark")}>Dark</button><button type="button" className={appSkin==="light"?"active":""} onClick={()=>setAppSkin("light")}>Light</button></div></div>
@@ -1113,7 +1247,7 @@ function App() {
           <label className="drawer-preference-toggle"><span><strong>Bottom app dock</strong><small>Keep quick navigation at the bottom</small></span><input type="checkbox" checked={memberDockEnabled} onChange={e=>setMemberDockEnabled(e.target.checked)}/><i aria-hidden="true"/></label>
         </section>
       </nav>
-      <div className="nav-actions">{currentUser && <button className="text-button nav-login" onClick={() => {setActiveScreen("dashboard");setMobileMenu(false);window.scrollTo({top:0,behavior:"smooth"});}}>My dashboard</button>}{currentUser ? <button className="text-button nav-login" onClick={signOutUser}>Log out</button> : <button className="text-button nav-login" onClick={() => setModal("login")}>Log in</button>}<button className="nav-spill" onClick={() => setModal("submit")}><span>Spill the tea</span></button>{!currentUser && <button className="nav-join" onClick={() => setModal("signup")}><span>Join Nochalant</span></button>}</div>
+      <div className="nav-actions app-nav-actions"><button className="app-nav-icon" type="button" aria-label="Search stories" onClick={()=>{setActiveScreen("home");window.setTimeout(()=>document.querySelector(".search-box input")?.focus(),50);}}>⌕</button><button className="app-nav-icon" type="button" aria-label="Community activity" title="Community activity" onClick={()=>{if(!currentUser){setModal("login");return;}setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>♧</button><button className="app-nav-avatar" type="button" aria-label={currentUser?"Open your dashboard":"Log in"} onClick={()=>{if(currentUser){setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}else setModal("login");}}>{accountProfile?.profileDetails?.avatar_url?<img src={accountProfile.profileDetails.avatar_url} alt=""/>:(accountProfile?.profile?.display_name||currentUser?.name||"N").trim().charAt(0).toUpperCase()}</button></div>
     </div></header>
     
 
@@ -1136,7 +1270,7 @@ function App() {
         const playTrack = track => playArtistTrack(track, allMusicTracks);
         const trackCard = (track, index) => <article className="music-release-card" key={track.id}>
           <button className="music-release-art" type="button" onClick={() => playTrack(track)} disabled={!track.audio_url} aria-label={"Play " + track.title}>
-            {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy"/> : <span>♫</span>}
+            {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy"decoding="async" /> : <span>♫</span>}
             <i>▶</i>
           </button>
           <div className="music-release-meta"><b>{String(index + 1).padStart(2,"0")}</b><span>{track.genre || "No genre"}</span></div>
@@ -1160,73 +1294,42 @@ function App() {
             <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">FIND YOUR SOUND</span><h2>Explore <em>genres.</em></h2></div></div><div className="music-genre-grid">{genres.slice(1).map(genre=><button type="button" key={genre} onClick={()=>{setMusicGenre(genre);setMusicTab("genres");}}>{genre}<span>Explore →</span></button>)}{genres.length===1&&<p className="music-hub-empty">Genre shelves will appear as artists publish releases with genre information.</p>}</div></section>
           </>}
           {musicTab === "top100" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE NOCHALANT CHART</span><h2>Nochalant <em>Top 100.</em></h2><p>Ranked by eligible plays recorded on Nochalant. Rankings update as verified plays are counted.</p></div><span>LIVE CATALOGUE DATA</span></div>
-            {rankedTracks.length ? <div className="music-chart-list">{rankedTracks.slice(0,100).map((track,index)=><div className="music-chart-row" key={track.id}><b className="music-chart-rank">{String(index+1).padStart(2,"0")}</b>{track.cover_art_url?<img src={track.cover_art_url} alt="" loading="lazy"/>:<span className="music-chart-placeholder">♫</span>}<div><strong>{track.title}</strong><small>{track.artist_name} · {track.genre || "Genre not set"}</small></div><span className="music-chart-plays">{Number(track.plays_count||0).toLocaleString()} plays</span><button type="button" onClick={()=>playTrack(track)} disabled={!track.audio_url} aria-label={"Play "+track.title}>▶</button></div>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading chart data…":"The chart will populate when approved releases have eligible play counts. No rankings are being fabricated."}</div>}
+            {rankedTracks.length ? <div className="music-chart-list">{rankedTracks.slice(0,100).map((track,index)=><div className="music-chart-row" key={track.id}><b className="music-chart-rank">{String(index+1).padStart(2,"0")}</b>{track.cover_art_url?<img src={track.cover_art_url} alt="" loading="lazy"decoding="async" />:<span className="music-chart-placeholder">♫</span>}<div><strong>{track.title}</strong><small>{track.artist_name} · {track.genre || "Genre not set"}</small></div><span className="music-chart-plays">{Number(track.plays_count||0).toLocaleString()} plays</span><button type="button" onClick={()=>playTrack(track)} disabled={!track.audio_url} aria-label={"Play "+track.title}>▶</button></div>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading chart data…":"The chart will populate when approved releases have eligible play counts. No rankings are being fabricated."}</div>}
           </section>}
           {musicTab === "genres" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">EXPLORE BY SOUND</span><h2>Music <em>genres.</em></h2><p>Browse published releases by the genre selected by each artist.</p></div></div><div className="music-genre-pills">{genres.map(genre=><button type="button" className={musicGenre===genre?"active":""} key={genre} onClick={()=>setMusicGenre(genre)}>{genre}</button>)}</div>{searchableTracks.length?<div className="music-release-grid">{searchableTracks.map(trackCard)}</div>:<div className="music-hub-empty">No releases are listed in this genre yet.</div>}</section>}
           {musicTab === "playlists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">CURATED FOR THE CULTURE</span><h2>Playlists <em>& moods.</em></h2><p>Editorial playlists will bring together official Nochalant releases by genre, mood and moment.</p></div></div><div className="music-playlist-grid"><article><span>01</span><b>Afrobeats Essentials</b><small>Curated Afrobeats releases</small></article><article><span>02</span><b>Naija Street & Energy</b><small>Street-pop and high-energy sounds</small></article><article><span>03</span><b>Late Night R&amp;B</b><small>Soul, R&amp;B and slow jams</small></article><article><span>04</span><b>New & Next</b><small>Fresh discoveries from the culture</small></article></div><div className="music-hub-empty">Playlist playback is not live yet. These are editorial playlist destinations, not populated playlists; tracks will appear when the playlist catalogue is connected.</div></section>}
-          {musicTab === "artists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE PEOPLE BEHIND THE SOUND</span><h2>Artists on <em>Nochalant.</em></h2></div><span>{artists.length} ARTISTS</span></div>{artists.length?<div className="music-artist-grid">{artists.map(artist=><button type="button" className="music-artist-card" key={artist.id || artist.slug} onClick={()=>openArtistProfile(artist.slug)}>{artist.image_url?<img src={artist.image_url} alt="" loading="lazy"/>:<span className="music-artist-placeholder">{String(artist.name||"N").slice(0,1)}</span>}<b>{artist.name}</b><small>{artist.genre || "Artist"}</small></button>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading artists…":"No artist profiles are published yet."}</div>}</section>}
+          {musicTab === "artists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE PEOPLE BEHIND THE SOUND</span><h2>Artists on <em>Nochalant.</em></h2></div><span>{artists.length} ARTISTS</span></div>{artists.length?<div className="music-artist-grid">{artists.map(artist=><button type="button" className="music-artist-card" key={artist.id || artist.slug} onClick={()=>openArtistProfile(artist.slug)}>{artist.image_url?<img src={artist.image_url} alt="" loading="lazy"decoding="async" />:<span className="music-artist-placeholder">{String(artist.name||"N").slice(0,1)}</span>}<b>{artist.name}</b><small>{artist.genre || "Artist"}</small></button>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading artists…":"No artist profiles are published yet."}</div>}</section>}
           {musicTab === "library" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">YOUR PERSONAL COLLECTION</span><h2>My <em>library.</em></h2></div></div><div className="music-hub-empty">Your saved songs, liked releases and followed artists will appear here when Music Library saving is enabled.</div></section>}
         </section>;
       })() : activeScreen === "home" ? <>
-      <section className="container lead-layout">
-        <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
-          <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
-          <p>Your plug for Nigerian entertainment, music, nightlife, lifestyle and everything happening around you. No long talk — just the gist that matters.</p>
-          <div className="hero-actions"><button className="button button-green" onClick={() => setModal("submit")}>Spill the gist</button><a className="button button-outline" href="#latest">Catch up on gist</a></div>
+      <div className="home-first-screen container">
+      <section className="container app-hero-layout" aria-label="Featured culture stories">
+        <article className="app-hero-feature" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
+          {leadSlides.map((slide,index)=><div className={"app-hero-slide"+(index===leadSlide?" is-active":"")} key={slide.story.id} aria-hidden={index!==leadSlide}>
+            <img src={slide.story.image} alt={slide.story.title} fetchPriority={index===leadSlide?"high":"auto"} loading={index===leadSlide?"eager":"lazy"}/>
+            <div className="app-hero-shade"/>
+            <div className="app-hero-copy"><span className="app-category-pill">{slide.story.category || "CULTURE"}</span><span className="app-editorial-label">NOCHALANT EXCLUSIVE</span><h1>{slide.story.title}</h1><p>{slide.story.excerpt}</p><div className="app-hero-meta"><span>◷ {slide.story.read || "3 min read"}</span><span>·</span><span>{slide.story.author || "Nochalant Editorial"}</span></div><button type="button" className="app-read-story" onClick={()=>openStory(slide.story)}>Read story <span aria-hidden="true">→</span></button></div>
+          </div>)}
+          <div className="app-hero-pagination">{leadSlides.map((slide,index)=><button key={slide.story.id} type="button" className={index===leadSlide?"active":""} onClick={()=>changeLeadSlide(index)} aria-label={"Show featured story "+(index+1)}/>)}</div>
+        </article>
+        <aside className="app-hero-side" aria-label="More featured stories">
+          {leadSlides.filter((_,index)=>index!==leadSlide).slice(0,2).map((slide,index)=><button type="button" className={"app-hero-side-card app-hero-side-"+index} key={slide.story.id} onClick={()=>openStory(slide.story)}>
+            <img src={slide.story.image} alt="" loading="lazy"decoding="async" /><span className="app-side-shade"/><span className="app-category-pill">{slide.story.category || "CULTURE"}</span><strong>{slide.story.title}</strong><span className="app-side-play" aria-hidden="true">▶</span>
+          </button>)}
+        </aside>
+      </section>
+
+      
+      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
+        <div className="nochalant-faces">
+          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
+          <div className="faces-viewport" aria-label="Nochalant community profiles">
+            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
+          </div>
           
         </div>
-        <article className="lead-story" aria-label="Featured Nochalant carousel" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
-          {leadSlides.map((slide, index) => <div className={index === leadSlide ? "lead-slide active" : "lead-slide"} key={slide.story.id} aria-hidden={index !== leadSlide}>
-            <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>
-            <div className="lead-overlay"></div>
-            <div className="lead-story-top"><span className="pill pill-hot">HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span><button className="lead-next-overlay" type="button" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT »</button></div>
-            <div className="lead-story-bottom"><div className="story-meta"><span>{slide.story.category}</span><span>· {slide.story.read}</span></div><h2>{slide.story.title}</h2><p>{slide.story.excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); openStory(slide.story);}}>Read story</button><b>{index + 1} / {leadSlides.length}</b></div></div>
-          </div>)}
-          <div className="lead-carousel-controls">
-            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>PREV</button>
-            <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
-            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT</button>
-          </div>
-        </article>
-      </section>
+        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
 
-      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
-        <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
-        <DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
-      </section>}
-
-      <section className="artists-section container" id="artists" aria-labelledby="artists-title">
-        <div className="artists-heading">
-          <div><span className="eyebrow">THE SOUND OF THE CULTURE</span><h2 id="artists-title">Artists on <em>Nochalant.</em></h2><p>Released music, original cover art and the artists moving the culture.</p></div>
-          <div className="artists-controls" aria-label="Artist carousel controls">
-            <button type="button" onClick={() => moveArtistRail(-1)} aria-label="Previous releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">←</span></button>
-            <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">→</span></button>
-          </div>
-        </div>
-        <div className="artists-viewport" ref={artistRailRef} aria-label="Nochalant releases. Swipe or use the arrow controls to browse." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
-          {artists.some(artist => artist.tracks?.length) ? <div className="artists-track">{artists.flatMap(artist => artist.tracks || []).map(track => {
-            const playableTracks = artists.flatMap(item => item.tracks || []);
-            return <article className="artist-card artist-track-card" key={track.id}>
-              <button type="button" className="artist-avatar artist-track-art" onClick={() => openArtistProfile(track.artist_slug)} aria-label={"View " + track.artist_name + "'s artist profile"}>
-                {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy" /> : <span>{track.artist_name?.slice(0,1).toUpperCase() || "N"}</span>}
-                <span className="artist-track-play" aria-hidden="true">▶</span>
-              </button>
-              <button type="button" className="artist-name artist-track-title" onClick={() => openArtistProfile(track.artist_slug)}>{track.title}</button>
-              <button type="button" className="artist-track-artist" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified && <span className="artist-silver-tick" title="Nochalant verified artist" aria-label="Nochalant verified artist">✓</span>}</button>
-              <div className="artist-track-stats">
-                <span title="Eligible plays"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>{Number(track.plays_count || 0).toLocaleString()}</span>
-                {track.audio_url ? <a href={"/api/music/download?trackId=" + encodeURIComponent(track.id)} title="Download track" aria-label={"Download " + track.title}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</a> : <span title="Downloads"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</span>}
-              </div>
-              <button type="button" className="artist-track-listen" onClick={() => playArtistTrack(track, playableTracks)} disabled={!track.audio_url}>{track.audio_url ? "PLAY TRACK" : "AUDIO COMING SOON"}</button>
-            </article>;
-          })}</div> : <div className="artists-empty">{artistsLoading ? "Loading verified artist releases…" : "No artist releases have been published yet. Verified artist releases will appear here with their original cover art."}</div>}
-        </div>
-      </section>
-
-      <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div></div>
-        <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
-        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-card-bottom"><span className="story-category-quiet">{item.category}</span><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]} aria-label={likes[item.id] ? "Unlike story" : "Like story"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/></svg></button><span className="story-icon-stat" aria-label={`${comments[item.id]?.length || 0} comments`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.7-.8L4 20l1.3-3.4A7.1 7.1 0 0 1 4 12c0-4.1 3.6-7.5 8-7.5s8 3.1 8 7Z"/></svg><small>{comments[item.id]?.length || 0}</small></span><span className="story-icon-stat" aria-label={`${typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0} views`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><small>{typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0}</small></span><button className="story-icon-button" type="button" aria-label="Read full story" onClick={e => {e.stopPropagation();openStory(item);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
-      </section>
 
       <section className="section container jury-section" id="hot-or-trash">
         <div className="jury-panel jury-opinion-card">
@@ -1236,7 +1339,7 @@ function App() {
             <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
           </div>
           <div className="jury-opinion-avatar" aria-hidden="true">
-            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" />
+            <img src={opinions[opinionSlide]?.avatar_url || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=700&q=85"} alt="" loading="lazy" decoding="async" />
           </div>
           <div className="jury-options">
             <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
@@ -1253,25 +1356,106 @@ function App() {
         </div>
       </section>
 
-      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
-        <div className="nochalant-faces">
-          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
-          <div className="faces-viewport" aria-label="Nochalant community profiles">
-            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
-          </div>
-          
-        </div>
-        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
-
       <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
+      
+      {activeScreen === "home" && <section className="newsletter-section container" aria-labelledby="newsletter-title">
+      <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
+      <form className="newsletter-form" onSubmit={e => {e.preventDefault();setModal("newsletter-success");}}>
+        <label className="sr-only" htmlFor="newsletter-email">Your email address</label>
+        <input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} placeholder="Your email address"/>
+        <button type="submit">Gimme Update</button>
+      </form>
+    </section>}
+      <div className="home-category-placement"><DeferredPanel><HomeCultureDiscovery onChooseCategory={name => { const map = {Trending:"All Gist",Afrobeats:"Afrobeats & Jamz",Nollywood:"Nollywood Drama",Celebrity:"Nollywood Drama",BBNaija:"BBNaija / Reality",Gossip:"Street Buzz","Hip-Hop":"Afrobeats & Jamz","Street Culture":"Street Buzz",Fashion:"Fashion & Swag",Lifestyle:"Lifestyle",Comedy:"Street Buzz",Sports:"All Gist",Events:"Agenda",Podcasts:"All Gist",Technology:"All Gist","Viral Videos":"All Gist",Relationships:"Lifestyle",Influencers:"Street Buzz",Business:"Lifestyle",Politics:"All Gist"}; setCategory(map[name] || "All Gist"); document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"}); }} /></DeferredPanel></div>
+      </div>
+
+      <section className="culture-pulse container" aria-label="Nochalant culture pulse">
+        <div className="pulse-heading"><span className="eyebrow">THE CULTURE, AT A GLANCE</span><span className="pulse-live"><i/> LIVE FROM NOCHALANT</span></div>
+        <div className="pulse-grid">
+          <a href="#latest"><b>{editorialStories.length}</b><span>Latest stories</span></a>
+          <a href="#social-wire"><b>{opinions.length}</b><span>Community voices</span></a>
+          <a href="#culture-charts"><b>{artists.flatMap(item => item.tracks || []).length}</b><span>Released tracks</span></a>
+          <a href="#agenda"><b>Explore</b><span>What's on next</span></a>
+        </div>
+        <div className="pulse-shortcuts">{["Now","Rising","Viral meter","Movers","Social pulse","What's on","Listen now","Watch now","Fan voice","Reading list","60-sec brief","Hashtag tracker"].map((item,index)=><a key={item} href={["#latest","#trending-now","#trending-now","#culture-charts","#social-wire","#agenda","#artists","#agenda","#buzzboard","#latest","#latest","#categories"][index]}>{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index] && <span aria-hidden="true">{["◉","","✦","⇅","◎","⌁","♫","▷","","▤","◷","#"][index]}</span>}{item}</a>)}</div>
+      </section>
+
+      <DeferredPanel><HomeCultureExpansion stories={[...editorialStories,...demoStories.filter(story=>story.label==="EDITORIAL PREVIEW" && !editorialStories.length)]} artists={artists} onOpenStory={openStory} /></DeferredPanel>
+
+      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
+        <div className="section-heading"><div><span className="eyebrow">YOUR COMMUNITY · LIVE</span><h2>Your <em>social wire.</em></h2><p>A quick pulse of conversations from your Nochalant community.</p></div></div>
+        <DeferredPanel><SocialFeed currentUser={currentUser} compactPreview onLoadMore={() => {setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
+      </section>}
+
+      <section className="artists-section container" id="artists" aria-labelledby="artists-title">
+        <div className="artists-heading">
+          <div><span className="eyebrow">THE SOUND OF THE CULTURE</span><h2 id="artists-title">Artists on <em>Nochalant.</em></h2><p>Released music, original cover art and the artists moving the culture.</p></div>
+          <div className="artists-controls" aria-label="Artist carousel controls">
+            <button type="button" onClick={() => moveArtistRail(-1)} aria-label="Previous releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">←</span></button>
+            <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+        <div className="artists-viewport" ref={artistRailRef} aria-label="Nochalant releases. Swipe or use the arrow controls to browse." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
+          {artists.some(artist => artist.tracks?.length) ? <div className="artists-track">{artists.flatMap(artist => artist.tracks || []).map(track => {
+            const playableTracks = artists.flatMap(item => item.tracks || []);
+            return <article className="artist-card artist-track-card" key={track.id}>
+              <button type="button" className="artist-avatar artist-track-art" onClick={() => openArtistProfile(track.artist_slug)} aria-label={"View " + track.artist_name + "'s artist profile"}>
+                {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy" decoding="async" /> : <span>{track.artist_name?.slice(0,1).toUpperCase() || "N"}</span>}
+                <span className="artist-track-play" aria-hidden="true">▶</span>
+              </button>
+              <button type="button" className="artist-name artist-track-title" onClick={() => openArtistProfile(track.artist_slug)}>{track.title}</button>
+              <button type="button" className="artist-track-artist" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified && <span className="artist-silver-tick" title="Nochalant verified artist" aria-label="Nochalant verified artist">✓</span>}</button>
+              <div className="artist-track-stats">
+                <span title="Eligible plays"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>{Number(track.plays_count || 0).toLocaleString()}</span>
+                {track.audio_url ? <a href={"/api/music/download?trackId=" + encodeURIComponent(track.id)} title="Download track" aria-label={"Download " + track.title}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</a> : <span title="Downloads"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</span>}
+              </div>
+              <button type="button" className="artist-track-listen" onClick={() => playArtistTrack(track, playableTracks)} disabled={!track.audio_url}>{track.audio_url ? "PLAY TRACK" : "AUDIO COMING SOON"}</button>
+            </article>;
+          })}</div> : <div className="artists-empty">{artistsLoading ? "Loading verified artist releases…" : "No artist releases have been published yet. Verified artist releases will appear here with their original cover art."}</div>}
+        </div>
+      </section>
+
+      <section className="flagship-section container" id="trending-now">
+        <div className="flagship-heading"><div><span className="eyebrow">01 / THE DAILY CONVERSATION</span><h2>Naija Trending <em>Now.</em></h2><p>Fresh stories from the Nochalant editorial desk. No invented trends or engagement numbers.</p></div><a href="#latest">Explore stories </a></div>
+        <div className="flagship-grid trending-grid">{(editorialStories.length ? editorialStories : demoStories).slice(0,4).map(item=><button className="flagship-story" type="button" key={"trend-"+item.id} onClick={()=>openStory(item)}><img src={item.image || demoStories[0].image} alt="" loading="lazy"decoding="async" /><span className="flagship-kicker">{item.category || "Culture"} · {item.time || "Latest"}</span><b>{item.title}</b><small>{item.author || "Nochalant Editorial Desk"}</small></button>)}</div>
+        {!editorialStories.length && <p className="flagship-note">Editorial preview cards are shown until approved stories are published.</p>}
+      </section>
+
+      <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div></div>
+        <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
+        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => {if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget){e.preventDefault();openStory(item);}}}><div className="story-image"><img src={item.image} alt="" loading="lazy" decoding="async"/></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-card-bottom"><span className="story-category-quiet">{item.category}</span><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]} aria-label={likes[item.id] ? "Unlike story" : "Like story"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11S3.2 14 3.2 8.8A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/></svg></button><span className="story-icon-stat" aria-label={`${comments[item.id]?.length || 0} comments`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.7-.8L4 20l1.3-3.4A7.1 7.1 0 0 1 4 12c0-4.1 3.6-7.5 8-7.5s8 3.1 8 7Z"/></svg><small>{comments[item.id]?.length || 0}</small></span><span className="story-icon-stat" aria-label={`${typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0} views`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><small>{typeof viewCounts[item.id] === "number" ? viewCounts[item.id] : 0}</small></span><button className="story-icon-button" type="button" aria-label="Read full story" onClick={e => {e.stopPropagation();openStory(item);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
+      </section>
+
+      <section className="flagship-section container" id="celebrity-radar">
+        <div className="flagship-heading"><div><span className="eyebrow">03 / PEOPLE TO WATCH</span><h2>Celebrity <em>Radar.</em></h2><p>Artist and creator profiles published on Nochalant.</p></div><a href="#artists">All artists </a></div>
+        <div className="radar-grid">{artists.slice(0,5).map(person=><button type="button" className="radar-card" key={person.id || person.slug} onClick={()=>openArtistProfile(person.slug)}>{person.image_url?<img src={person.image_url} alt="" loading="lazy"decoding="async" />:<span className="radar-placeholder">{String(person.name || "N").slice(0,1)}</span>}<b>{person.name}</b><small>{person.genre || "Artist profile"}</small></button>)}{!artists.length && <div className="flagship-empty">Verified artist and creator profiles will appear here after publication.</div>}</div>
+      </section>
+
+      <section className="flagship-section container" id="culture-charts">
+        <div className="flagship-heading"><div><span className="eyebrow">04 / THE SOUND & THE NUMBERS</span><h2>The Culture <em>Charts.</em></h2><p>Released Nochalant tracks, ordered by recorded eligible plays.</p></div><a href="#artists">Listen to releases </a></div>
+        <div className="charts-list">{artists.flatMap(person=>(person.tracks || []).map(track=>({...track,artist_name:track.artist_name || person.name}))).sort((a,b)=>Number(b.plays_count||0)-Number(a.plays_count||0)).slice(0,5).map((track,index)=><div className="chart-row" key={track.id}><strong>{String(index+1).padStart(2,"0")}</strong>{track.cover_art_url?<img src={track.cover_art_url} alt="" loading="lazy"decoding="async" />:<span className="chart-art">N.</span>}<span className="chart-track"><b>{track.title}</b><small>{track.artist_name}</small></span><span className="chart-plays">{Number(track.plays_count||0).toLocaleString()} plays</span><button type="button" onClick={()=>playArtistTrack(track,artists.flatMap(person=>person.tracks||[]))} disabled={!track.audio_url}>▶</button></div>)}{!artists.some(person=>(person.tracks||[]).length) && <div className="flagship-empty">The chart will populate from released tracks and recorded plays. No chart positions are invented.</div>}</div>
+      </section>
+
+      <section className="flagship-section container" id="buzzboard">
+        <div className="flagship-heading"><div><span className="eyebrow">05 / FAN VOICE & CULTURE DEBATES</span><h2>The <em>Buzzboard.</em></h2><p>Opinions, fan debates and polls from the Nochalant community.</p></div><button type="button" onClick={()=>document.getElementById("hot-or-trash")?.scrollIntoView({behavior:"smooth"})}>Vote on a debate </button></div>
+        <div className="buzzboard-grid">{opinions.slice(0,4).map(item=><button type="button" className="buzz-card" key={"buzz-"+item.id} onClick={()=>setSelectedOpinion(item)}><span>{item.topic || "COMMUNITY TAKE"}</span><b>{item.body}</b><small>By {item.author_name || "Community member"} · Read the take </small></button>)}{!opinions.length && <div className="flagship-empty">The Buzzboard opens up as soon as the community publishes its first opinions.</div>}</div>
+      </section>
+
+      <section className="flagship-section container" id="social-wire">
+        <div className="flagship-heading"><div><span className="eyebrow">02 / THE PEOPLE HAVE A SAY</span><h2>The Social <em>Wire.</em></h2><p>Community opinions and public conversations submitted to Nochalant.</p></div><button type="button" onClick={()=>{if(!currentUser){setModal("login");return;}setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}>Join the conversation </button></div>
+        <div className="wire-grid">{opinions.slice(0,3).map(item=><article className="wire-card" key={item.id}><span className="wire-label">NOCHALANT COMMUNITY</span><p>“{item.body}”</p><div><b>{item.author_name || "Community member"}</b><small>{item.topic || "Culture conversation"}</small></div></article>)}{!opinions.length && <div className="flagship-empty">Community conversations will appear here when members share their opinions. No sample tweets or fabricated social posts are displayed.</div>}</div>
+      </section>
+
+      
       </> : activeScreen === "promotions" ? <section className="promotions-page container screen-page">
         <div className="promotions-hero"><span className="eyebrow">NOCHALANT FOR BRANDS</span><h1>Make some <em>noise.</em></h1><p>Promote your brand, event, product, video or creative work to the Nochalant audience.</p></div>
-        {!promotionPackageChosen && <div className="promotion-package-grid">
+        <div className="promotion-package-grid">
           <article className="promotion-package"><span className="eyebrow">IMAGE · 7 DAYS</span><h2>₦2,000 <small>/ $1.99</small></h2><p>One promotional image or flyer with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("image_7d");setPromotionKind("image");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose image</button></article>
           <article className="promotion-package"><span className="eyebrow">VIDEO · 7 DAYS</span><h2>₦4,000 <small>/ $3.99</small></h2><p>One promotional video with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("video_7d");setPromotionKind("video");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose video</button></article>
           <article className="promotion-package promotion-package-featured"><span className="eyebrow">PREMIUM · 14 DAYS</span><h2>₦8,000 <small>/ $7.99</small></h2><p>Premium image, video or designed text placement with a clickable call-to-action.</p><button className="button button-green" onClick={() => {setPromotionPackage("premium_14d");setPromotionKind("text");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Create text promotion</button></article>
           <article className="promotion-package"><span className="eyebrow">EXTENDED · 30 DAYS</span><h2>₦15,000 <small>/ $14.99</small></h2><p>Longer premium campaign for brands, launches and events.</p><button className="button button-outline" onClick={() => {setPromotionPackage("extended_30d");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose extended</button></article>
-        </div>}
+        </div>
+        <div className="promotion-selection-summary"><span className="eyebrow">SELECTED PACKAGE</span><strong>{({image_7d:"₦2,000 · 7 days",video_7d:"₦4,000 · 7 days",premium_14d:"₦8,000 · 14 days",extended_30d:"₦15,000 · 30 days"})[promotionPackage]}</strong><small>International prices: {({image_7d:"$1.99",video_7d:"$3.99",premium_14d:"$7.99",extended_30d:"$14.99"})[promotionPackage]}</small><button type="button" className="button button-green" onClick={() => document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"})}>Proceed with this package</button></div>
         <form id="promotion-submit" className="promotion-submit-form" onSubmit={async event => {
           event.preventDefault(); if (!currentUser) { setModal("login"); return; }
           const form = event.currentTarget; const data = new FormData(form); const file = data.get("mediaFile");
@@ -1300,9 +1484,9 @@ function App() {
           } catch(error) { setPromotionMessage(error.message || "Campaign could not be submitted."); }
           finally { setPromotionBusy(false); }
         }}>
-          <span className="eyebrow">START A CAMPAIGN</span><h2 id="promotion-submit">Submit your promotion.</h2>{promotionPackageChosen && <p className="fine-print">Package selected. Pricing is hidden while you complete your promotion. <button type="button" className="text-button" onClick={()=>setPromotionPackageChosen(false)}>Change package</button></p>}
+          <span className="eyebrow">START A CAMPAIGN</span><h2 id="promotion-submit">Submit your promotion.</h2><p className="fine-print">You can change your package above at any time. Your price remains visible while you complete the form.</p>
           <div className="promotion-form-grid"><label>Campaign title<input name="title" required maxLength="120" placeholder="Your brand, event or product"/></label>
-          <label>Package<select value={promotionPackage} onChange={event => setPromotionPackage(event.target.value)}>{promotionKind!=="text"&&<><option value="image_7d">Image · 7 days</option><option value="video_7d">Video · 7 days</option></>}<option value="premium_14d">Premium · 14 days</option><option value="extended_30d">Extended · 30 days</option></select></label>
+          <label>Package<select value={promotionPackage} onChange={event => setPromotionPackage(event.target.value)}>{promotionKind!=="text"&&<><option value="image_7d">Image · 7 days — ₦2,000</option><option value="video_7d">Video · 7 days — ₦4,000</option></>}<option value="premium_14d">Premium · 14 days — ₦8,000</option><option value="extended_30d">Extended · 30 days — ₦15,000</option></select></label>
           <label>Promotion format<select value={promotionKind} onChange={event => {const next=event.target.value;setPromotionKind(next);if(next==="text"&&["image_7d","video_7d"].includes(promotionPackage))setPromotionPackage("premium_14d");}}><option value="image">Image</option><option value="video">Video</option><option value="text">Designed text</option></select></label>
           <label>Currency<select name="currency"><option value="NGN">NGN · Nigeria</option><option value="USD">USD · International</option></select></label>
           {promotionKind === "text" ? <div className="text-promo-studio">
@@ -1335,25 +1519,36 @@ function App() {
         </section>}
         <section className="promotion-live-list"><div className="artists-heading"><div><span className="eyebrow">BRANDS · EVENTS · CREATORS</span><h2>In the <em>spotlight.</em></h2><p>Approved promotions from the Nochalant community.</p></div></div>
           {promotionCampaigns.length ? <div className="promotion-live-grid">{promotionCampaigns.map(campaign => <article className="promotion-live-card" key={campaign.id}>
-            {campaign.media_kind === "text" ? <div className={`promotion-text-live theme-${campaign.design_config?.theme||"midnight"} layout-${campaign.design_config?.layout||"editorial"} align-${campaign.design_config?.alignment||"left"} font-${campaign.design_config?.font||"modern"}`}><span>NOCHALANT · SPONSORED</span><strong>{campaign.description}</strong></div> : campaign.media_kind === "video" ? <video src={campaign.media_url} controls playsInline preload="metadata" /> : <img src={campaign.media_url} alt={campaign.title}/>}
-            <div><span className="pill pill-gold">SPONSORED</span><h3>{campaign.title}</h3>{campaign.media_kind!=="text"&&<p>{campaign.description}</p>}{campaign.destination_url && <a href={campaign.destination_url} target="_blank" rel="noreferrer">Learn more ↗</a>}</div>
+            {campaign.media_kind === "text" ? <div className={`promotion-text-live theme-${campaign.design_config?.theme||"midnight"} layout-${campaign.design_config?.layout||"editorial"} align-${campaign.design_config?.alignment||"left"} font-${campaign.design_config?.font||"modern"}`}><span>NOCHALANT · SPONSORED</span><strong>{campaign.description}</strong></div> : campaign.media_kind === "video" ? <video src={campaign.media_url} controls playsInline preload="metadata" /> : <img src={campaign.media_url} alt={campaign.title}loading="lazy" decoding="async" />}
+            <div><span className="pill pill-gold">SPONSORED</span><h3>{campaign.title}</h3>{campaign.media_kind!=="text"&&<p>{campaign.description}</p>}{campaign.destination_url && <a href={campaign.destination_url} target="_blank" rel="noreferrer">Learn more </a>}</div>
           </article>)}</div> : <div className="social-feed-state"><strong>Be the first in the spotlight.</strong><p>Approved campaigns will appear here.</p></div>}
         </section>
       </section> : activeScreen === "social" ? <section className="social-section container screen-page" id="social" aria-labelledby="social-title"><DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => { setAuthMessage(""); setModal("signup"); }} onLogin={() => { setAuthMessage(""); setModal("login"); }} onShare={() => { if (!currentUser) setModal("login"); else { setOpinionsPanelMode("dashboard"); setOpinionsPanelOpen(true); } }} /></DeferredPanel></section> : activeScreen === "podcast" ? <section className="podcast-section container screen-page" id="podcast-show" aria-labelledby="podcast-show-title">
-        <div className="podcast-heading"><div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h1 id="podcast-show-title">Nochalant <em>Podcast.</em></h1><p>Watch the conversations, performances and stories moving Nigerian culture.</p></div>{podcastDisplayItems[selectedPodcastIndex]?.id && podcastCatalogue.shows.find(show=>show.id===podcastDisplayItems[selectedPodcastIndex].id)?.host_name ? (()=>{const host=podcastCatalogue.shows.find(show=>show.id===podcastDisplayItems[selectedPodcastIndex].id);return <aside className="podcast-host-card">{host.host_image_url?<img src={host.host_image_url} alt={host.host_name} loading="lazy"/>:<span className="podcast-host-avatar">N.</span>}<div><span className="eyebrow">YOUR HOST</span><button type="button" className="podcast-host-profile-link" onClick={()=>setSelectedPodcastHost(host)}>{host.host_name} <span aria-hidden="true">↗</span></button>{host.host_role&&<small>{host.host_role}</small>}{host.host_bio&&<p>{host.host_bio.slice(0,150)}{host.host_bio.length>150?"…":""}</p>}</div></aside>})() : <span className="podcast-mark" aria-hidden="true">N<span>.</span></span>}</div>
-        {selectedPodcastHost && <div className="podcast-host-profile-backdrop" role="presentation" onClick={event=>{if(event.target===event.currentTarget)setSelectedPodcastHost(null);}}><section className="podcast-host-profile-modal" role="dialog" aria-modal="true" aria-label={selectedPodcastHost.host_name+" profile"}><button type="button" className="podcast-host-profile-close" onClick={()=>setSelectedPodcastHost(null)} aria-label="Close profile">×</button><div className="podcast-host-profile-hero">{selectedPodcastHost.host_image_url?<img src={selectedPodcastHost.host_image_url} alt={selectedPodcastHost.host_name}/>:<span className="podcast-host-avatar">N.</span>}<div><span className="eyebrow">NOCHALANT PODCAST · HOST PROFILE</span><h2>{selectedPodcastHost.host_name}</h2><p>{selectedPodcastHost.host_role}</p><span className="podcast-host-location">BENIN CITY · EDO STATE, NIGERIA</span></div></div><div className="podcast-host-profile-body"><span className="eyebrow">ABOUT THE HOST</span><p>{selectedPodcastHost.host_bio}</p><h3>Music catalogue</h3><ul><li><strong>Do Or Die</strong><span>Hunter Of Africa, Gasky & Marvis LA · 9 October 2022</span></li><li><strong>Hunter We Wanna Party</strong></li><li><strong>My Friend & Brother</strong></li></ul><h3>Follow Hunter</h3><div className="podcast-host-socials">{selectedPodcastHost.host_instagram_url&&<a href={selectedPodcastHost.host_instagram_url} target="_blank" rel="noreferrer">Instagram ↗</a>}{selectedPodcastHost.host_tiktok_url&&<a href={selectedPodcastHost.host_tiktok_url} target="_blank" rel="noreferrer">TikTok ↗</a>}</div><small>Music catalogue and professional details are presented from supplied editorial information; further career milestones remain subject to verification.</small></div></section></div>}
+        <div className="podcast-heading"><div><span className="eyebrow">ORIGINALS · NOCHALANT STUDIOS</span><h1 id="podcast-show-title">Nochalant <em>Podcast.</em></h1><p>Watch the conversations, performances and stories moving Nigerian culture.</p></div>{podcastDisplayItems[selectedPodcastIndex]?.id && podcastCatalogue.shows.find(show=>show.id===podcastDisplayItems[selectedPodcastIndex].id)?.host_name ? (()=>{const host=podcastCatalogue.shows.find(show=>show.id===podcastDisplayItems[selectedPodcastIndex].id);return <aside className="podcast-host-card"><button type="button" className="podcast-host-avatar-button" onClick={()=>setSelectedPodcastHost(host)} aria-label={"View "+host.host_name+" profile"}>{host.host_image_url?<img src={host.host_image_url} alt="" loading="lazy"decoding="async" />:<span className="podcast-host-avatar">N.</span>}</button><div><span className="eyebrow">YOUR HOST</span><button type="button" className="podcast-host-profile-link" onClick={()=>setSelectedPodcastHost(host)}>{host.host_name}</button></div></aside>})() : <span className="podcast-mark" aria-hidden="true">N<span>.</span></span>}</div>
+        {selectedPodcastHost && <div className="podcast-host-profile-backdrop" role="presentation" onClick={event=>{if(event.target===event.currentTarget)setSelectedPodcastHost(null);}}><section className="podcast-host-profile-modal" role="dialog" aria-modal="true" aria-label={selectedPodcastHost.host_name+" profile"}><button type="button" className="podcast-host-profile-close" onClick={()=>setSelectedPodcastHost(null)} aria-label="Close profile">×</button><div className="podcast-host-profile-hero">{selectedPodcastHost.host_image_url?<img src={selectedPodcastHost.host_image_url} alt={selectedPodcastHost.host_name}loading="lazy" decoding="async" />:<span className="podcast-host-avatar">N.</span>}<div><span className="eyebrow">NOCHALANT PODCAST · HOST PROFILE</span><h2>{selectedPodcastHost.host_name}</h2><p>{selectedPodcastHost.host_role}</p><span className="podcast-host-location">BENIN CITY · EDO STATE, NIGERIA</span></div></div><div className="podcast-host-profile-body"><span className="eyebrow">ABOUT THE HOST</span><p>{selectedPodcastHost.host_bio}</p><h3>Music catalogue</h3><ul><li><strong>Do Or Die</strong><span>Hunter Of Africa, Gasky & Marvis LA · 9 October 2022</span></li><li><strong>Hunter We Wanna Party</strong></li><li><strong>My Friend & Brother</strong></li></ul><h3>Follow Hunter</h3><div className="podcast-host-socials">{selectedPodcastHost.host_instagram_url&&<a href={selectedPodcastHost.host_instagram_url} target="_blank" rel="noreferrer">Instagram </a>}{selectedPodcastHost.host_tiktok_url&&<a href={selectedPodcastHost.host_tiktok_url} target="_blank" rel="noreferrer">TikTok </a>}</div><small>Music catalogue and professional details are presented from supplied editorial information; further career milestones remain subject to verification.</small></div></section></div>}
         <div className="podcast-library-feature">
           <div className="podcast-library-screen podcast-player-stage">
-            {activePodcastEpisode?.video_url ? <video className="podcast-video" src={activePodcastEpisode.video_url} poster={activePodcastEpisode.thumbnail_url || ""} controls playsInline preload="metadata" /> : <><div className="podcast-stage-play" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="M26 19.5 46 32 26 44.5Z"/></svg></div><strong>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(0,1).join(" ")}<br/>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(1).join(" ")}</strong><span>FULL EPISODES · CLIPS · SESSIONS</span></>}
+            {activePodcastEpisode?.video_url ? <div className="podcast-video-shell">
+              <video ref={podcastVideoRef} className="podcast-video" src={activePodcastEpisode.video_url} poster={activePodcastEpisode.thumbnail_url || ""} playsInline preload="metadata" onPlay={()=>setPodcastVideoPlaying(true)} onPause={()=>setPodcastVideoPlaying(false)} onTimeUpdate={event=>setPodcastVideoCurrent(event.currentTarget.currentTime)} onLoadedMetadata={event=>setPodcastVideoDuration(event.currentTarget.duration || 0)} onEnded={()=>{setPodcastVideoPlaying(false);movePodcastEpisode(1);}} />
+              <div className="podcast-video-controls" aria-label="Nochalant episode controls">
+                <div className="podcast-video-track"><span>NOW PLAYING · NOCHALANT ORIGINALS</span><strong>{activePodcastEpisode.title}</strong></div>
+                <div className="podcast-video-control-row">
+                  <button type="button" className="podcast-video-skip" onClick={()=>movePodcastEpisode(-1)} disabled={activePodcastEpisodeIndex<=0} aria-label="Previous episode"><span>◀|</span><small>PREVIOUS</small></button>
+                  <button type="button" className="podcast-video-toggle" onClick={togglePodcastVideo} aria-label={podcastVideoPlaying ? "Pause episode" : "Play episode"}>{podcastVideoPlaying ? "Ⅱ" : "▶"}<small>{podcastVideoPlaying ? "PAUSE" : "PLAY"}</small></button>
+                  <button type="button" className="podcast-video-skip" onClick={()=>movePodcastEpisode(1)} disabled={activePodcastEpisodeIndex<0 || activePodcastEpisodeIndex>=selectedShowEpisodes.length-1} aria-label="Next episode"><span>|▶</span><small>NEXT</small></button>
+                </div>
+                <div className="podcast-video-progress"><span>{formatAudioTime(podcastVideoCurrent)}</span><input aria-label="Seek episode video" type="range" min="0" max={podcastVideoDuration || 0} step="0.1" value={Math.min(podcastVideoCurrent,podcastVideoDuration || 0)} onChange={event=>{if(podcastVideoRef.current)podcastVideoRef.current.currentTime=Number(event.target.value);}} disabled={!podcastVideoDuration}/><span>{formatAudioTime(podcastVideoDuration)}</span></div>
+              </div>
+            </div> : <><div className="podcast-stage-play" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="M26 19.5 46 32 26 44.5Z"/></svg></div><strong>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(0,1).join(" ")}<br/>{podcastDisplayItems[selectedPodcastIndex].label.split(" ").slice(1).join(" ")}</strong><span>FULL EPISODES · CLIPS · SESSIONS</span></>}
           </div>
-          <div className="podcast-library-copy"><span className="eyebrow">{activePodcastEpisode ? "NOW PLAYING" : `SERIES · ${String(selectedPodcastIndex+1).padStart(2,"0")} / ${String(podcastDisplayItems.length).padStart(2,"0")}`}</span><h2>{activePodcastEpisode?.title || podcastDisplayItems[selectedPodcastIndex].title} <em>on Nochalant.</em></h2><p>{activePodcastEpisode?.description || podcastDisplayItems[selectedPodcastIndex].description}</p><span className="podcast-status">{activePodcastEpisode ? "OFFICIAL NOCHALANT EPISODE" : "NEW EPISODES WILL APPEAR HERE"}</span>{activePodcastEpisode && <button className="podcast-clear-selection" type="button" onClick={() => setActivePodcastEpisode(null)}>Back to series</button>}</div>
+          <div className="podcast-library-copy"><span className="eyebrow">{activePodcastEpisode ? "NOW PLAYING" : `SERIES · ${String(selectedPodcastIndex+1).padStart(2,"0")} / ${String(podcastDisplayItems.length).padStart(2,"0")}`}</span><h2>{activePodcastEpisode?.title || podcastDisplayItems[selectedPodcastIndex].title} <em>on Nochalant.</em></h2><p>{activePodcastEpisode?.description || podcastDisplayItems[selectedPodcastIndex].description}</p><span className="podcast-status">{activePodcastEpisode ? "OFFICIAL NOCHALANT EPISODE" : "NEW EPISODES WILL APPEAR HERE"}</span>{activePodcastEpisode && <button className="podcast-clear-selection" type="button" onClick={() => {setActivePodcastEpisode(null);setPodcastVideoPlaying(false);setPodcastVideoCurrent(0);setPodcastVideoDuration(0);}}>Back to series</button>}</div>
         </div>
         <div className="podcast-selection-nav" aria-label="Choose a podcast series"><button type="button" onClick={() => {setActivePodcastEpisode(null);setPodcastSelection(index => (index - 1 + podcastDisplayItems.length) % podcastDisplayItems.length);}} aria-label="Previous podcast series">← <span>PREVIOUS</span></button><span>CHOOSE A SERIES</span><button type="button" onClick={() => {setActivePodcastEpisode(null);setPodcastSelection(index => (index + 1) % podcastDisplayItems.length);}} aria-label="Next podcast series"><span>NEXT</span> →</button></div>
         <div className="podcast-library-tabs"><span>ALL EPISODES</span><span>SEASONS</span><span>SESSIONS</span><span>CLIPS</span></div>
         <div className="podcast-episodes-heading"><span className="eyebrow">THE SERIES LIBRARY</span><h2>{podcastDisplayItems[selectedPodcastIndex].title} <em>episodes.</em></h2></div>
-        {podcastCatalogueLoading ? <p className="podcast-empty-state">Loading the Nochalant catalogue…</p> : (podcastCatalogue.episodes || []).filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex].id).length ? <div className="podcast-episodes-grid">{podcastCatalogue.episodes.filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex].id).map(episode => <article className={activePodcastEpisode?.id === episode.id ? "podcast-episode-card is-playing" : "podcast-episode-card"} key={episode.id}><div className="podcast-episode-art">{episode.thumbnail_url ? <img src={episode.thumbnail_url} alt="" loading="lazy"/> : <span className="podcast-episode-monogram">N.</span>}<span className="podcast-episode-number">EP {String(episode.episode_number || "—").padStart(2,"0")}</span></div><div className="podcast-episode-copy"><strong>{episode.title}</strong><p>{episode.description || "An original Nochalant episode."}</p><button type="button" className="podcast-branded-play" onClick={() => {setActivePodcastEpisode(episode);window.scrollTo({top:0,behavior:"smooth"});}}><span>WATCH EPISODE</span><span aria-hidden="true">↗</span></button></div></article>)}</div> : <div className="podcast-empty-state"><span className="podcast-empty-mark">N.</span><strong>Episodes are on the way.</strong><p>This series is set up. Its first published episode will appear here as soon as the editorial team uploads and publishes it.</p></div>}
+        {podcastCatalogueLoading ? <p className="podcast-empty-state">Loading the Nochalant catalogue…</p> : (podcastCatalogue.episodes || []).filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex].id).length ? <div className="podcast-episodes-grid">{podcastCatalogue.episodes.filter(episode => episode.show_id === podcastDisplayItems[selectedPodcastIndex].id).map(episode => <article className={activePodcastEpisode?.id === episode.id ? "podcast-episode-card is-playing" : "podcast-episode-card"} key={episode.id}><div className="podcast-episode-art">{episode.thumbnail_url ? <img src={episode.thumbnail_url} alt="" loading="lazy"decoding="async" /> : <span className="podcast-episode-monogram">N.</span>}<span className="podcast-episode-number">EP {String(episode.episode_number || "—").padStart(2,"0")}</span></div><div className="podcast-episode-copy"><strong>{episode.title}</strong><p>{episode.description || "An original Nochalant episode."}</p><button type="button" className="podcast-branded-play" onClick={() => {setActivePodcastEpisode(episode);setPodcastVideoPlaying(false);setPodcastVideoCurrent(0);setPodcastVideoDuration(0);window.scrollTo({top:0,behavior:"smooth"});}}><span>WATCH EPISODE</span><span aria-hidden="true"></span></button></div></article>)}</div> : <div className="podcast-empty-state"><span className="podcast-empty-mark">N.</span><strong>Episodes are on the way.</strong><p>This series is set up. Its first published episode will appear here as soon as the editorial team uploads and publishes it.</p></div>}
         <div className="podcast-library-grid">{podcastDisplayItems.map((item,index) => <button type="button" key={item.id || item.title} className={selectedPodcastIndex === index ? "podcast-library-card is-selected" : "podcast-library-card"} onClick={() => {setActivePodcastEpisode(null);setPodcastSelection(index);}} aria-pressed={selectedPodcastIndex === index}><div className={item.art}><span>{String(index+1).padStart(2,"0")}</span><b>{item.label}</b></div><div><strong>{item.title}</strong><p>{item.subtitle}</p></div></button>)}</div>
-      </section> : activeScreen === "dashboard" ? <section className="account-dashboard container screen-page" aria-labelledby="account-dashboard-title"><div className="account-dashboard-head"><div><span className="eyebrow">YOUR NOCHALANT SPACE</span><h1 id="account-dashboard-title">Your dashboard<span>.</span></h1><p>Welcome back, {accountProfile?.profile?.display_name || currentUser?.name || "member"}.</p></div><div className="dashboard-account-type"><span className="account-type-chip">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span><small>Account type selected during registration</small></div></div>{accountProfileLoading ? <div className="account-dashboard-loading">Loading your account tools…</div> : accountProfileError ? <div className="account-dashboard-loading" role="alert">{accountProfileError} <button className="button button-outline" type="button" onClick={() => setAccountProfileRefresh(value => value + 1)}>Retry</button></div> : <><form id="member-profile-settings" className="member-profile-editor artist-studio-form" onSubmit={saveMemberProfile}>
+      </section> : activeScreen === "dashboard" ? <section className="account-dashboard container screen-page" aria-labelledby="account-dashboard-title"><div className="account-dashboard-head"><div><span className="eyebrow">YOUR NOCHALANT SPACE</span><h1 id="account-dashboard-title">{({fan:"Your feed",artist:"Artist studio",creator:"Creator hub",event_organizer:"Event dashboard",business:"Brand hub",media:"Publisher desk"})[accountProfile?.profile?.account_type || "fan"]}<span>.</span></h1><p>Welcome back, {accountProfile?.profile?.display_name || currentUser?.name || "member"}. {({fan:"Your culture, conversations and people in one place.",artist:"Your music, releases and artist presence.",creator:"Your portfolio, audience and booking enquiries.",event_organizer:"Your events, listings and audience.",business:"Your brand presence and campaigns.",media:"Your publication identity and editorial submissions."})[accountProfile?.profile?.account_type || "fan"]}</p></div><div className="dashboard-account-type"><span className="account-type-chip">{ACCOUNT_TYPE_LABELS[accountProfile?.profile?.account_type || "fan"] || "Fan / Listener"}</span><small>Account type selected during registration</small></div></div>{accountProfileLoading ? <div className="account-dashboard-loading">Loading your account tools…</div> : accountProfileError ? <div className="account-dashboard-loading" role="alert">{accountProfileError} <button className="button button-outline" type="button" onClick={() => setAccountProfileRefresh(value => value + 1)}>Retry</button></div> : <><details className="member-profile-settings"><summary>Edit your profile and public identity</summary><form id="member-profile-settings" className="member-profile-editor artist-studio-form" onSubmit={saveMemberProfile}>
           <div><span className="eyebrow">YOUR PUBLIC IDENTITY</span><h2>Member profile</h2><p>Set up the profile people see when you join the Nochalant community.</p></div>
           <div className="member-avatar-editor"><span className="member-avatar-preview">{accountProfile?.profileDetails?.avatar_url ? <img src={accountProfile.profileDetails.avatar_url} alt="Your profile"/> : (accountProfile?.profile?.display_name || currentUser?.name || "N").charAt(0).toUpperCase()}</span><label>Profile photo<input name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/avif"/></label></div>
           <label>Username<input name="username" minLength="3" maxLength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="your_username" defaultValue={accountProfile?.profileDetails?.username || ""}/></label>
@@ -1361,10 +1556,17 @@ function App() {
           <label>Website<input name="websiteUrl" type="url" placeholder="https://example.com" defaultValue={accountProfile?.profileDetails?.website_url || ""}/></label>
           <label>Location<input name="location" maxLength="100" placeholder="City, country" defaultValue={accountProfile?.profileDetails?.location || ""}/></label>
           <button className="button button-green" disabled={memberProfileBusy}>{memberProfileBusy ? "Saving profile…" : "Save member profile"}</button>
-        </form>
-        <div className="account-dashboard-grid" id="account-dashboard-tools"><article className="account-dashboard-card account-dashboard-primary"><span className="eyebrow">ACCOUNT TYPE</span><h2>{({fan:"Fan & Listener",artist:"Artist / Musician",creator:"Creator / Influencer",event_organizer:"Event Organizer",business:"Business / Brand",media:"Media / Publisher"})[accountProfile?.profile?.account_type || "fan"]}</h2><p>Your dashboard is organized around the account type you selected. Your account type does not grant editorial or verification privileges.</p></article>{(accountProfile?.profile?.account_type || "fan") === "artist" ? <><article className="account-dashboard-card"><span className="eyebrow">ARTIST PROFILE</span><h3>{artistStudio?.artist?.stage_name || accountProfile?.artistProfile?.stage_name || "Your artist identity"}</h3><p>Verification: {artistStudio?.artist?.verification_status || accountProfile?.artistProfile?.verification_status || "unverified"}. Public verification is reviewed separately by Nochalant.</p><span className="dashboard-status">{(artistStudio?.artist?.verification_status || "unverified").toUpperCase()}</span></article><article className="account-dashboard-card"><span className="eyebrow">MUSIC CATALOGUE</span><h3>{artistStudio?.releases?.length || 0} release drafts &amp; submissions</h3><p>{artistStudio?.stats?.published_tracks || 0} published tracks · {Number(artistStudio?.stats?.downloads || 0).toLocaleString()} recorded downloads</p><span className="dashboard-status">LIVE ACCOUNT DATA</span></article></> : (accountProfile?.profile?.account_type || "fan") === "creator" ? <><article className="account-dashboard-card"><span className="eyebrow">CREATOR PROFILE</span><h3>Your public portfolio</h3><p>Build your creator identity, showcase work and connect with your audience.</p><span className="dashboard-status">PROFILE TO SET UP</span></article><article className="account-dashboard-card"><span className="eyebrow">BOOKINGS</span><h3>Enquiries &amp; bookings</h3><p>Manage service details, availability and booking requests.</p><span className="dashboard-status">BOOKING TOOLS IN DEVELOPMENT</span></article></> : (accountProfile?.profile?.account_type || "fan") === "event_organizer" ? <><article className="account-dashboard-card"><span className="eyebrow">EVENTS</span><h3>Your event listings</h3><p>Create event details, submit them for review and manage approved listings.</p><span className="dashboard-status">EVENT TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">ATTENDANCE</span><h3>Tickets &amp; guests</h3><p>Track event interest and attendance when ticketing is enabled.</p><span className="dashboard-status">TICKETING NOT CONNECTED</span></article></> : (accountProfile?.profile?.account_type || "fan") === "business" ? <><article className="account-dashboard-card"><span className="eyebrow">BRAND PROFILE</span><h3>Your business presence</h3><p>Showcase your brand, services and approved promotions.</p><span className="dashboard-status">PROFILE TO SET UP</span></article><article className="account-dashboard-card"><span className="eyebrow">PROMOTIONS</span><h3>Campaigns</h3><p>Prepare sponsored placements with transparent labels and editorial review.</p><span className="dashboard-status">CAMPAIGN TOOLS IN DEVELOPMENT</span></article></> : (accountProfile?.profile?.account_type || "fan") === "media" ? <><article className="account-dashboard-card"><span className="eyebrow">PUBLISHER PROFILE</span><h3>Media submissions</h3><p>Manage publisher identity and submit coverage for editorial consideration.</p><span className="dashboard-status">PUBLISHER TOOLS IN DEVELOPMENT</span></article></> : <><article className="account-dashboard-card"><span className="eyebrow">YOUR ACTIVITY</span><h3>Saved culture &amp; follows</h3><p>Keep up with artists, creators, conversations and events you follow.</p><span className="dashboard-status">MEMBER TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">COMMUNITY</span><h3>Social &amp; opinions</h3><p>Join conversations, share posts and take part in community voting.</p><span className="dashboard-status">MEMBER ACCESS</span></article></>}</div>{(accountProfile?.profile?.account_type || "fan") === "artist" && <div className="artist-studio-tools" id="artist-studio-tools"><div className="artist-studio-heading"><div><span className="eyebrow">ARTIST WORKSPACE</span><h2>Manage your <em>sound.</em></h2><p>Build your artist identity and prepare music releases for review.</p></div></div>{artistStudioError && <p className="artist-studio-error" role="alert">{artistStudioError}</p>}<div className="artist-studio-forms"><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"update_profile")}><h3>Artist profile</h3><label>Stage / artist name<input name="stageName" required maxLength="100" defaultValue={artistStudio?.artist?.stage_name || ""}/></label><label>Short biography<textarea name="bio" rows="4" maxLength="3000" defaultValue={artistStudio?.artist?.bio || ""}/></label><label>City<input name="city" maxLength="100" defaultValue={artistStudio?.artist?.city || ""}/></label><label>Profile image<input name="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><label>Banner image<input name="bannerFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional. JPEG, PNG, WebP or AVIF, up to 15 MB each. Leave blank to keep your current images.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save artist profile"}</button></form><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"create_release")}><h3>Start a music release</h3><label>Release title<input name="title" required maxLength="180" placeholder="Your single or album title"/></label><label>Release type<select name="releaseType" defaultValue="single"><option value="single">Single</option><option value="ep">EP</option><option value="album">Album</option><option value="mixtape">Mixtape</option></select></label><label>Genre<input name="genre" required maxLength="80" placeholder="Afrobeats, Amapiano…"/></label><label>Release date<input name="releaseDate" type="date"/></label><label>Cover artwork<input name="coverArtFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional JPEG, PNG, WebP or AVIF artwork, up to 15 MB.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save release draft"}</button><small className="fine-print">Audio and cover artwork upload directly to private Neon Storage. A saved draft is not published.</small>
-</form></div>
-<form className="artist-studio-form artist-track-form" onSubmit={e => submitArtistStudio(e,"add_track")}>
+        </form></details>
+        {(accountProfile?.profile?.account_type || "fan") !== "fan" && (<div className="account-dashboard-grid" id="account-dashboard-tools"><article className="account-dashboard-card account-dashboard-primary"><span className="eyebrow">ACCOUNT TYPE</span><h2>{({fan:"Fan & Listener",artist:"Artist / Musician",creator:"Creator / Influencer",event_organizer:"Event Organizer",business:"Business / Brand",media:"Media / Publisher"})[accountProfile?.profile?.account_type || "fan"]}</h2><p>Your dashboard is organized around the account type you selected. Your account type does not grant editorial or verification privileges.</p></article>{(accountProfile?.profile?.account_type || "fan") === "artist" ? <><article className="account-dashboard-card"><span className="eyebrow">ARTIST PROFILE</span><h3>{artistStudio?.artist?.stage_name || accountProfile?.artistProfile?.stage_name || "Your artist identity"}</h3><p>Verification: {artistStudio?.artist?.verification_status || accountProfile?.artistProfile?.verification_status || "unverified"}. Public verification is reviewed separately by Nochalant.</p><span className="dashboard-status">{(artistStudio?.artist?.verification_status || "unverified").toUpperCase()}</span></article><article className="account-dashboard-card"><span className="eyebrow">MUSIC CATALOGUE</span><h3>{artistStudio?.releases?.length || 0} release drafts &amp; submissions</h3><p>{artistStudio?.stats?.published_tracks || 0} published tracks · {Number(artistStudio?.stats?.downloads || 0).toLocaleString()} recorded downloads</p><span className="dashboard-status">LIVE ACCOUNT DATA</span></article></> : (accountProfile?.profile?.account_type || "fan") === "creator" ? <><article className="account-dashboard-card"><span className="eyebrow">CREATOR PROFILE</span><h3>Your public creator identity</h3><p>Manage your bio, category, location and booking contact details in your Creator Workspace.</p><span className="dashboard-status">CREATOR WORKSPACE AVAILABLE</span></article><article className="account-dashboard-card"><span className="eyebrow">PORTFOLIO & BOOKINGS</span><h3>Your work and enquiries</h3><p>Add portfolio samples, enable booking enquiries and manage incoming requests.</p><span className="dashboard-status">PORTFOLIO MANAGEMENT AVAILABLE</span></article></> : (accountProfile?.profile?.account_type || "fan") === "event_organizer" ? <><article className="account-dashboard-card"><span className="eyebrow">EVENTS</span><h3>Your event listings</h3><p>Create event details, submit them for review and manage approved listings.</p><span className="dashboard-status">EVENT DRAFT WORKSPACE</span></article><article className="account-dashboard-card"><span className="eyebrow">ATTENDANCE</span><h3>Tickets &amp; guests</h3><p>Track event interest and attendance when ticketing is enabled.</p><span className="dashboard-status">TICKETING NOT CONNECTED</span></article></> : (accountProfile?.profile?.account_type || "fan") === "business" ? <><article className="account-dashboard-card"><span className="eyebrow">BRAND PROFILE</span><h3>Your business presence</h3><p>Showcase your brand, services and approved promotions.</p><span className="dashboard-status">BUSINESS WORKSPACE AVAILABLE</span></article><article className="account-dashboard-card"><span className="eyebrow">PROMOTIONS</span><h3>Campaigns</h3><p>Prepare sponsored placements with transparent labels and editorial review.</p><span className="dashboard-status">CAMPAIGN MANAGEMENT AVAILABLE</span></article></> : (accountProfile?.profile?.account_type || "fan") === "media" ? <><article className="account-dashboard-card"><span className="eyebrow">PUBLISHER PROFILE</span><h3>Media submissions</h3><p>Manage publisher identity and submit coverage for editorial consideration.</p><span className="dashboard-status">PUBLISHER WORKSPACE AVAILABLE</span></article></> : <><article className="account-dashboard-card"><span className="eyebrow">YOUR ACTIVITY</span><h3>Saved culture &amp; follows</h3><p>Keep up with artists, creators, conversations and events you follow.</p><span className="dashboard-status">MEMBER TOOLS IN DEVELOPMENT</span></article><article className="account-dashboard-card"><span className="eyebrow">COMMUNITY</span><h3>Social &amp; opinions</h3><p>Join conversations, share posts and take part in community voting.</p><span className="dashboard-status">MEMBER ACCESS</span></article></>}</div>)}{(accountProfile?.profile?.account_type || "fan") === "fan" && <section className="fan-member-shortcuts" aria-label="Fan and listener home"><div className="fan-home-heading"><span className="eyebrow">MADE FOR FANS & LISTENERS</span><h2>Your culture, <em>your way.</em></h2><p>Pick up where you want: listen, connect or catch the latest gist.</p></div>
+  <div className="fan-shortcut-grid">
+    <button type="button" className="fan-shortcut-card" onClick={() => {setActiveScreen("music");setMemberDockTab("music");window.scrollTo({top:0,behavior:"smooth"});}}><span className="eyebrow">LISTEN</span><strong>Explore music</strong><small>Discover tracks and artists</small><span className="fan-shortcut-arrow">↗</span></button>
+    <button type="button" className="fan-shortcut-card" onClick={() => {setActiveScreen("social");setMemberDockTab("socials");window.scrollTo({top:0,behavior:"smooth"});}}><span className="eyebrow">CONNECT</span><strong>Community</strong><small>Join conversations and follow people</small><span className="fan-shortcut-arrow">↗</span></button>
+    <button type="button" className="fan-shortcut-card" onClick={() => {setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}><span className="eyebrow">DISCOVER</span><strong>Culture desk</strong><small>News, entertainment and trends</small><span className="fan-shortcut-arrow">↗</span></button>
+  </div>
+</section>}
+{(accountProfile?.profile?.account_type || "fan") === "fan" && <section className="fan-member-feed" aria-label="Your fan and listener feed"><div className="artist-studio-heading"><div><span className="eyebrow">YOUR CULTURE · YOUR COMMUNITY</span><h2>Your <em>feed.</em></h2><p>Conversations, creators and culture updates from the Nochalant community.</p></div></div><DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} /></DeferredPanel></section>}{(accountProfile?.profile?.account_type || "fan") === "creator" && <DeferredPanel><CreatorWorkspace /></DeferredPanel>}{(accountProfile?.profile?.account_type || "fan") === "event_organizer" && <DeferredPanel><EventOrganizerWorkspace /></DeferredPanel>}{(accountProfile?.profile?.account_type || "fan") === "business" && <DeferredPanel><BusinessWorkspace /></DeferredPanel>}{(accountProfile?.profile?.account_type || "fan") === "media" && <DeferredPanel><MediaWorkspace /></DeferredPanel>}{(accountProfile?.profile?.account_type || "fan") === "artist" && <div className="artist-studio-tools" id="artist-studio-tools"><div className="artist-studio-heading"><div><span className="eyebrow">ARTIST WORKSPACE</span><h2>Manage your <em>sound.</em></h2><p>Build your artist identity and prepare music releases for review.</p></div><div className="workspace-overview-grid"><article className="account-dashboard-card"><span className="eyebrow">RELEASES</span><h3>{artistStudio?.releases?.length || 0}</h3><p>All release drafts and submissions</p></article><article className="account-dashboard-card"><span className="eyebrow">PUBLISHED TRACKS</span><h3>{artistStudio?.stats?.published_tracks || 0}</h3><p>Tracks approved and published</p></article><article className="account-dashboard-card"><span className="eyebrow">RECORDED DOWNLOADS</span><h3>{Number(artistStudio?.stats?.downloads || 0).toLocaleString()}</h3><p>Recorded track downloads</p></article></div></div>{artistStudioError && <p className="artist-studio-error" role="alert">{artistStudioError}</p>}<div className="artist-studio-forms"><details className="workspace-edit-details"><summary>Edit artist profile</summary><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"update_profile")}><h3>Artist profile</h3><label>Stage / artist name<input name="stageName" required maxLength="100" defaultValue={artistStudio?.artist?.stage_name || ""}/></label><label>Short biography<textarea name="bio" rows="4" maxLength="3000" defaultValue={artistStudio?.artist?.bio || ""}/></label><label>City<input name="city" maxLength="100" defaultValue={artistStudio?.artist?.city || ""}/></label><label>Profile image<input name="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><label>Banner image<input name="bannerFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional. JPEG, PNG, WebP or AVIF, up to 15 MB each. Leave blank to keep your current images.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save artist profile"}</button></form></details><details className="workspace-edit-details"><summary>Create a release draft</summary><form className="artist-studio-form" onSubmit={e => submitArtistStudio(e,"create_release")}><h3>Start a music release</h3><label>Release title<input name="title" required maxLength="180" placeholder="Your single or album title"/></label><label>Release type<select name="releaseType" defaultValue="single"><option value="single">Single</option><option value="ep">EP</option><option value="album">Album</option><option value="mixtape">Mixtape</option></select></label><label>Genre<input name="genre" required maxLength="80" placeholder="Afrobeats, Amapiano…"/></label><label>Release date<input name="releaseDate" type="date"/></label><label>Cover artwork<input name="coverArtFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"/></label><small className="fine-print">Optional JPEG, PNG, WebP or AVIF artwork, up to 15 MB.</small><button className="button button-green" disabled={artistStudioBusy}>{artistStudioBusy ? "Saving…" : "Save release draft"}</button><small className="fine-print">Audio and cover artwork upload directly to private Neon Storage. A saved draft is not published.</small>
+</form></details></div>
+<details className="workspace-edit-details"><summary>Add tracks to a release</summary><form className="artist-studio-form artist-track-form" onSubmit={e => submitArtistStudio(e,"add_track")}>
 <h3>Add a track</h3>
 <label>Draft release<select name="releaseId" required defaultValue=""><option value="" disabled>Choose your release</option>{(artistStudio?.releases || []).filter(release => release.status === "draft").map(release => <option key={release.id} value={release.id}>{release.title}</option>)}</select></label>
 <label>Track title<input name="title" required maxLength="180" placeholder="Track title"/></label>
@@ -1373,24 +1575,17 @@ function App() {
 <label>ISRC (optional)<input name="isrc" maxLength="20" placeholder="Track ISRC"/></label>
 <button className="button button-green" disabled={artistStudioBusy || !(artistStudio?.releases || []).some(release => release.status === "draft")}>{artistStudioBusy ? "Saving…" : "Add track to release"}</button>
 <small className="fine-print">Upload MP3, M4A, AAC, WAV, FLAC, OGG or WebM audio up to 100 MB. Files upload directly to private Neon Storage; tracks remain pending until editorial approval.</small>
-</form>
+</form></details>
 <div className="artist-release-list"><h3>Your releases</h3>{artistStudio?.releases?.length ? artistStudio.releases.map(release => <div className="artist-release-row" key={release.id}><div><strong>{release.title}</strong><small>{release.release_type.toUpperCase()} · {release.genre} · {release.track_count} tracks</small></div><span className="dashboard-status">{release.status.toUpperCase()}</span>{release.status === "draft" && <button className="button button-outline" disabled={artistStudioBusy} onClick={async () => {setArtistStudioBusy(true);try{const token=await getAuthToken();const response=await fetch("/api/artist/studio",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action:"submit_release",releaseId:release.id})});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||"Release could not be submitted.");const refreshed=await fetch("/api/artist/studio",{headers:{Authorization:`Bearer ${token}`},cache:"no-store"});const latest=await refreshed.json().catch(()=>({}));if(refreshed.ok&&latest.ok)setArtistStudio(latest);notify("Release sent for editorial review.");}catch(error){setArtistStudioError(error.message||"Release submission failed.");}finally{setArtistStudioBusy(false);}}}>Submit for review</button>}</div>) : <p className="fine-print">No releases yet. Create your first release draft above.</p>}</div></div>}<div className="account-dashboard-footer"><button className="button button-outline" onClick={() => setActiveScreen("home")}>Back to Nochalant</button></div></>}</section> : null}
     </main>
     {activeScreen === "home" && (
       <section className="home-podcast-section container" aria-labelledby="home-podcast-title">
               <div className="home-podcast-head"><div><span className="eyebrow">NOCHALANT PODCAST</span><h2 id="home-podcast-title">Watch the <em>latest episode.</em></h2><p>Unfiltered conversations. Culture. Music. People. Only on Nochalant Podcast.</p></div><button className="podcast-see-more" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>See more <span>→</span></button></div>
-              <div className="podcast-feature-player"><div className="podcast-screen"><div className="podcast-screen-brand"><span className="podcast-screen-mark">N.</span><strong>NOCHALANT<br/>PODCAST</strong></div><span className="podcast-screen-status">NOCHALANT ORIGINALS · EPISODES COMING SOON</span></div><div className="podcast-player-meta"><div><span className="podcast-status">FEATURED SHOW</span><h3>Nochalant Podcast</h3><p>Original conversations from the culture desk</p></div><button type="button" className="podcast-brand-emblem" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}} aria-label="Open Nochalant Podcast"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30"/><path d="M18 17v30h7V28l17 19h5V17h-7v19L23 17z"/><path d="m30 26 13 7-13 7z" className="podcast-brand-play-cut"/></svg></button></div></div>
+              <div className="podcast-feature-player"><div className="podcast-screen"><div className="podcast-screen-brand"><span className="podcast-screen-mark">N.</span><strong>NOCHALANT<br/>PODCAST</strong></div><span className="podcast-screen-status">NOCHALANT ORIGINALS · EPISODES COMING SOON</span></div><div className="podcast-player-meta"><div><span className="podcast-status">FEATURED SHOW</span><h3>Nochalant Podcast</h3><p>Original conversations from the culture desk</p></div><button type="button" className="podcast-play-cta" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}} aria-label="Open Nochalant Podcast episodes"><span className="podcast-play-disc" aria-hidden="true"><svg viewBox="0 0 80 80"><circle className="podcast-play-orbit" cx="40" cy="40" r="36"/><path className="podcast-play-triangle" d="M33 25.5c-1.6-1-3.7.2-3.7 2.1v24.8c0 1.9 2.1 3.1 3.7 2.1l20-12.4a2.5 2.5 0 0 0 0-4.2l-20-12.4Z"/></svg></span><span className="podcast-play-label">PLAY SHOW</span></button></div></div>
       </section>
     )}
 
-    {activeScreen === "home" && <section className="newsletter-section container" aria-labelledby="newsletter-title">
-      <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
-      <form className="newsletter-form" onSubmit={e => {e.preventDefault();setModal("newsletter-success");}}>
-        <label className="sr-only" htmlFor="newsletter-email">Your email address</label>
-        <input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} placeholder="Your email address"/>
-        <button type="submit">Gimme Update</button>
-      </form>
-    </section>}
+    
     {!currentUser?.id && <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>}
 
     <audio ref={audioRef} preload="metadata" />
@@ -1421,24 +1616,24 @@ function App() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14V10M8 18V6M12 15V9M16 19V5M20 14V10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
     </button>}
 
-    {currentUser?.id && memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
-      <button type="button" className={memberDockTab==="home"?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
+    {memberDockEnabled && <nav className={"member-app-dock"+(memberDockHidden?" is-hidden":"")} aria-label="Nochalant member navigation">
+      <button type="button" className={(memberDockTab==="home"||(!currentUser?.id&&activeScreen==="home"))?"active":""} onClick={()=>navigateMemberDock("home")} aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9a1.2 1.2 0 0 1-1.2 1.2h-5.2v-6.2H9.4V21H4.2A1.2 1.2 0 0 1 3 19.8z"/></svg><span>HOME</span></button>
       <button type="button" className={memberDockTab==="music"?"active":""} onClick={()=>navigateMemberDock("music")} aria-label="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></svg><span>MUSIC</span></button>
       <button type="button" className="dock-create" onClick={()=>navigateMemberDock("create")} aria-label="Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       <button type="button" className={memberDockTab==="socials"?"active":""} onClick={()=>navigateMemberDock("socials")} aria-label="Socials"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5M16 5.5a3 3 0 0 1 0 5.8M17 14.5c2.4.6 4 2.5 4 5"/></svg><span>SOCIALS</span></button>
       <button type="button" className={"dock-more"+(memberDockTab==="more"?" active":"")} onClick={()=>navigateMemberDock("more")} aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>MORE</span></button>
     </nav>}
-    {modal && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
+    {modal && <div className={"modal-backdrop"+(modal === "story" ? " story-reader-backdrop" : "")} onMouseDown={e => e.target === e.currentTarget && closeModal()}><div className={"modal-card"+(modal === "story" ? " story-reader-card" : "")} role="dialog" aria-modal="true" aria-labelledby="modal-title"><button ref={modalCloseRef} className="modal-close" onClick={closeModal} aria-label="Close dialog">×</button>
       {modal === "artist-profile" && <div className="artist-profile-modal">
         {artistProfileLoading ? <p className="artist-profile-loading">Loading artist profile…</p> : artistProfileError ? <p className="artist-profile-loading" role="alert">{artistProfileError}</p> : selectedArtist && <>
           <div className="artist-profile-hero" style={selectedArtist.banner_url ? {backgroundImage: 'linear-gradient(0deg,#0b0d09 0%,#0b0d0988 100%),url("' + selectedArtist.banner_url + '")'} : undefined}>
-            {selectedArtist.image_url && <img src={selectedArtist.image_url} alt={selectedArtist.name + " artist portrait"} />}
+            {selectedArtist.image_url && <img src={selectedArtist.image_url} alt={selectedArtist.name + " artist portrait"} loading="lazy" decoding="async" />}
             <div><span className="eyebrow">NOCHALANT VERIFIED ARTIST</span><h2 id="modal-title">{selectedArtist.name}</h2><p>{[selectedArtist.city, selectedArtist.country_code].filter(Boolean).join(" · ")}</p></div>
           </div>
           <section className="artist-profile-bio"><span className="eyebrow">ARTIST BIO</span><p>{selectedArtist.bio || "Artist biography coming soon."}</p>{selectedArtist.genre && <span className="artist-profile-genre">{selectedArtist.genre}</span>}</section>
           <section className="artist-profile-discography"><span className="eyebrow">RELEASED ON NOCHALANT</span><h3>Tracks & releases</h3>
             {selectedArtist.tracks?.length ? selectedArtist.tracks.map(track => <article className="artist-profile-track" key={track.id}>
-              <img src={track.cover_art_url || selectedArtist.image_url || ""} alt="" />
+              <img src={track.cover_art_url || selectedArtist.image_url || ""} alt="" loading="lazy" decoding="async" />
               <div><strong>{track.title}</strong><small>{track.release_title}</small><span><span>▶ {Number(track.plays_count || 0).toLocaleString()}</span><span>↓ {Number(track.download_count || 0).toLocaleString()}</span></span></div>
               <button type="button" onClick={() => playArtistTrack(track, selectedArtist.tracks)} disabled={!track.audio_url} aria-label={"Play " + track.title}>▶</button>
             </article>) : <p className="artist-profile-loading">No published tracks yet.</p>}
@@ -1446,13 +1641,15 @@ function App() {
         </>}
       </div>}
       {modal === "newsletter-success" && <div className="newsletter-success"><span className="brand-signature" aria-hidden="true">N</span><span className="eyebrow">YOU'RE IN THE LOOP</span><h2 id="modal-title">Good things are coming.</h2><p>Thanks for wanting the Nochalant update. Email signups aren't connected yet, so your address hasn't been saved.</p><button className="button button-green full-width" onClick={closeModal}>Got you</button></div>}
-      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><div className="article-byline"><span>By {story.author}</span><span>{typeof viewCounts[story.id] === "number" ? `${viewCounts[story.id].toLocaleString()} views` : "Reader count loading"}</span><span>{story.read}</span></div><img className="modal-story-image" src={story.image} alt=""/><p>{story.body}</p>{story.slug && <p><a href={"/story/"+story.slug} target="_blank" rel="noreferrer">Open search-friendly article page ↗</a></p>}<div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
+      {modal === "story" && <><span className="eyebrow">{story.category} · {story.label}</span><h2 id="modal-title">{story.title}</h2><div className="article-byline"><span>By {story.author}</span><span>{typeof viewCounts[story.id] === "number" ? `${viewCounts[story.id].toLocaleString()} views` : "Reader count loading"}</span><span>{story.read}</span></div><img className="modal-story-image" src={story.image} alt=""loading="lazy" decoding="async" /><p>{story.body}</p>{story.slug && <p><a href={"/story/"+story.slug} target="_blank" rel="noreferrer">Open search-friendly article page </a></p>}<div className="comment-area"><h3>Join the conversation</h3>{(comments[story.id] || []).map((comment, index) => <p className="comment" key={index}>{comment}</p>)}<form onSubmit={addComment}><label className="sr-only" htmlFor="comment-input">Your comment</label><textarea id="comment-input" rows="3" value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Drop your comment..."/><button className="button button-green" type="submit">Post comment</button></form><small className="fine-print">Comments are stored only in this browser preview.</small></div></>}
       {modal === "submit" && <><span className="eyebrow">YOUR STORY. YOUR PLATFORM.</span><h2 id="modal-title">Spill the <em>gist.</em></h2><p className="modal-intro">Send a tip or story anonymously. No account, sign-in or registration is required. Every anonymous gist is archived privately for editorial review, with a target review window of up to 7 days.</p><form onSubmit={submitGist}><label>Category<select name="category" value={submissionCategories.includes(formCategory) ? formCategory : "Entertainment"} onChange={e => setFormCategory(e.target.value)}>{submissionCategories.map(x => <option key={x} value={x}>{x}</option>)}</select></label><label>Post title<input name="title" required minLength="8" maxLength="180" placeholder="Give your gist a clear title"/></label><label>Tell us the full gist<textarea name="body" required minLength="20" maxLength="12000" rows="5" placeholder="Add details, links and useful context..."/></label><label>Source link (optional)<input name="sourceUrl" type="url" placeholder="https://..."/></label><label className="check-label"><input type="checkbox" required/> I confirm this submission is accurate and I have permission to share its content.</label><button className="button button-green full-width" type="submit">Send anonymous gist</button><small className="fine-print">Your identity is not requested. Your submission remains private and pending until an editor reviews it.</small></form></>}
-      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><form onSubmit={submitAuth}>{modal === "signup" && <><label>Full name<input name="name" required placeholder="Your name"/></label><label>Choose your account type<select name="accountType" defaultValue="fan"><option value="fan">Fan / Listener</option><option value="artist">Artist / Musician</option><option value="creator">Creator / Influencer</option><option value="event_organizer">Event Organizer</option><option value="business">Business / Brand</option><option value="media">Media / Publisher</option></select></label><small className="fine-print">Your account type personalizes your dashboard and tools. Artist verification and publishing approval are separate steps.</small></>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
+      {(modal === "signup" || modal === "login") && <><span className="eyebrow">JOIN THE CULTURE</span><h2 id="modal-title">{modal === "signup" ? "Create your account." : "Welcome back."}</h2><p className="modal-intro">Sign in or create your Nochalant account securely.</p><button className="button button-outline full-width google-auth-button" type="button" onClick={signInWithGoogle} disabled={authBusy}><span className="google-mark" aria-hidden="true">G</span>{authBusy ? "Connecting to Google…" : "Continue with Google"}</button><div className="auth-divider"><span>OR CONTINUE WITH EMAIL</span></div><form onSubmit={submitAuth}>{modal === "signup" && <><label>Full name<input name="name" required placeholder="Your name"/></label><label>Choose your account type<select name="accountType" defaultValue="fan"><option value="fan">Fan / Listener</option><option value="artist">Artist / Musician</option><option value="creator">Creator / Influencer</option><option value="event_organizer">Event Organizer</option><option value="business">Business / Brand</option><option value="media">Media / Publisher</option></select></label><small className="fine-print">Your account type personalizes your dashboard and tools. Artist verification and publishing approval are separate steps.</small></>}<label>Email address<input name="email" type="email" required placeholder="you@example.com"/></label><label>Password<input name="password" type="password" required minLength="8" placeholder="At least 8 characters"/></label><button className="button button-green full-width" type="submit" disabled={authBusy}>{authBusy ? "Please wait…" : modal === "signup" ? "Create account" : "Log in"}</button>{authMessage && <small className="fine-print" role="status">{authMessage}</small>}</form><button className="switch-modal" onClick={() => setModal(modal === "signup" ? "login" : "signup")}>{modal === "signup" ? "Already registered? Log in" : "New here? Register"}</button></>}
     </div></div>}
     {selectedOpinion && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && setSelectedOpinion(null)}><div className="modal-card opinion-detail" role="dialog" aria-modal="true" aria-labelledby="opinion-detail-title"><button className="modal-close" onClick={() => setSelectedOpinion(null)} aria-label="Close opinion">×</button><span className="eyebrow">{selectedOpinion.topic} · NOCHALANT OPINION</span><h2 id="opinion-detail-title">The people have a say.</h2><blockquote>“{selectedOpinion.body}”</blockquote><p className="opinion-author-detail">Shared by {selectedOpinion.author_name}</p><div className="opinion-detail-actions"><button className="button button-outline full-width" onClick={() => {if (!currentUser) {setSelectedOpinion(null);setModal("login");setAuthMessage("Log in to report content.");} else {setReportOpinion(selectedOpinion);setSelectedOpinion(null);setOpinionsPanelMode("report");setOpinionsPanelOpen(true);}}}>Report this opinion</button><button className="button button-green full-width" onClick={() => {setSelectedOpinion(null);if (!currentUser) setModal("login");else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}>Share your take</button></div></div></div>}
     {opinionsPanelOpen && <DeferredPanel><OpinionsPanel open={opinionsPanelOpen} mode={opinionsPanelMode} opinion={reportOpinion} onClose={() => setOpinionsPanelOpen(false)} onNotice={notify} /></DeferredPanel>}
     {toast && <div className="toast" role="status">{toast}</div>}
   </div>;
 }
-createRoot(document.getElementById("root")).render(<App />);
+const publicCreatorParts = window.location.pathname.split("/");
+const publicCreatorId = publicCreatorParts.length === 3 && publicCreatorParts[1] === "creators" && /^[0-9a-f-]{36}$/i.test(publicCreatorParts[2]) ? publicCreatorParts[2] : null;
+createRoot(document.getElementById("root")).render(publicCreatorId ? <PublicCreatorProfile creatorId={publicCreatorId} /> : <App />);

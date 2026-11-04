@@ -1,0 +1,27 @@
+import React,{useCallback,useEffect,useState} from "react";
+import {getAuthToken} from "./auth.js";
+const blank={businessName:"",category:"Other",bio:"",websiteUrl:"",contactEmail:"",location:"",logoUrl:""};
+export default function BusinessWorkspace(){
+ const [profile,setProfile]=useState(blank),[campaigns,setCampaigns]=useState([]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
+ const token=useCallback(async()=>{const t=await getAuthToken();if(!t)throw new Error("Your session expired. Please sign in again.");return t;},[]);
+ const call=useCallback(async(url,body)=>{const t=await token();const r=await fetch(url,{method:body?"POST":"GET",headers:{Authorization:"Bearer "+t,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||"Request failed.");return d;},[token]);
+ const load=useCallback(async()=>{setBusy(true);setError("");try{const [p,c]=await Promise.all([call("/api/business/workspace"),call("/api/promotions",{action:"my_campaigns"})]);if(p.profile)setProfile({businessName:p.profile.business_name,category:p.profile.category,bio:p.profile.bio,websiteUrl:p.profile.website_url||"",contactEmail:p.profile.contact_email||"",location:p.profile.location||"",logoUrl:p.profile.logo_url||""});setCampaigns(c.campaigns||[]);}catch(e){setError(e.message);}finally{setBusy(false);}},[call]);
+ useEffect(()=>{load();},[load]);
+ const change=e=>setProfile(v=>({...v,[e.target.name]:e.target.value}));
+ const save=async e=>{e.preventDefault();setBusy(true);setError("");setNotice("");try{const d=await call("/api/business/workspace",profile);setProfile({businessName:d.profile.business_name,category:d.profile.category,bio:d.profile.bio,websiteUrl:d.profile.website_url||"",contactEmail:d.profile.contact_email||"",location:d.profile.location||"",logoUrl:d.profile.logo_url||""});setNotice("Business profile saved.");}catch(err){setError(err.message);}finally{setBusy(false);}};
+ const statusLabel=c=>c.payment_status==="paid"?(c.status==="approved"||c.status==="active"?"Approved / active":"Paid — awaiting review"):c.payment_status==="pending"?"Payment pending":c.payment_status==="failed"?"Payment failed":"Awaiting payment";
+ return <section className="artist-studio-tools business-workspace">
+  <div className="artist-studio-heading"><div><span className="eyebrow">BUSINESS WORKSPACE</span><h2>Build your <em>brand presence.</em></h2><p>Manage your public business details and sponsored campaign requests.</p></div></div>
+  {error&&<p className="artist-studio-error" role="alert">{error}</p>}{notice&&<p className="fine-print" role="status">{notice}</p>}
+  <div className="workspace-overview-grid"><article className="account-dashboard-card"><span className="eyebrow">CAMPAIGNS</span><h3>{campaigns.length}</h3><p>Campaign records</p></article><article className="account-dashboard-card"><span className="eyebrow">ACTIVE / APPROVED</span><h3>{campaigns.filter(c=>c.payment_status==="paid"&&(c.status==="approved"||c.status==="active")).length}</h3><p>Paid and approved campaigns</p></article></div>
+  <details className="workspace-edit-details"><summary>Manage business profile</summary><form className="artist-studio-form" onSubmit={save}><h3>Business profile</h3>
+   <label>Business / brand name<input name="businessName" value={profile.businessName} onChange={change} required minLength="2" maxLength="140"/></label>
+   <label>Category<select name="category" value={profile.category} onChange={change}>{["Other","Entertainment","Music","Fashion","Food & Beverage","Technology","Media","Lifestyle","Events","Professional Services"].map(v=><option key={v}>{v}</option>)}</select></label>
+   <label>About your business<textarea name="bio" value={profile.bio} onChange={change} rows="4" maxLength="2000"/></label>
+   <div className="artist-studio-form-grid"><label>Website (HTTPS)<input name="websiteUrl" type="url" value={profile.websiteUrl} onChange={change}/></label><label>Contact email<input name="contactEmail" type="email" value={profile.contactEmail} onChange={change}/></label><label>Location<input name="location" value={profile.location} onChange={change} maxLength="140"/></label><label>Logo URL (HTTPS)<input name="logoUrl" type="url" value={profile.logoUrl} onChange={change}/></label></div>
+   <button className="button button-green" disabled={busy}>{busy?"Saving…":"Save business profile"}</button>
+  </form></details>
+  <div className="artist-studio-heading"><div><span className="eyebrow">SPONSORED CAMPAIGNS</span><h2>Your <em>campaign activity.</em></h2><p>Only paid and approved campaigns can run.</p></div><button type="button" className="button button-outline" onClick={load} disabled={busy}>Refresh</button></div>
+  {busy&&!campaigns.length?<p className="fine-print">Loading campaigns…</p>:campaigns.length?<div className="event-organizer-list">{campaigns.map(c=><article className="account-dashboard-card" key={c.id}><span className="dashboard-status">{statusLabel(c).toUpperCase()}</span><h3>{c.title}</h3><p>{c.package_code} · {c.currency} {(Number(c.budget_minor)/100).toLocaleString()}</p><p>{c.impressions_count||0} impressions · {c.clicks_count||0} clicks</p></article>)}</div>:<p className="fine-print">No campaigns yet. Create a campaign in Promotions and it will appear here.</p>}
+ </section>;
+}

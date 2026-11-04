@@ -52,6 +52,13 @@ The numbered SQL files are committed to GitHub; that does **not** mean they have
 22. `019_social_stories.sql`
 23. `020_immutable_account_type.sql`
 24. `021_editorial_auto_post.sql`
+25. `022_editorial_seo_metadata.sql`
+26. `021_creator_workspace.sql` (workspace preflight only)
+27. `023_business_workspace.sql` (workspace preflight only)
+28. `024_media_workspace.sql` (workspace preflight only)
+29. `025_creator_booking_rate_limits.sql` (workspace preflight only)
+
+Note: migration filenames have legacy duplicate numeric prefixes. Apply the full filenames in dependency order, not lexical order. The Creator, Business, Media and public-booking rate-limit migrations are currently present on the isolated `nochalant-creator-workspace-test-20261103` branch only. They are not part of the production schema yet. Migration 021 is a legacy duplicate prefix: `021_editorial_auto_post.sql` must be applied before `021_creator_workspace.sql`. Event Organizer currently reuses `agenda_events`; there is no separate event-organizer migration in this branch.
 
 The workspace migration is additive and backfills each existing member's current account type without replacing an already selected primary workspace. Migration 019 adds text-only 24-hour stories and story-view tracking. Migration 020 adds the immutable registration-time account-type lock. It locks existing members only when they already have a non-empty account type; members with no selected type remain eligible to make their first selection, which is locked at activation. Verify this behavior on the isolated preflight branch before production rollout. Do not run these migrations on production until the development branch passes schema and API verification. If any migration fails, stop and inspect the error; do not continue with later migrations or assume a partially executed script completed.
 
@@ -65,7 +72,7 @@ A successful response has:
 - `ok: true`
 - `database: "connected"`
 - `schema: "complete"`
-- `present_tables: 46`
+- `present_tables: 56`
 - `missing_columns: []`
 - `missing_tables: []`
 - `missing_triggers: []`
@@ -169,3 +176,18 @@ The initial feeds are BellaNaija, NotJustOk and BBC Africa. RSS availability and
 Migration `022_editorial_seo_metadata.sql` adds per-article slug, SEO title/description, focus keyword, canonical URL, Open Graph image and indexability metadata. Public article URLs use `/story/:slug`, rendered server-side with NewsArticle JSON-LD, canonical and social metadata. `/sitemap.xml` is generated from published, indexable articles and `/robots.txt` advertises it to crawlers. Apply 022 on preflight before testing; production remains untouched until the full migration sequence is approved.
 
 Important: sitemap inclusion and crawlable HTML improve discovery, but cannot guarantee Google/Bing indexing or rankings. Search Console and Bing Webmaster Tools ownership verification and sitemap submission remain external setup steps.
+
+
+## 15. Media / Publisher workspace
+
+Migration `024_media_workspace.sql` adds the publisher identity and editorial pitch workflow:
+- `media_profiles` stores the publication name, outlet type, contact details, coverage beats and public profile.
+- `media_pitch_submissions` stores story pitches submitted by authenticated Media / Publisher accounts. New pitches enter `pending` and only editors can decide their editorial status.
+- The workspace API is routed through the existing consolidated admin function so the Vercel Hobby serverless-function budget is preserved.
+
+Apply migration 024 only to the isolated preview/test branch first. The media workspace health check includes both tables. Do not apply this migration to Production until the feature branch, editorial review flow and production migration plan have been approved.
+
+
+## 16. Public creator booking intake
+
+Migration `025_creator_booking_rate_limits.sql` adds hashed-IP fixed-window counters for public booking enquiries. `POST /api/creator/bookings` accepts requests only for active Creator accounts with booking enabled, validates the requester and date, uses a honeypot field, and limits each connection to five attempts per 15-minute window. The Creator member-profile view exposes only the creator's public profile and portfolio fields and includes the enquiry form when booking is enabled. No requester data is returned publicly. Apply migration 025 to preview/test before production rollout approval. The database health endpoint checks all seven workspace tables (Creator x3, Business x1, Media x2 and booking rate limits x1), so the preview health response must report 56/56 required tables. Production must remain at its existing schema until the additive migrations are explicitly approved.

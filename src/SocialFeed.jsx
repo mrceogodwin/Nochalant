@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getAuthToken } from "./auth.js";
+import { localDateTimeToIso } from "./event-date-time.js";
 
 async function socialRequest({ method = "GET", query = "", body, signal }) {
   const token = await getAuthToken();
@@ -40,7 +41,16 @@ function timeAgo(value) {
   return days < 7 ? days + "d" : date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
-export default function SocialFeed({ currentUser, onJoin, onLogin }) {
+export default function SocialFeed({ currentUser, onJoin, onLogin, compactPreview = false, onLoadMore }) {
+  const accountType = currentUser?.account_type || currentUser?.profile?.account_type || "fan";
+  const feedIdentity = {
+    fan: { forYou: "For you", following: "Following", eyebrow: "YOUR CULTURE FEED" },
+    artist: { forYou: "Industry pulse", following: "Your circle", eyebrow: "ARTIST COMMUNITY" },
+    creator: { forYou: "Creator pulse", following: "Your circle", eyebrow: "CREATOR COMMUNITY" },
+    event_organizer: { forYou: "Event pulse", following: "Your circle", eyebrow: "EVENT COMMUNITY" },
+    business: { forYou: "Brand pulse", following: "Your circle", eyebrow: "BRAND COMMUNITY" },
+    media: { forYou: "Media pulse", following: "Your circle", eyebrow: "PUBLISHER COMMUNITY" }
+  }[accountType] || { forYou: "For you", following: "Following", eyebrow: "YOUR CULTURE FEED" };
   const [feed, setFeed] = useState("for-you");
   const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
@@ -72,6 +82,10 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   const [comments, setComments] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [busyAction, setBusyAction] = useState("");
+  const [bookingDraft, setBookingDraft] = useState({ name: "", email: "", message: "", requestedFor: "", website: "" });
+  const [bookingBusy, setBookingBusy] = useState(false);
+  const [bookingNotice, setBookingNotice] = useState("");
+  const [bookingError, setBookingError] = useState("");
 
   const loadFeed = useCallback(async (signal, selectedFeed = feed) => {
     setLoading(true);
@@ -172,6 +186,23 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
     } finally {
       if (requestId === memberProfileRequest.current) setMemberProfileLoading(false);
     }
+  };
+
+  const submitCreatorBooking = async event => {
+    event.preventDefault();
+    if (!memberProfile?.id || bookingBusy) return;
+    setBookingBusy(true); setBookingError(""); setBookingNotice("");
+    try {
+      const response = await fetch("/api/creator/bookings", {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ creatorId: memberProfile.id, ...bookingDraft, requestedFor: localDateTimeToIso(bookingDraft.requestedFor) })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || "Your booking enquiry could not be sent.");
+      setBookingDraft({ name: "", email: "", message: "", requestedFor: "", website: "" });
+      setBookingNotice(result.message || "Your booking enquiry has been sent.");
+    } catch (err) { setBookingError(err.message || "Your booking enquiry could not be sent."); }
+    finally { setBookingBusy(false); }
   };
 
   const closeMemberProfile = () => {
@@ -296,14 +327,14 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
   }
 
   return <div className="social-feed-shell">
-    <header className="social-network-header">
+    <header className={"social-network-header" + (compactPreview ? " is-compact-hidden" : "")}>
       <div><span className="eyebrow">THE PEOPLE · THE CULTURE</span><h1 id="social-title">Nochalant <em>Social.</em></h1><p>What's happening in your world?</p></div>
       <button className="social-create-top" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋ <span>Create post</span></button>
       <button className="social-profile-top" type="button" onClick={openProfile}>Profile</button>
       <button className="social-notification-toggle" type="button" onClick={openNotifications} aria-expanded={notificationsOpen} aria-label="Notifications">🔔<span>Notifications</span></button>
     </header>
 
-    {suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
+    {!compactPreview && suggestedMembers.length > 0 && <section className="social-people-rail" aria-label="People to follow">
       <div className="social-rail-heading"><div><span className="eyebrow">FIND YOUR PEOPLE</span><h2>Creators & community</h2></div><span>MEMBERS TO DISCOVER</span></div>
       <div className="social-people-list">
         {suggestedMembers.map(member => <article className="social-person" key={member.id}>
@@ -315,21 +346,21 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       </div>
     </section>}
 
-    <section className="social-stories-rail" aria-label="Stories">
+    {!compactPreview && <section className="social-stories-rail" aria-label="Stories">
       <button type="button" className="social-story-bubble social-story-add" onClick={() => setStoryComposerOpen(true)}>
         <span className="social-story-avatar">＋</span><strong>Your story</strong>
       </button>
       {stories.map(story => <button type="button" className={"social-story-bubble" + (story.viewer_seen ? " seen" : "")} key={story.id} onClick={() => openStory(story)}>
         <span className="social-story-avatar">{avatarContent(story.author_name, story.avatar_url)}</span><strong>{story.author_name || "Member"}</strong>
       </button>)}
-    </section>
+    </section>}
 
-    <div className="social-feed-toolbar">
+    <div className={"social-feed-toolbar" + (compactPreview ? " is-compact-hidden" : "")}>
       <div className="social-feed-tabs" role="tablist" aria-label="Choose your feed">
-        <button type="button" role="tab" aria-selected={feed === "for-you"} className={feed === "for-you" ? "active" : ""} onClick={() => setFeed("for-you")}>For you</button>
-        <button type="button" role="tab" aria-selected={feed === "following"} className={feed === "following" ? "active" : ""} onClick={() => setFeed("following")}>Following</button>
+        <button type="button" role="tab" aria-selected={feed === "for-you"} className={feed === "for-you" ? "active" : ""} onClick={() => setFeed("for-you")}>{feedIdentity.forYou}</button>
+        <button type="button" role="tab" aria-selected={feed === "following"} className={feed === "following" ? "active" : ""} onClick={() => setFeed("following")}>{feedIdentity.following}</button>
       </div>
-      <span className="social-feed-live"><i/> COMMUNITY FEED</span>
+      <span className="social-feed-live"><i/> {feedIdentity.eyebrow}</span>
     </div>
 
     {notificationsOpen && <section className="social-notification-panel" aria-label="Notifications">
@@ -359,8 +390,26 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
         <div className="social-public-profile-head"><span className="social-public-profile-avatar">{avatarContent(memberProfile.display_name, memberProfile.avatar_url)}</span><div><h3>{memberProfile.display_name}</h3><small>@{memberProfile.username || "member"} · {String(memberProfile.account_type || "fan").replaceAll("_", " ")}</small></div></div>
         {memberProfile.bio && <p className="social-public-profile-bio">{memberProfile.bio}</p>}
         <div className="social-profile-stats"><span><strong>{Number(memberProfile.follower_count || 0).toLocaleString()}</strong><small>Followers</small></span><span><strong>{Number(memberProfile.following_count || 0).toLocaleString()}</strong><small>Following</small></span><span><strong>{(memberProfile.posts || []).length}</strong><small>Posts</small></span></div>
-        {(memberProfile.location || memberProfile.website_url) && <div className="social-public-profile-meta">{memberProfile.location && <span>{memberProfile.location}</span>}{memberProfile.website_url && <a href={memberProfile.website_url} target="_blank" rel="noreferrer">Visit website ↗</a>}</div>}
+        {(memberProfile.location || memberProfile.website_url) && <div className="social-public-profile-meta">{memberProfile.location && <span>{memberProfile.location}</span>}{memberProfile.website_url && <a href={memberProfile.website_url} target="_blank" rel="noreferrer">Visit website </a>}</div>}
         {memberProfile.id !== viewerProfileId && <button type="button" className="button button-green full-width" onClick={toggleMemberProfileFollow} disabled={busyAction === "profile-follow"}>{memberProfile.viewer_follows ? "Following · Unfollow" : "＋ Follow"}</button>}
+        {memberProfile.account_type === "creator" && memberProfile.creator_profile && <section className="social-creator-public-work">
+          <div className="social-public-profile-posts"><h3>{memberProfile.creator_profile.display_title || memberProfile.display_name}</h3>
+            {memberProfile.creator_profile.creator_category && <small>{memberProfile.creator_profile.creator_category.replaceAll("_"," ")}</small>}
+            {memberProfile.creator_profile.bio && <p>{memberProfile.creator_profile.bio}</p>}
+            {memberProfile.creator_profile.location && <p>{memberProfile.creator_profile.location}</p>}
+            {memberProfile.creator_portfolio?.length > 0 && <><h3>Portfolio</h3>{memberProfile.creator_portfolio.map(item=><article key={item.id}><strong>{item.title}</strong>{item.description&&<p>{item.description}</p>}{item.media_url&&<a href={item.media_url} target="_blank" rel="noreferrer">View media </a>}{item.external_url&&<a href={item.external_url} target="_blank" rel="noreferrer">View project </a>}</article>)}</>}
+          </div>
+          {memberProfile.creator_profile.booking_enabled && <form className="social-creator-booking-form" onSubmit={submitCreatorBooking}>
+            <h3>Book this creator</h3><p>Send a booking enquiry directly to this creator.</p>
+            {bookingError&&<p className="artist-studio-error" role="alert">{bookingError}</p>}{bookingNotice&&<p className="dashboard-status" role="status">{bookingNotice}</p>}
+            <label>Your name<input required minLength="2" maxLength="120" value={bookingDraft.name} onChange={e=>setBookingDraft(v=>({...v,name:e.target.value}))}/></label>
+            <label>Email address<input type="email" required maxLength="254" value={bookingDraft.email} onChange={e=>setBookingDraft(v=>({...v,email:e.target.value}))}/></label>
+            <label>Preferred date (optional)<input type="datetime-local" value={bookingDraft.requestedFor} onChange={e=>setBookingDraft(v=>({...v,requestedFor:e.target.value}))}/></label>
+            <label>Tell them about your booking<textarea required minLength="10" maxLength="3000" rows="4" value={bookingDraft.message} onChange={e=>setBookingDraft(v=>({...v,message:e.target.value}))} placeholder="What would you like to book them for?"/></label>
+            <label className="social-booking-honeypot" aria-hidden="true">Leave this field empty<input tabIndex="-1" autoComplete="off" value={bookingDraft.website} onChange={e=>setBookingDraft(v=>({...v,website:e.target.value}))}/></label>
+            <button className="button button-green full-width" disabled={bookingBusy}>{bookingBusy?"Sending…":"Send booking enquiry"}</button>
+          </form>}
+        </section>}
         <div className="social-public-profile-posts"><h3>Recent posts</h3>{(memberProfile.posts || []).length ? memberProfile.posts.map(item => <article key={item.id}><p>{item.body}</p><small>{timeAgo(item.created_at)} · {Number(item.like_count || 0)} likes · {Number(item.comment_count || 0)} comments</small></article>) : <p className="social-notification-empty">No public posts yet.</p>}</div>
       </article>}
     </div>}
@@ -388,9 +437,9 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
       </form>
     </div>}
 
-    <div className="social-network-layout">
+    <div className={"social-network-layout" + (compactPreview ? " social-network-layout-compact" : "")}>
       <main className="social-network-posts">
-        {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? posts.map(post => <article className="social-network-post" key={post.id}>
+        {loading ? <div className="social-feed-state">Loading your community…</div> : error ? <div className="social-feed-state" role="alert"><strong>We couldn't load the feed.</strong><p>{error}</p><button className="button button-outline" onClick={() => loadFeed()}>Try again</button></div> : posts.length ? (compactPreview ? posts.slice(0, 3) : posts).map(post => <article className="social-network-post" key={post.id}>
           <div className="social-network-post-head"><span className="social-avatar">{avatarContent(post.author_name, post.avatar_url)}</span><div className="social-author-copy"><button type="button" className="social-author-profile-link" onClick={() => openMemberProfile(post.author_id)}>{post.author_name || "Nochalant member"}</button><small>{String(post.account_type || "fan").replaceAll("_", " ")} · {timeAgo(post.created_at)}</small></div>{post.author_id !== viewerProfileId && <span className="social-member-label">{post.viewer_follows_author ? "FOLLOWING" : "NOCHALANT"}</span>}</div>
           <p className="social-network-post-body">{post.body}</p>
           <div className="social-network-post-actions">
@@ -402,14 +451,15 @@ export default function SocialFeed({ currentUser, onJoin, onLogin }) {
             {(comments[post.id] || []).map(comment => <article className="social-comment" key={comment.id}><span className="social-comment-avatar">{avatarContent(comment.author_name, comment.avatar_url)}</span><div><strong>{comment.author_name}</strong><p>{comment.body}</p><small>{timeAgo(comment.created_at)}</small></div></article>)}
             <form onSubmit={event => submitComment(event, post)} className="social-comment-form"><input value={commentDrafts[post.id] || ""} onChange={event => setCommentDrafts(value => ({ ...value, [post.id]: event.target.value }))} maxLength={4000} placeholder="Write a reply…" aria-label="Write a reply"/><button type="submit" disabled={!(commentDrafts[post.id] || "").trim() || busyAction === "comment:" + post.id}>Reply</button></form>
           </section>}
-        </article>) : <div className="social-feed-state"><strong>{feed === "following" ? "Your Following feed is quiet." : "The conversation starts here."}</strong><p>{feed === "following" ? "Follow creators and members to see their posts here." : "Be among the first to share what's happening in your world."}</p><button className="button button-green" type="button" onClick={() => setComposerOpen(true)}>＋ Create your first post</button></div>}
+        </article>) : <div className="social-feed-state"><span className="eyebrow">{feedIdentity.eyebrow}</span><strong>{feed === "following" ? "Your circle is quiet for now." : ({fan:"Your culture feed starts here.",artist:"Your industry circle starts here.",creator:"Your creator community starts here.",event_organizer:"Your event community starts here.",business:"Your brand community starts here.",media:"Your publisher community starts here."}[accountType] || "Your community feed starts here.")}</strong><p>{feed === "following" ? "Follow members whose updates you want to see. Their new posts will appear here." : ({fan:"Follow artists and creators, discover conversations and share what you love.",artist:"Connect with fans, collaborators, creators and media. Share a release or studio update.",creator:"Meet creators, artists and potential collaborators. Share your work and grow your circle.",event_organizer:"Connect with artists, venues, fans and organisers. Share an event update.",business:"Meet creators, artists and event organisers. Share news about your brand or campaign.",media:"Connect with artists, creators and event organisers. Share coverage and editorial updates."}[accountType] || "Follow people you like or share an update with your community.")}</p><div className="social-role-empty-actions"><button className="button button-green" type="button" onClick={() => setComposerOpen(true)}>＋ Create a post</button><button className="button button-outline" type="button" onClick={() => setFeed("for-you")}>Explore community</button></div></div>}
       </main>
-      <aside className="social-network-aside">
+      {!compactPreview && <aside className="social-network-aside">
         <div className="social-aside-card"><span className="social-aside-mark">N<span>.</span></span><span className="eyebrow">NOCHALANT SOCIAL</span><h2>Your voice moves culture.</h2><p>Connect with creators, artists and people shaping entertainment, music and everyday life.</p><button type="button" className="button button-outline full-width" onClick={() => setComposerOpen(true)}>Start a conversation</button></div>
         <div className="social-aside-note"><strong>Keep it respectful.</strong><p>Build the culture. Credit creators. Make room for different voices.</p></div>
-      </aside>
+      </aside>}
     </div>
+    {compactPreview && !loading && !error && posts.length > 0 && <div className="social-preview-more"><span>Showing {Math.min(posts.length,3)} recent conversations</span><button type="button" onClick={onLoadMore}>Load more <span aria-hidden="true">→</span></button></div>}
 
-    <button className="social-floating-create" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋</button>
+    {!compactPreview && <button className="social-floating-create" type="button" onClick={() => setComposerOpen(true)} aria-label="Create a post">＋</button>}
   </div>;
 }

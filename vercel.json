@@ -1,6 +1,34 @@
 {
   "rewrites": [
     {
+      "source": "/creators/:creatorId",
+      "destination": "/"
+    },
+    {
+      "source": "/api/creator/profile",
+      "destination": "/api/admin/opinions?creatorPublicProfileRoute=1"
+    },
+    {
+      "source": "/api/creator/bookings",
+      "destination": "/api/admin/opinions?creatorPublicBookingRoute=1"
+    },
+    {
+      "source": "/api/media/workspace",
+      "destination": "/api/admin/opinions?mediaWorkspaceRoute=1"
+    },
+    {
+      "source": "/api/business/workspace",
+      "destination": "/api/admin/opinions?businessWorkspaceRoute=1"
+    },
+    {
+      "source": "/api/events/workspace",
+      "destination": "/api/admin/opinions?eventOrganizerRoute=1"
+    },
+    {
+      "source": "/api/creator/workspace",
+      "destination": "/api/admin/opinions?creatorWorkspaceRoute=1"
+    },
+    {
       "source": "/api/artists",
       "destination": "/api/community?type=artists"
     },

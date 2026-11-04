@@ -3,6 +3,11 @@ import { neon } from "@neondatabase/serverless";
 import { createMusicDownloadUrl } from "../_lib/music-storage.js";
 import { handleAccountType } from "../_lib/account-type.js";
 import { handleArtistStudio } from "../_lib/artist-studio.js";
+import { handleCreatorWorkspace } from "../_lib/creator-workspace.js";
+import { handleEventOrganizer } from "../_lib/event-organizer.js";
+import { handleBusinessWorkspace } from "../_lib/business-workspace.js";
+import { handleMediaWorkspace } from "../_lib/media-workspace.js";
+import { handlePublicCreatorBooking, handlePublicCreatorProfile } from "../_lib/creator-booking.js";
 import { handlePodcast } from "../_lib/podcast.js";
 import { handlePromotions } from "../_lib/promotions.js";
 import { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
@@ -31,17 +36,33 @@ async function proxyNeonAuth(req, res) {
   // can be the deployment's canonical hostname even when the visitor uses a
   // branch alias; using it here causes an origin mismatch in Safari.
   const requestOrigin = typeof req.headers.origin === "string" ? req.headers.origin : "";
-  const requestHost = typeof req.headers.host === "string" ? req.headers.host.toLowerCase() : "";
+  const requestHost = typeof req.headers.host === "string" ? req.headers.host.split(",")[0].trim().toLowerCase() : "";
+  // Vercel can expose the incoming public hostname separately from the
+  // function host. Accept the browser origin only when it matches one of
+  // those request-scoped host values; never substitute a deployment URL
+  // for the visitor's actual origin.
+  const forwardedHost = typeof req.headers["x-forwarded-host"] === "string"
+    ? req.headers["x-forwarded-host"].split(",")[0].trim().toLowerCase()
+    : "";
+  const allowedRequestHosts = new Set([requestHost, forwardedHost].filter(Boolean));
   let authOrigin = null;
   if (requestOrigin) {
     try {
       const parsedOrigin = new URL(requestOrigin);
-      if (parsedOrigin.protocol === "https:" && parsedOrigin.host.toLowerCase() === requestHost) {
+      if (
+        parsedOrigin.protocol === "https:" &&
+        allowedRequestHosts.has(parsedOrigin.host.toLowerCase())
+      ) {
         authOrigin = parsedOrigin.origin;
       }
     } catch {}
     if (!authOrigin) {
-      return res.status(403).json({ message: "Authentication origin does not match this site." });
+      console.warn("Nochalant auth origin rejected", {
+        originHost: (() => { try { return new URL(requestOrigin).host; } catch { return "invalid"; } })(),
+        requestHost,
+        forwardedHost
+      });
+      return res.status(403).json({ message: "Authentication origin does not match this site. Reload Nochalant and try again." });
     }
   } else if (process.env.VERCEL_ENV === "production") {
     authOrigin = "https://nochalant.com";
@@ -51,6 +72,9 @@ async function proxyNeonAuth(req, res) {
   if (!authOrigin) {
     return res.status(503).json({ message: "Preview authentication origin is not configured." });
   }
+  // The upstream fetch already supplies the Neon Auth endpoint as Host.
+  // Do not forward the public app hostname as x-forwarded-host: Neon Auth
+  // validates its own service hostname separately from the browser Origin.
   headers.set("origin", authOrigin);
 
   const init = { method: req.method, headers, redirect: "manual" };
@@ -152,6 +176,14 @@ async function handleSocialNetwork(req, res) {
           WHERE s.status = 'published' AND s.expires_at > now()
             AND (s.author_id = ${auth.profile.id} OR s.visibility = 'public'
               OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = s.author_id))
+            AND (s.author_id = ${auth.profile.id} OR CASE ${auth.profile.account_type}
+              WHEN 'fan' THEN true
+              WHEN 'artist' THEN u.account_type IN ('artist','fan','creator','media')
+              WHEN 'creator' THEN u.account_type IN ('creator','fan','artist','media')
+              WHEN 'event_organizer' THEN u.account_type IN ('event_organizer','fan','business','artist')
+              WHEN 'business' THEN u.account_type IN ('business','fan','creator','event_organizer')
+              WHEN 'media' THEN u.account_type IN ('media','fan','artist','creator','event_organizer')
+              ELSE true END)
           ORDER BY s.created_at DESC
           LIMIT 100
         `;
@@ -181,7 +213,20 @@ async function handleSocialNetwork(req, res) {
               OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
           ORDER BY p.created_at DESC LIMIT 20
         `;
-        return res.status(200).json({ ok: true, profile: members[0], posts: memberPosts });
+        let creatorProfile = null;
+        let creatorPortfolio = [];
+        if (members[0].account_type === "creator") {
+          const [creatorRows, portfolioRows] = await Promise.all([
+            auth.sql`SELECT display_title,creator_category,bio,location,website_url,booking_enabled
+              FROM creator_profiles WHERE user_profile_id=${memberId} LIMIT 1`,
+            auth.sql`SELECT id,title,description,media_url,external_url,sort_order,created_at
+              FROM creator_portfolio_items WHERE creator_user_id=${memberId}
+              ORDER BY sort_order ASC,created_at DESC LIMIT 30`
+          ]);
+          creatorProfile = creatorRows[0] || null;
+          creatorPortfolio = portfolioRows;
+        }
+        return res.status(200).json({ ok: true, profile: { ...members[0], creator_profile: creatorProfile, creator_portfolio: creatorPortfolio }, posts: memberPosts });
       }
       if (req.query?.profile === "1") {
         const rows = await auth.sql`
@@ -238,6 +283,14 @@ async function handleSocialNetwork(req, res) {
         WHERE p.status = 'published' AND u.account_status = 'active'
           AND (p.author_id = ${auth.profile.id} OR p.visibility = 'public'
             OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
+          AND (p.author_id = ${auth.profile.id} OR CASE ${auth.profile.account_type}
+            WHEN 'fan' THEN true
+            WHEN 'artist' THEN u.account_type IN ('artist','fan','creator','media')
+            WHEN 'creator' THEN u.account_type IN ('creator','fan','artist','media')
+            WHEN 'event_organizer' THEN u.account_type IN ('event_organizer','fan','business','artist')
+            WHEN 'business' THEN u.account_type IN ('business','fan','creator','event_organizer')
+            WHEN 'media' THEN u.account_type IN ('media','fan','artist','creator','event_organizer')
+            ELSE true END)
           AND (${feed} <> 'following' OR p.author_id = ${auth.profile.id}
             OR EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = p.author_id))
         ORDER BY p.created_at DESC LIMIT 40
@@ -247,6 +300,14 @@ async function handleSocialNetwork(req, res) {
         FROM user_profiles u
         LEFT JOIN user_profile_details d ON d.user_profile_id = u.id
         WHERE u.id <> ${auth.profile.id} AND u.account_status = 'active'
+          AND CASE ${auth.profile.account_type}
+            WHEN 'fan' THEN true
+            WHEN 'artist' THEN u.account_type IN ('artist','fan','creator','media')
+            WHEN 'creator' THEN u.account_type IN ('creator','fan','artist','media')
+            WHEN 'event_organizer' THEN u.account_type IN ('event_organizer','fan','business','artist')
+            WHEN 'business' THEN u.account_type IN ('business','fan','creator','event_organizer')
+            WHEN 'media' THEN u.account_type IN ('media','fan','artist','creator','event_organizer')
+            ELSE true END
           AND NOT EXISTS (SELECT 1 FROM user_follows f WHERE f.follower_id = ${auth.profile.id} AND f.followed_user_id = u.id)
         ORDER BY u.created_at DESC LIMIT 8
       `;
@@ -495,6 +556,12 @@ export default async function handler(req, res) {
   if (req.query?.authPath) return proxyNeonAuth(req, res);
   if (req.query?.accountTypeRoute) return handleAccountType(req, res);
   if (req.query?.artistStudioRoute) return handleArtistStudio(req, res);
+  if (req.query?.creatorWorkspaceRoute) return handleCreatorWorkspace(req, res);
+  if (req.query?.creatorPublicProfileRoute) return handlePublicCreatorProfile(req, res);
+  if (req.query?.creatorPublicBookingRoute) return handlePublicCreatorBooking(req, res);
+  if (req.query?.eventOrganizerRoute) return handleEventOrganizer(req, res);
+  if (req.query?.businessWorkspaceRoute) return handleBusinessWorkspace(req, res);
+  if (req.query?.mediaWorkspaceRoute) return handleMediaWorkspace(req, res);
   if (req.query?.podcastRoute) return handlePodcast(req, res);
   if (req.query?.promotionsRoute) return handlePromotions(req, res);
   const auth = await requireActiveUser(req);
