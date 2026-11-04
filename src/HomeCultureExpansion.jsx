@@ -4,6 +4,14 @@ const discoveryCategories = ["Trending","Afrobeats","Nollywood","Celebrity","BBN
 const sectionStory = (stories, terms, fallbackIndex=0) => stories.find(story => terms.some(term => (story.category||"").toLowerCase().includes(term))) || stories[fallbackIndex];
 const StoryTile = ({story,onOpen,rank}) => story ? <button type="button" className="flagship-story" onClick={()=>onOpen?.(story)}><img src={story.image || ""} alt="" loading="lazy"/><span className="flagship-story-category">{story.category || "CULTURE"}</span><b>{story.title}</b><small>{story.read || "3 min read"} · {story.time || "Latest"}</small></button> : null;
 
+
+export function HomeCultureDiscovery({onChooseCategory}) {
+  return <section className="culture-pulse container" aria-label="Culture discovery">
+    <div className="pulse-heading"><div><span className="eyebrow">YOUR CULTURE, YOUR WAY</span><h2>Find your <em>corner.</em></h2></div><span className="pulse-live">NOCHALANT DISCOVER</span></div>
+    <div className="pulse-grid">{discoveryCategories.map((name,i)=><button type="button" key={name} className="pulse-chip" onClick={()=>onChooseCategory?.(name)}>{name}<span>{i===0?"":"›"}</span></button>)}</div>
+  </section>;
+}
+
 export default function HomeCultureExpansion({stories=[],artists=[],onOpenStory,onChooseCategory}) {
   const published = stories.filter(s=>s && s.title && s.image);
   const trending = published.slice(0,5);
@@ -12,11 +20,6 @@ export default function HomeCultureExpansion({stories=[],artists=[],onOpenStory,
   const buzz = published.slice(0,4);
   const tracks = artists.flatMap(a=>(a.tracks||[]).map(t=>({...t,artist_name:t.artist_name||a.name}))).slice(0,5);
   return <div className="home-culture-expansion">
-    <section className="culture-pulse container" aria-label="Culture discovery">
-      <div className="pulse-heading"><div><span className="eyebrow">YOUR CULTURE, YOUR WAY</span><h2>Find your <em>corner.</em></h2></div><span className="pulse-live">NOCHALANT DISCOVER</span></div>
-      <div className="pulse-grid">{discoveryCategories.map((name,i)=><button type="button" key={name} className="pulse-chip" onClick={()=>onChooseCategory?.(name)}>{name}<span>{i===0?"":"›"}</span></button>)}</div>
-    </section>
-
     <section className="flagship-section container" aria-labelledby="trending-now-title">
       <div className="flagship-heading"><div><span className="eyebrow">THE STORIES MOVING RIGHT NOW</span><h2 id="trending-now-title">Naija Trending <em>Now.</em></h2><p>Freshly published stories from the Nochalant desk.</p></div><span className="flagship-kicker">01 / THE DAILY PULSE</span></div>
       <div className="flagship-grid">{trending.length ? trending.map((s,i)=><StoryTile key={s.id||s.slug||i} story={s} rank={i+1} onOpen={onOpenStory}/>) : <div className="flagship-empty">No published trending stories yet. Approved editorial stories will appear here automatically.</div>}</div>
