@@ -160,7 +160,7 @@ function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [viewCounts, setViewCounts] = useState({});
-  const [communityFaces, setCommunityFaces] = useState(demoFaces);
+  const [communityFaces, setCommunityFaces] = useState([]);
   const [artists, setArtists] = useState([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [selectedArtist, setSelectedArtist] = useState(null);
