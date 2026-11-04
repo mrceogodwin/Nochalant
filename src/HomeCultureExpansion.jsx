@@ -14,7 +14,7 @@ export default function HomeCultureExpansion({stories=[],artists=[],onOpenStory,
   return <div className="home-culture-expansion">
     <section className="culture-pulse container" aria-label="Culture discovery">
       <div className="pulse-heading"><div><span className="eyebrow">YOUR CULTURE, YOUR WAY</span><h2>Find your <em>corner.</em></h2></div><span className="pulse-live">NOCHALANT DISCOVER</span></div>
-      <div className="pulse-grid">{discoveryCategories.map((name,i)=><button type="button" key={name} className="pulse-chip" onClick={()=>onChooseCategory?.(name)}>{name}<span>{i===0?"↗":"›"}</span></button>)}</div>
+      <div className="pulse-grid">{discoveryCategories.map((name,i)=><button type="button" key={name} className="pulse-chip" onClick={()=>onChooseCategory?.(name)}>{name}<span>{i===0?"":"›"}</span></button>)}</div>
     </section>
 
     <section className="flagship-section container" aria-labelledby="trending-now-title">
