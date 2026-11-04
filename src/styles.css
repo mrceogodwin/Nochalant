@@ -2316,3 +2316,45 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 }
 /* PLAY SHOW is a clean label; the circular play control remains the visual action. */
 .podcast-play-label{gap:0}
+
+
+/* Auth modal polish: consistent light-skin surfaces and Safari/iOS autofill. */
+.skin-light .modal-card .modal-close{
+  background:#e7e8df!important;
+  color:#3b4033!important;
+  border:1px solid #d6d8cb!important;
+}
+.skin-light .modal-card .switch-modal{color:#687d3d!important}
+.skin-light .modal-card .fine-print{color:#74766d!important}
+.skin-light .modal-card input,
+.skin-light .modal-card textarea,
+.skin-light .modal-card select{
+  background-color:#f1f0e9!important;
+  color:#292b25!important;
+  -webkit-text-fill-color:#292b25!important;
+  border-color:#ddddd3!important;
+}
+.modal-card input:-webkit-autofill,
+.modal-card input:-webkit-autofill:hover,
+.modal-card input:-webkit-autofill:focus,
+.modal-card textarea:-webkit-autofill,
+.modal-card select:-webkit-autofill{
+  -webkit-text-fill-color:var(--ink)!important;
+  -webkit-box-shadow:0 0 0 1000px var(--auth-input-bg,#0d0f0b) inset!important;
+  box-shadow:0 0 0 1000px var(--auth-input-bg,#0d0f0b) inset!important;
+  caret-color:var(--ink)!important;
+  transition:background-color 9999s ease-out 0s;
+}
+.skin-light .modal-card input:-webkit-autofill,
+.skin-light .modal-card input:-webkit-autofill:hover,
+.skin-light .modal-card input:-webkit-autofill:focus,
+.skin-light .modal-card textarea:-webkit-autofill,
+.skin-light .modal-card select:-webkit-autofill{
+  --auth-input-bg:#f1f0e9;
+  -webkit-text-fill-color:#292b25!important;
+}
+.skin-light .modal-card .google-auth-button{
+  background:#fff!important;
+  color:#202124!important;
+  border-color:#dadce0!important;
+}
