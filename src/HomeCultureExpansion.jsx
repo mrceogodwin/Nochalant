@@ -1,14 +1,15 @@
 import React from "react";
 
-const discoveryCategories = ["Trending","Afrobeats","Nollywood","Celebrity","BBNaija","Gossip","Hip-Hop","Street Culture","Fashion","Lifestyle","Comedy","Sports","Events","Podcasts","Technology","Viral Videos","Relationships","Influencers","Business","Politics"];
+const discoveryCategories = [{name:"Music",icon:"♫",category:"Afrobeats"},{name:"Movies",icon:"▣",category:"Nollywood"},{name:"Celebs",icon:"★",category:"Celebrity"},{name:"Events",icon:"▦",category:"Events"},{name:"Podcast",icon:"♩",category:"Podcasts"},{name:"Trending",icon:"♨",category:"Trending"},{name:"Lifestyle",icon:"♧",category:"Lifestyle"},{name:"More",icon:"▱",category:"All Gist"}];
 const sectionStory = (stories, terms, fallbackIndex=0) => stories.find(story => terms.some(term => (story.category||"").toLowerCase().includes(term))) || stories[fallbackIndex];
 const StoryTile = ({story,onOpen,rank}) => story ? <button type="button" className="flagship-story" onClick={()=>onOpen?.(story)}><img src={story.image || ""} alt="" loading="lazy"/><span className="flagship-story-category">{story.category || "CULTURE"}</span><b>{story.title}</b><small>{story.read || "3 min read"} · {story.time || "Latest"}</small></button> : null;
 
 
 export function HomeCultureDiscovery({onChooseCategory}) {
-  return <section className="culture-pulse container" aria-label="Culture discovery">
-    <div className="pulse-heading"><div><span className="eyebrow">YOUR CULTURE, YOUR WAY</span><h2>Find your <em>corner.</em></h2></div><span className="pulse-live">NOCHALANT DISCOVER</span></div>
-    <div className="pulse-grid">{discoveryCategories.map((name,i)=><button type="button" key={name} className="pulse-chip" onClick={()=>onChooseCategory?.(name)}>{name}<span>{i===0?"":"›"}</span></button>)}</div>
+  const [active,setActive] = React.useState("Music");
+  return <section className="category-discovery" aria-label="Explore by category">
+    <div className="category-discovery-heading"><h2>Explore by Category</h2><button type="button" onClick={()=>{setActive("More");onChooseCategory?.("All Gist");}}>View All <span aria-hidden="true">→</span></button></div>
+    <div className="category-discovery-grid">{discoveryCategories.map(item=><button type="button" key={item.name} className={"category-discovery-tile"+(active===item.name?" is-active":"")} aria-pressed={active===item.name} onClick={()=>{setActive(item.name);onChooseCategory?.(item.category);}}><span aria-hidden="true">{item.icon}</span><b>{item.name}</b></button>)}</div>
   </section>;
 }
 
@@ -21,7 +22,7 @@ export default function HomeCultureExpansion({stories=[],artists=[],onOpenStory,
   const tracks = artists.flatMap(a=>(a.tracks||[]).map(t=>({...t,artist_name:t.artist_name||a.name}))).slice(0,5);
   return <div className="home-culture-expansion">
     <section className="flagship-section container" aria-labelledby="trending-now-title">
-      <div className="flagship-heading"><div><span className="eyebrow">THE STORIES MOVING RIGHT NOW</span><h2 id="trending-now-title">Naija Trending <em>Now.</em></h2><p>Freshly published stories from the Nochalant desk.</p></div><span className="flagship-kicker">01 / THE DAILY PULSE</span></div>
+      <div className="flagship-heading"><div><span className="eyebrow">WHAT THE CULTURE IS TALKING ABOUT</span><h2 id="trending-now-title">Trending <em>Now.</em></h2><p>Freshly published stories from the Nochalant desk.</p></div><span className="flagship-kicker">01 / THE DAILY PULSE</span></div>
       <div className="flagship-grid">{trending.length ? trending.map((s,i)=><StoryTile key={s.id||s.slug||i} story={s} rank={i+1} onOpen={onOpenStory}/>) : <div className="flagship-empty">No published trending stories yet. Approved editorial stories will appear here automatically.</div>}</div>
     </section>
 
