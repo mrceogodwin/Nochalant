@@ -6,6 +6,7 @@ import { handleArtistStudio } from "../_lib/artist-studio.js";
 import { handleCreatorWorkspace } from "../_lib/creator-workspace.js";
 import { handleEventOrganizer } from "../_lib/event-organizer.js";
 import { handleBusinessWorkspace } from "../_lib/business-workspace.js";
+import { handleMediaWorkspace } from "../_lib/media-workspace.js";
 import { handlePodcast } from "../_lib/podcast.js";
 import { handlePromotions } from "../_lib/promotions.js";
 import { handleEditorialAutoPost, handleEditorialLatest } from "../_lib/editorial-auto-post.js";
@@ -501,6 +502,7 @@ export default async function handler(req, res) {
   if (req.query?.creatorWorkspaceRoute) return handleCreatorWorkspace(req, res);
   if (req.query?.eventOrganizerRoute) return handleEventOrganizer(req, res);
   if (req.query?.businessWorkspaceRoute) return handleBusinessWorkspace(req, res);
+  if (req.query?.mediaWorkspaceRoute) return handleMediaWorkspace(req, res);
   if (req.query?.podcastRoute) return handlePodcast(req, res);
   if (req.query?.promotionsRoute) return handlePromotions(req, res);
   const auth = await requireActiveUser(req);
