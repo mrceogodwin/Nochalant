@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/creator/bookings",
+      "destination": "/api/admin/opinions?creatorPublicBookingRoute=1"
+    },
+    {
       "source": "/api/media/workspace",
       "destination": "/api/admin/opinions?mediaWorkspaceRoute=1"
     },
