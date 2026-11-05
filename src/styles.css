@@ -1680,3 +1680,54 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .player-reopen:active,.member-player-reopen:active{cursor:grabbing}
 .player-reopen[style*="left"],.member-player-reopen[style*="left"]{right:auto!important;bottom:auto!important}
 @media(max-width:600px){.player-reopen,.member-player-reopen{width:62px;height:62px;min-width:62px}}
+
+
+/* Mobile fix: Hot or Trash hero was inheriting the desktop image min-height,
+   creating a large empty panel above the circular editorial image. */
+@media (max-width: 760px) {
+  #hot-or-trash.split-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 520px;
+  }
+  #hot-or-trash.split-section .jury-image {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    flex: 0 0 180px;
+    width: 100%;
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
+    overflow: hidden;
+  }
+  #hot-or-trash.split-section .jury-image img {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: 136px !important;
+    height: 136px !important;
+    min-height: 136px !important;
+    max-height: 136px !important;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  #hot-or-trash.split-section .jury-panel {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 20px 18px 22px;
+  }
+  #hot-or-trash.split-section .jury-panel h2 {
+    margin: 8px 0 10px;
+    font-size: clamp(32px, 8vw, 40px);
+    line-height: 1.05;
+  }
+  #hot-or-trash.split-section .jury-panel > p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
