@@ -30,7 +30,9 @@ function isUsableJwt(token, minimumValiditySeconds = 30) {
   const parts = token.split(".");
   if (parts.length !== 3) return false;
   try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded));
     return Number.isFinite(payload.exp)
       && payload.exp > Math.floor(Date.now() / 1000) + minimumValiditySeconds;
   } catch {
