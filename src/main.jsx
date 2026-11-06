@@ -525,6 +525,9 @@ function App() {
     let active = true;
     authClient.getSession().then(async result => {
       if (!active) return;
+      // Restore the JWT cache before setting the user: account/profile effects
+      // run as soon as currentUser changes and may immediately call protected APIs.
+      rememberAuthSession(result);
       if (result?.data?.user) {
         setCurrentUser(result.data.user);
         if (isControlRoom) await verifyControlRoomAccess();
@@ -917,9 +920,13 @@ function App() {
 
   const signOutUser = async () => {
     try {
-      await authClient?.signOut?.();
+      if (!authClient) throw new Error("Authentication is not configured.");
+      const result = await authClient.signOut();
+      if (result?.error) throw new Error(result.error.message || "Sign-out failed.");
       clearRememberedAuthSession();
       setCurrentUser(null);
+      setAccountProfile(null);
+      setArtistStudio(null);
       setOpinionsPanelOpen(false);
       notify("You have been signed out.");
     } catch (error) {
