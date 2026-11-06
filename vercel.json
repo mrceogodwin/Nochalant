@@ -34,7 +34,7 @@
     },
     {
       "source": "/api/auth/:path*",
-      "destination": "/api/admin/opinions?authPath=$1"
+      "destination": "/api/admin/opinions?authPath=:path*"
     },
     {
       "source": "/control-room",
