@@ -10,14 +10,29 @@ async function proxyNeonAuth(req, res) {
   const upstreamBase = process.env.NEON_AUTH_BASE_URL;
   if (!upstreamBase) return res.status(503).json({ message: "Neon Auth proxy is not configured." });
 
+  let authBase;
+  try {
+    authBase = new URL(upstreamBase);
+  } catch {
+    return res.status(503).json({ message: "Neon Auth proxy configuration is invalid." });
+  }
+  // This is a server-to-server credential boundary: never allow a configured
+  // non-HTTPS endpoint or URL credentials, and never let route segments escape
+  // the configured Neon Auth path via dot-segment normalization.
+  if (authBase.protocol !== "https:" || authBase.username || authBase.password || authBase.search || authBase.hash) {
+    return res.status(503).json({ message: "Neon Auth proxy configuration is invalid." });
+  }
+
   const requestUrl = new URL(req.url, "https://nochalant.vercel.app");
   const authPath = requestUrl.searchParams.get("authPath") || "";
   const segments = authPath.split("/").filter(Boolean);
-  if (!segments.length || segments.some(part => !/^[a-zA-Z0-9._~-]+$/.test(part))) {
+  if (!segments.length || segments.some(part =>
+    part === "." || part === ".." || !/^[a-zA-Z0-9._~-]+$/.test(part)
+  )) {
     return res.status(400).json({ message: "Invalid authentication route." });
   }
 
-  const upstream = new URL(upstreamBase.replace(/\/$/, "") + "/" + segments.join("/"));
+  const upstream = new URL(authBase.toString().replace(/\/$/, "") + "/" + segments.join("/"));
   requestUrl.searchParams.delete("authPath");
   upstream.search = requestUrl.search;
 
