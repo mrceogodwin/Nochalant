@@ -16,11 +16,17 @@ Nochalant is a Nigerian culture, entertainment, nightlife and events platform.
 - database/migrations/001_initial_schema.sql defines the initial PostgreSQL data model.
 - Homepage stories and events are placeholders until connected to editorial data.
 
-## Backend setup still required
-1. Provision a Neon project for Nochalant and configure DATABASE_URL as a server-side Vercel environment variable.
-2. Configure an authentication provider and store its immutable user ID in user_profiles.auth_user_id. Never trust client-supplied roles or user IDs.
-3. Implement server-side submission endpoints that derive the member from a verified session, calculate the normalized content fingerprint, and rely on database unique constraints for race-safe daily and duplicate protection.
-4. Add Paystack or Flutterwave checkout and verify signed webhooks server-side before marking payments successful or activating carousel placements.
-5. Restrict editorial endpoints to editor/admin roles and record moderation actions in editorial_audit_log.
+## Backend and preview setup
+- The browser uses Neon Managed Auth through Nochalant's same-origin `/api/auth/*` proxy. Do not configure a public `VITE_NEON_AUTH_URL` for this flow.
+- Server-side Vercel variables required for authenticated API routes: `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL`, and `DATABASE_URL_POOLED` (or `DATABASE_URL` as a fallback).
+- For preview testing, scope these variables to the intended Git branch and connect them only to an isolated Neon test branch. Never copy production database credentials into a preview.
+- The proxy uses the preview deployment origin for non-production requests. Ensure the Neon Auth trusted-origin configuration permits the exact preview origin being tested.
+- After configuring preview variables, redeploy the preview and verify registration, login, session restoration, logout, and protected API requests before considering authentication production-ready.
+- Never expose database credentials or Neon Auth server settings in Vite client variables.
+
+## Remaining backend/product work
+1. Ensure server-side submission endpoints derive the member from a verified session, calculate the normalized content fingerprint, and rely on database unique constraints for race-safe daily and duplicate protection.
+2. Add Paystack or Flutterwave checkout and verify signed webhooks server-side before marking payments successful or activating carousel placements.
+3. Restrict editorial endpoints to editor/admin roles and record moderation actions in `editorial_audit_log`.
 
 Never expose database credentials or payment secrets in Vite client variables. Never mark a payment successful from a browser redirect alone.
