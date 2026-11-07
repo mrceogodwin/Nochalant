@@ -45,6 +45,9 @@ Last updated: 2026-11-07
 | 0 | Voice room discovery | DONE (UNVERIFIED) | `/chats/voice-rooms`; live/upcoming room cards and local join state; no microphone or audio connection |
 | 0 | Messaging visual system | DONE (UNVERIFIED) | Inbox, direct threads, request cards, voice rooms and responsive styling in `globals.css` |
 
+| 0 | Squad group chat interaction preview | DONE (UNVERIFIED) | `/chats/lagos-night-crew`; Chat/Voice Room/Members tabs, local replies, reactions and pinned-message detail |
+| 0 | Squad conversation details | DONE (UNVERIFIED) | `/chats/lagos-night-crew/info`; mute toggle preview, invite and report entry points, safety notice |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
