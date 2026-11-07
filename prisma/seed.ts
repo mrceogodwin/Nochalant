@@ -33,7 +33,7 @@ const catalogueNames = [
 const starterIdentities = ["The Observer", "The Rebel", "The Music Head", "The Night Owl", "The Curator", "The Creative", "The Connector", "The Social One"] as const;
 
 const iconCategories = ["Royalty","Nightlife","Music","Alternative Culture","Fashion","Social","Creative","Mystery","Competitive","Exclusive","Culture","Culture"] as const;
-const starterScenes [
+const starterScenes = [
   ["alte-society","Alté Society","Alternative culture, music, fashion and creative expression.","MUSIC"],
   ["afterhours","Afterhours","Nightlife, clubs, events and afterparty stories.","NIGHTLIFE"],
   ["sound-district","Sound District","New music, unreleased drops, producers and artist talks.","MUSIC"],
