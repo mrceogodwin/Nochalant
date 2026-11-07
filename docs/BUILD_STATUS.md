@@ -126,3 +126,5 @@ Last updated: 2026-11-07
 - No credentials or API keys were added to the repository. No database was contacted, no migration or seed was run, and no deployment was attempted.
 - NOT READY FOR PUBLIC REGISTRATION: migration, terms/privacy/guidelines publication and legal review, resend-verification flow, password reset, automated abuse controls, end-to-end tests and verified Preview build remain outstanding.
 - TypeScript, Prisma schema validation, build and browser tests have not been run. All implementation status remains unverified pending CI/Preview.
+
+- Final review corrections: onboarding now displays the API's generic registration response verbatim, and the verification endpoint distinguishes an invalid token from an expired token. These are source-level fixes only; runtime validation remains pending.
