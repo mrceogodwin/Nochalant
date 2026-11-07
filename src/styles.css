@@ -1735,7 +1735,7 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 
 /* Flagship Nochalant Top 100 — homepage chart */
 .nocha-top100-section{padding-top:30px;padding-bottom:42px}
-.nocha-chart-shell{position:relative;overflow:hidden;padding:clamp(18px,3vw,30px);border:1px solid #b8d95a;border-radius:20px;background:radial-gradient(ellipse at 78% 4%,#a9db2617,transparent 35%),linear-gradient(145deg,#11140d,#090b09 60%,#10140b);box-shadow:0 0 0 1px #b8d95a18,0 20px 70px #0008,inset 0 0 44px #a5d51b0b}
+.nocha-chart-shell{position:relative;overflow:hidden;padding:clamp(18px,3vw,30px);border:0;border-radius:0;background:radial-gradient(ellipse at 78% 4%,#a9db2617,transparent 35%),linear-gradient(145deg,#11140d,#090b09 60%,#10140b);box-shadow:none}
 .nocha-chart-brand{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;min-height:150px}
 .nocha-chart-brand-main{display:flex;align-items:flex-start;gap:13px}
 .nocha-chart-crown{color:var(--lime);font-size:38px;line-height:1}
@@ -1787,7 +1787,7 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .nocha-chart-pagination span{color:#b9c58e;font-size:11px;font-weight:800}
 @media(max-width:700px){
  .nocha-top100-section{padding-top:14px;padding-bottom:28px}
- .nocha-chart-shell{padding:15px 11px;border-radius:15px}
+ .nocha-chart-shell{padding:15px 0;border-radius:0}
  .nocha-chart-brand{grid-template-columns:1fr;gap:12px;min-height:0}
  .nocha-chart-brand-main h2{font-size:61px;letter-spacing:-3.5px}
  .nocha-chart-crown{font-size:29px}
