@@ -21,6 +21,9 @@ const registrationSchema = z.object({
 });
 
 const POLICY_VERSION = "beta-18plus-v1";
+const TERMS_VERSION = "beta-terms-v1";
+const PRIVACY_VERSION = "beta-privacy-v1";
+const COMMUNITY_GUIDELINES_VERSION = "beta-guidelines-v1";
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24;
 
 function sha256(value: string) {
@@ -125,6 +128,13 @@ export async function POST(request: NextRequest) {
         },
         emailVerificationTokens: {
           create: { tokenHash, expiresAt },
+        },
+        termsAcceptances: {
+          create: {
+            termsVersion: TERMS_VERSION,
+            privacyVersion: PRIVACY_VERSION,
+            communityGuidelinesVersion: COMMUNITY_GUIDELINES_VERSION,
+          },
         },
       },
       select: { id: true, displayName: true },
