@@ -39,6 +39,12 @@ Last updated: 2026-11-07
 | 0 | Post composer preview | DONE (UNVERIFIED) | `/club/create`; Post/Scene/Poll modes, poll options, audience selector and validation; no publishing |
 | 0 | Notifications preview | DONE (UNVERIFIED) | `/notifications`; illustrative activity list, clearly labelled sample content |
 
+| 0 | Messaging inbox redesign | DONE (UNVERIFIED) | `/chats`; search, All/Unread/Direct/Group filters, unread indicators and shortcuts |
+| 0 | Direct message screens | DONE (UNVERIFIED) | `/chats/mira`, `/chats/jude`; local message composer and reactions, no delivery or persistence |
+| 0 | Message requests | DONE (UNVERIFIED) | `/chats/requests`; accept/delete preview actions and privacy explanation |
+| 0 | Voice room discovery | DONE (UNVERIFIED) | `/chats/voice-rooms`; live/upcoming room cards and local join state; no microphone or audio connection |
+| 0 | Messaging visual system | DONE (UNVERIFIED) | Inbox, direct threads, request cards, voice rooms and responsive styling in `globals.css` |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
