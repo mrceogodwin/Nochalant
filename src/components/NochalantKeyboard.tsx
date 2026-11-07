@@ -7,7 +7,7 @@ const rows=["qwertyuiop","asdfghjkl","zxcvbnm"];
 const quickIcons: [string, ComponentType<{size?:number}>, string][]=[["Royalty",Crown,"♛"],["Fire",Flame,"🔥"],["Phantom",Ghost,"👻"],["Electric",Zap,"ϟ"],["Night Owl",Moon,"☾"],["Elite",Gem,"◇"],["Sound",Music2,"♫"],["Observer",Eye,"◎"],["Warrior",Swords,"⚔"],["Icon",Sparkles,"✦"],["Lover",Heart,"♡"]];
 export default function NochalantKeyboard({value,onChange,onSubmit,placeholder="Write something…",multiline=false,disabled=false}:Props){
  const [open,setOpen]=useState(false),[mode,setMode]=useState<"letters"|"numbers"|"symbols"|"icons">("letters"),[shift,setShift]=useState(false);
- const lastWord=useMemo(()=>value.split(/\\s/).at(-1)||"",[value]);
+ const lastWord=useMemo(()=>value.split(/\s/).at(-1)||"",[value]);
  function insert(text:string){onChange(value+text)}
  function backspace(){onChange(value.slice(0,-1))}
  function key(k:string){insert(shift?k.toUpperCase():k);setShift(false)}
