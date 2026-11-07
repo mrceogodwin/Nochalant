@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -24,24 +25,18 @@ async function getViewer() {
 }
 
 async function canViewPost(postId: string, viewerId?: string) {
-  const post = await prisma.clubPost.findFirst({
-    where: {
-      id: postId,
-      status: "PUBLISHED",
-      OR: [
-        { audience: "EVERYONE" },
-        ...(viewerId ? [
-          { audience: "FOLLOWING", author: { followers: { some: { sourceId: viewerId } } } },
-          { audience: "MY_SCENES", author: { sceneMemberships: { some: {
-            status: "ACTIVE",
-            scene: { members: { some: { userId: viewerId, status: "ACTIVE" } } },
-          } } } },
-        ] : []),
-      ],
-    },
+  const visibility: Prisma.ClubPostWhereInput[] = [{ audience: "EVERYONE" }];
+  if (viewerId) visibility.push(
+    { audience: "FOLLOWING", author: { followers: { some: { sourceId: viewerId } } } },
+    { audience: "MY_SCENES", author: { sceneMemberships: { some: {
+      status: "ACTIVE",
+      scene: { members: { some: { userId: viewerId, status: "ACTIVE" } } },
+    } } } },
+  );
+  return prisma.clubPost.findFirst({
+    where: { id: postId, status: "PUBLISHED", OR: visibility },
     select: { id: true, kind: true, options: true },
   });
-  return post;
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
