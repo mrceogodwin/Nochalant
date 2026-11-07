@@ -140,3 +140,5 @@ Last updated: 2026-11-07
 - Hardened token consumption so concurrent submissions cannot reuse the same reset token.
 - Password recovery remains unavailable until the isolated V2 schema is migrated and Preview credentials (Neon v2-dev, Upstash, Resend, sender and AUTH_URL) are configured.
 - No DB migration, database write, deployment, or production change occurred. Build, typecheck, Prisma validation and end-to-end behaviour remain unverified.
+
+- Added fail-closed rate limiting to the Auth.js credentials authorize path and connected the sign-in screen to Auth.js. The UI is now wired to the endpoint, but live sign-in remains unavailable until Preview credentials, schema migration and CI/browser validation are completed.
