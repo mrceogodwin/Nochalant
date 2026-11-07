@@ -10,7 +10,8 @@ export default function NochalantKeyboard({value,onChange,onSubmit,placeholder="
  const lastWord=useMemo(()=>value.split(/\s/).at(-1)||"",[value]);
  function insert(text:string){onChange(value+text)}
  function backspace(){onChange(value.slice(0,-1))}
- function key(k:string){insert(shift?k.toUpperCase():k);setShift(false)}\n function handlePhysicalKey(e:React.KeyboardEvent<HTMLTextAreaElement>){if(e.key==="Backspace"){e.preventDefault();backspace();return;}if(e.key==="Enter"){if(multiline){e.preventDefault();insert("\n");}else{e.preventDefault();onSubmit?.();setOpen(false);}return;}if(e.key===" "){e.preventDefault();insert(" ");return;}if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();key(e.key);}}
+ function key(k:string){insert(shift?k.toUpperCase():k);setShift(false)}
+ function handlePhysicalKey(e:React.KeyboardEvent<HTMLTextAreaElement>){if(e.key==="Backspace"){e.preventDefault();backspace();return;}if(e.key==="Enter"){if(multiline){e.preventDefault();insert("\n");}else{e.preventDefault();onSubmit?.();setOpen(false);}return;}if(e.key===" "){e.preventDefault();insert(" ");return;}if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();key(e.key);}}
  return <div className="nochalant-keys-wrap">
   <div className="nochalant-input-row">
    <button type="button" className="nk-tool" aria-label="Open Nochalant icons" onClick={()=>{setOpen(true);setMode("icons")}}><Smile size={20}/></button>
