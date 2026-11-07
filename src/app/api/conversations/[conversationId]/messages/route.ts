@@ -48,8 +48,11 @@ export async function POST(request: NextRequest, context: Context) {
   if (blocked) return NextResponse.json({ error: "Messaging is unavailable for this conversation." }, { status: 403 });
   const actor = await prisma.user.findUnique({ where: { id: userId }, select: { status: true, ageAssurance: { select: { declaredAdult: true } } } });
   if (!actor || actor.status !== "ACTIVE" || actor.ageAssurance?.declaredAdult !== true) return NextResponse.json({ error: "Your account must be active and age-confirmed to message." }, { status: 403 });
-  const prior = await prisma.message.findUnique({ where: { senderId_clientMessageId: { senderId: userId, clientMessageId: parsed.data.clientMessageId } }, select: { id: true, body: true, createdAt: true, senderId: true } });
-  if (prior) return NextResponse.json({ message: prior });
+  const prior = await prisma.message.findUnique({ where: { senderId_clientMessageId: { senderId: userId, clientMessageId: parsed.data.clientMessageId } }, select: { id: true, conversationId: true, body: true, createdAt: true, senderId: true } });
+  if (prior) {
+    if (prior.conversationId !== conversationId) return NextResponse.json({ error: "This message ID was already used." }, { status: 409 });
+    return NextResponse.json({ message: prior });
+  }
   const message = await prisma.message.create({
     data: { conversationId, senderId: userId, clientMessageId: parsed.data.clientMessageId, kind: "TEXT", body: parsed.data.body },
     select: { id: true, body: true, createdAt: true, senderId: true },
