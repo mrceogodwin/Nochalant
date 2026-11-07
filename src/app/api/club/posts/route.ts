@@ -33,6 +33,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Check your post and try again." }, { status: 400 });
   }
 
+  const author = await prisma.user.findUnique({
+    where: { id: authorId },
+    select: { status: true, ageAssurance: { select: { declaredAdult: true } } },
+  });
+  if (!author || author.status !== "ACTIVE") {
+    return NextResponse.json({ error: "Your account cannot publish right now." }, { status: 403 });
+  }
+  if (!author.ageAssurance?.declaredAdult) {
+    return NextResponse.json({ error: "Complete the 18+ age confirmation before publishing." }, { status: 403 });
+  }
+
   try {
     const post = await prisma.clubPost.create({
       data: {
@@ -54,30 +65,32 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   const userId = session?.user?.id;
-  const visibility: Prisma.ClubPostWhereInput[] = [{ audience: "EVERYONE" }];
-  if (userId) {
-    visibility.push(
-      { audience: "FOLLOWING", author: { followers: { some: { sourceId: userId } } } },
-      {
-        audience: "MY_SCENES",
-        author: {
-          sceneMemberships: {
-            some: {
-              status: "ACTIVE",
-              scene: {
-                members: { some: { userId, status: "ACTIVE" } },
-              },
-            },
-          },
-        },
-      },
-    );
+  const feed = request.nextUrl.searchParams.get("feed") ?? "for-you";
+  if (!["for-you", "following", "scenes"].includes(feed)) {
+    return NextResponse.json({ error: "Unknown feed." }, { status: 400 });
   }
 
-  const posts = await prisma.clubPost.findMany({
+  const visibility: Prisma.ClubPostWhereInput[] = [];
+  if (feed === "for-you") {
+    visibility.push({ audience: "EVERYONE" });
+    if (userId) visibility.push(
+      { audience: "FOLLOWING", author: { followers: { some: { sourceId: userId } } } },
+      { audience: "MY_SCENES", author: { sceneMemberships: { some: {
+        status: "ACTIVE", scene: { members: { some: { userId, status: "ACTIVE" } } },
+      } } } },
+    );
+  } else if (feed === "following" && userId) {
+    visibility.push({ audience: "FOLLOWING", author: { followers: { some: { sourceId: userId } } } });
+  } else if (feed === "scenes" && userId) {
+    visibility.push({ audience: "MY_SCENES", author: { sceneMemberships: { some: {
+      status: "ACTIVE", scene: { members: { some: { userId, status: "ACTIVE" } } },
+    } } } });
+  }
+
+  const posts = visibility.length ? await prisma.clubPost.findMany({
     where: { status: "PUBLISHED", OR: visibility },
     orderBy: { createdAt: "desc" },
     take: 40,
@@ -85,6 +98,6 @@ export async function GET() {
       id: true, kind: true, body: true, options: true, audience: true, createdAt: true,
       author: { select: { id: true, username: true, displayName: true, profile: { select: { avatarUrl: true, clubId: true } } } },
     },
-  });
+  }) : [];
   return NextResponse.json({ posts });
 }
