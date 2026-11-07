@@ -1,28 +1,98 @@
 "use client";
+
 import Link from "next/link";
-import {useState, use} from "react";
-const directory:Record<string,{name:string;category:string;members:string;description:string;rules:string[];tone:string}>={
- "alte-society":{name:"Alté Society",category:"MUSIC & CULTURE",members:"23.4K members",description:"A home for alternative culture, independent music, fashion and creative expression. Share discoveries, meet collaborators and shape the next wave.",rules:["Respect every member and creative voice.","Credit artists and creators when sharing their work.","Keep conversations relevant and welcoming."],tone:"violet"},
- "afterhours":{name:"Afterhours",category:"NIGHTLIFE",members:"18.7K members",description:"For the people who know the city after dark. Discover nights out, share recommendations and connect around the Lagos scene.",rules:["Keep event information accurate.","Respect privacy and consent.","No harassment, unsafe meetups or doxxing."],tone:"pink"},
- "sound-district":{name:"Sound District",category:"MUSIC",members:"12.1K members",description:"A community for new music, underground drops, producers and artist conversations.",rules:["Give constructive feedback.","Only share music you have permission to post.","Support emerging artists."],tone:"silver"},
- "the-drip-room":{name:"The Drip Room",category:"FASHION",members:"16.9K members",description:"Outfits, sneakers, personal style and fashion battles. Bring your perspective and celebrate originality.",rules:["Critique the fit, never attack the person.","Credit photographers and designers.","Keep it inclusive."],tone:"orange"}
+import { use, useEffect, useState } from "react";
+
+type Scene = {
+  id: string; name: string; slug: string; description: string; category: string;
+  coverUrl: string | null; visibility: "PUBLIC" | "PRIVATE" | "PAID" | "UNLISTED";
+  memberCount: number; rules?: unknown; channels?: { id: string; name: string; slug: string; description: string | null; isDefault: boolean }[];
 };
-const posts=[{name:"Mira A.",time:"24 min ago",body:"What independent artist has been on repeat for you this week? Drop your finds below.",likes:18,channel:"general"},{name:"Jude K.",time:"2 hours ago",body:"Sharing a few new releases in the music channel later. Some serious talent coming through.",likes:12,channel:"music"},{name:"Nia O.",time:"Yesterday",body:"Community reminder: credit the photographers and creatives whose work you share here.",likes:31,channel:"announcements"}];
-export default function SceneDetail({params}:{params:Promise<{slug:string}>}){const {slug}=use(params);const [tab,setTab]=useState("Overview");const [joined,setJoined]=useState(false);const [liked,setLiked]=useState<number[]>([]);const [draft,setDraft]=useState("");const [notice,setNotice]=useState("");const [localPosts,setLocalPosts]=useState(posts);const [channel,setChannel]=useState("general");
- const scene=directory[slug];if(!slug)return <main className="feed-shell"><p className="supporting">Loading Scene…</p></main>;
- if(!scene)return <main className="feed-shell"><Link href="/discover" className="back-link">‹ Back to Discover</Link><h1>Scene not found</h1></main>;
- const channels=[{id:"announcements",name:"announcements",desc:"News and updates",icon:"⚑"},{id:"general",name:"general",desc:"The main conversation",icon:"✦"},{id:"music",name:"music-and-drops",desc:"Share new sounds",icon:"♫"}];
- function publish(){if(!draft.trim())return;setLocalPosts(v=>[{name:"You",time:"Just now",body:draft.trim(),likes:0,channel},...v]);setDraft("");setNotice("Discussion added to this local preview.");}
- return <main className="feed-shell"><header className="chat-header"><Link href="/discover">‹</Link><div><strong>{scene.name}</strong><small>Scene community</small></div><Link href={"/discover/scenes/"+slug+"/manage"} className="group-more">•••</Link></header>
- <section className={"scene-detail-art "+scene.tone}><span>NOCHALANT SCENE</span><h1>{scene.name}</h1><small>{scene.category}</small></section>
- <div className="scene-detail-meta"><strong>{scene.members}</strong><span>Public Scene · Preview</span></div><p className="scene-detail-description">{scene.description}</p>
- <div className="scene-member-actions"><button className="yellow-cta" onClick={()=>setJoined(!joined)}>{joined?"Joined ✓":"Join Scene +"}</button><Link href={"/discover/scenes/"+slug+"/manage"}>Manage</Link></div>
- <div className="scene-detail-tabs">{["Overview","Discussions","Channels","Members","About"].map(t=><button key={t} className={tab===t?"selected":""} onClick={()=>setTab(t)}>{t}</button>)}</div>
- {tab==="Overview"&&<><div className="scene-section-head"><h2>Community channels</h2><Link href={"/discover/scenes/"+slug+"/channels"}>View all →</Link></div>{channels.map(c=><Link className="scene-channel-row" href={"/discover/scenes/"+slug+"/channels/"+c.id} key={c.id}><span>{c.icon}</span><div><b>#{c.name}</b><small>{c.desc}</small></div><i>›</i></Link>)}<div className="scene-section-head"><h2>Recent discussions</h2><button onClick={()=>setTab("Discussions")}>See all →</button></div>{localPosts.slice(0,2).map((p,i)=><article className="scene-discussion-card" key={i}><small>{p.name} · {p.time}</small><p>{p.body}</p><span>♡ {p.likes} · #{p.channel}</span></article>)}</>}
- {tab==="Discussions"&&<><div className="scene-compose"><textarea value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Start a conversation with this Scene..." maxLength={1000}/><button disabled={!draft.trim()} onClick={publish}>Post discussion →</button></div>{notice&&<div className="feed-notice">{notice}</div>}{localPosts.map((p,i)=><article className="scene-discussion-card" key={i}><small>{p.name} · {p.time}</small><p>{p.body}</p><div><button onClick={()=>setLiked(v=>v.includes(i)?v.filter(x=>x!==i):[...v,i])}>{liked.includes(i)?"♥":"♡"} {p.likes+(liked.includes(i)?1:0)}</button><span>#{p.channel}</span></div></article>)}</>}
- {tab==="Channels"&&channels.map(c=><Link className="scene-channel-row" href={"/discover/scenes/"+slug+"/channels/"+c.id} key={c.id}><span>{c.icon}</span><div><b>#{c.name}</b><small>{c.desc}</small></div><i>›</i></Link>)}
- {tab==="Members"&&<><div className="queue-heading"><h2>Community members</h2><span>MEMBERS</span></div>{["Founder · Scene host","Curator · Music","Moderator · Community","Member · Creator","Member · Listener"].map((v,i)=><div className="group-member-row" key={v}><span>{["A","M","J","N","S"][i]}</span><div><b>{["Ayo Founder","Mira A.","Jude K.","Nia O.","Sam T."][i]}</b><small>{v}</small></div><button onClick={()=>setNotice("Member actions are available after account connection.")}>View</button></div>)}</>}
- {tab==="About"&&<><div className="queue-heading"><h2>Community guidelines</h2></div><div className="scene-rules">{scene.rules.map((r,i)=><p key={r}><b>{i+1}</b>{r}</p>)}</div><div className="owner-notice"><strong>Community standards</strong><p>Members can report content. Moderators can review reports, remove content and manage membership once connected.</p></div></>}
- {notice&&tab!=="Discussions"&&<div className="feed-notice">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
- <p className="selection-hint scene-preview-disclaimer">Scene membership, channels, posts and roles are interface previews. No content is stored in the database yet.</p>
- </main>}
+type Membership = { status: string; role: string; joinedAt?: string } | null;
+type Payload = { scene: Scene; membership: Membership; access: "MEMBER" | "PUBLIC" | "RESTRICTED" };
+
+export default function SceneDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const [data, setData] = useState<Payload | null>(null);
+  const [tab, setTab] = useState("Overview");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [pendingMembers, setPendingMembers] = useState<{ userId: string; joinedAt: string; user: { username: string; displayName: string; profile: { avatarUrl: string | null } | null } }[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
+  async function loadScene() {
+    const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}`, { cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Scene could not be loaded.");
+    setData(result as Payload);
+  }
+  useEffect(() => { loadScene().catch(e => setError(e.message)); }, [slug]);
+
+  async function changeMembership(action: "join" | "leave") {
+    setBusy(true); setNotice(""); setError("");
+    try {
+      const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}${action === "join" ? "/join" : ""}`, { method: action === "join" ? "POST" : "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to update membership.");
+      setNotice(result.message || "Membership updated.");
+      await loadScene();
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to update membership."); }
+    finally { setBusy(false); }
+  }
+
+  async function loadPendingMembers() {
+    setLoadingMembers(true); setError("");
+    try {
+      const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}/members`, { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Member requests are unavailable.");
+      setPendingMembers(result.pending || []);
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to load requests."); }
+    finally { setLoadingMembers(false); }
+  }
+
+  async function decideRequest(userId: string, action: "APPROVE" | "REJECT") {
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}/members`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, action }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to update request.");
+      setNotice(result.message); await loadPendingMembers(); await loadScene();
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to update request."); }
+    finally { setBusy(false); }
+  }
+
+  if (error && !data) return <main className="feed-shell"><Link href="/discover">‹ Discover</Link><p role="alert" className="form-error">{error}</p></main>;
+  if (!data) return <main className="feed-shell"><p className="supporting">Loading Scene…</p></main>;
+  const { scene, membership, access } = data;
+  const isMember = access === "MEMBER";
+  const isPending = membership?.status === "PENDING";
+  const isManager = isMember && ["FOUNDER", "CO_FOUNDER", "CURATOR", "MODERATOR"].includes(membership?.role || "");
+  const rules = Array.isArray(scene.rules) ? scene.rules.filter((v): v is string => typeof v === "string") : [];
+
+  return <main className="feed-shell">
+    <header className="chat-header"><Link href="/discover">‹</Link><div><strong>{scene.name}</strong><small>Scene community</small></div>{isManager && <Link href={`/discover/scenes/${slug}/manage`} className="group-more">Manage</Link>}</header>
+    <section className="scene-detail-art"><span>NOCHALANT SCENE · {scene.category.toUpperCase()}</span><h1>{scene.name}</h1><small>{scene.visibility.toLowerCase()} Scene</small></section>
+    <div className="scene-detail-meta"><strong>{scene.memberCount.toLocaleString()} members</strong><span>{scene.visibility === "PRIVATE" ? "Approval required" : "Community"}</span></div>
+    <p className="scene-detail-description">{scene.description}</p>
+    <div className="scene-member-actions">
+      {isMember ? <button className="yellow-cta" disabled={busy || membership?.role === "FOUNDER"} onClick={() => changeMembership("leave")}>{busy ? "Please wait…" : membership?.role === "FOUNDER" ? "Scene founder" : "Leave Scene"}</button>
+      : isPending ? <button className="yellow-cta" disabled>Request pending</button>
+      : access === "RESTRICTED" ? <button className="yellow-cta" disabled>Private Scene</button>
+      : <button className="yellow-cta" disabled={busy} onClick={() => changeMembership("join")}>{busy ? "Please wait…" : scene.visibility === "PRIVATE" ? "Request to join" : "Join Scene +"}</button>}
+      <span>{isMember ? membership?.role.replace("_", " ") : isPending ? "Awaiting approval" : "Discover and connect"}</span>
+    </div>
+    {notice && <p role="status" className="feed-notice">{notice}</p>}
+    {error && <p role="alert" className="form-error">{error}</p>}
+    {access === "RESTRICTED" ? <div className="owner-notice"><strong>Private community</strong><p>You can see this Scene's introduction. Its channels and member content are only available after a moderator approves your request.</p></div> : <>
+      <div className="scene-detail-tabs">{["Overview", "Channels", "Members", "About"].map(t => <button key={t} className={tab === t ? "selected" : ""} onClick={() => { setTab(t); if (t === "Members" && isManager) loadPendingMembers(); }}>{t}</button>)}</div>
+      {tab === "Overview" && <><div className="scene-section-head"><h2>Community channels</h2><button onClick={() => setTab("Channels")}>View all →</button></div>{(scene.channels || []).map(channel => <div className="scene-channel-row" key={channel.id}><span>✦</span><div><b>#{channel.name}</b><small>{channel.description || "Scene conversation"}</small></div></div>)}{!scene.channels?.length && <p className="selection-hint">No channels have been created yet.</p>}</>}
+      {tab === "Channels" && (scene.channels || []).map(channel => <div className="scene-channel-row" key={channel.id}><span>✦</span><div><b>#{channel.name}</b><small>{channel.description || "Scene conversation"}</small></div></div>)}
+      {tab === "Members" && <><div className="queue-heading"><h2>Membership</h2><span>{scene.memberCount} ACTIVE</span></div>{isManager ? <><button className="text-back" onClick={loadPendingMembers} disabled={loadingMembers}>{loadingMembers ? "Refreshing…" : "Refresh requests"}</button>{pendingMembers.length ? pendingMembers.map(person => <div className="group-member-row" key={person.userId}><span>{person.user.displayName.slice(0, 1).toUpperCase()}</span><div><b>{person.user.displayName}</b><small>@{person.user.username} · Request pending</small></div><button disabled={busy} onClick={() => decideRequest(person.userId, "APPROVE")}>Approve</button><button disabled={busy} onClick={() => decideRequest(person.userId, "REJECT")}>Decline</button></div>) : <p className="selection-hint">No pending membership requests.</p>}</> : <p className="selection-hint">Join this Scene to become part of its member community.</p>}</>}
+      {tab === "About" && <><div className="queue-heading"><h2>Community guidelines</h2></div><div className="scene-rules">{(rules.length ? rules : ["Respect every member and their boundaries.", "No harassment, hate or targeted abuse.", "Respect creators and share responsibly."]).map((rule, i) => <p key={rule}><b>{i + 1}</b>{rule}</p>)}</div><p className="selection-hint">Scene membership and access are managed by the server.</p></>}
+    </>}
+  </main>;
+}
