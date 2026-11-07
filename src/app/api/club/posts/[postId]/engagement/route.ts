@@ -83,11 +83,26 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (!post) return NextResponse.json({ error: "Post not found." }, { status: 404 });
 
   if (parsed.data.action === "LIKE") {
-    const existing = await prisma.clubPostLike.findUnique({ where: { postId_userId: { postId, userId: viewer.id } } });
-    if (existing) await prisma.clubPostLike.delete({ where: { id: existing.id } });
-    else await prisma.clubPostLike.create({ data: { postId, userId: viewer.id } });
-    const likeCount = await prisma.clubPostLike.count({ where: { postId } });
-    return NextResponse.json({ liked: !existing, likeCount });
+    const result = await prisma.$transaction(async tx => {
+      const existing = await tx.clubPostLike.findUnique({
+        where: { postId_userId: { postId, userId: viewer.id } },
+        select: { id: true },
+      });
+      if (existing) {
+        await tx.clubPostLike.delete({ where: { id: existing.id } });
+        return { liked: false, likeCount: await tx.clubPostLike.count({ where: { postId } }) };
+      }
+      await tx.clubPostLike.createMany({
+        data: [{ postId, userId: viewer.id }],
+        skipDuplicates: true,
+      });
+      const liked = Boolean(await tx.clubPostLike.findUnique({
+        where: { postId_userId: { postId, userId: viewer.id } },
+        select: { id: true },
+      }));
+      return { liked, likeCount: await tx.clubPostLike.count({ where: { postId } }) };
+    });
+    return NextResponse.json(result);
   }
 
   if (parsed.data.action === "COMMENT") {
