@@ -35,7 +35,7 @@ export async function GET(_request: Request, context: Context) {
   if (scene.visibility === "UNLISTED" && !isFounder && !membership) {
     return NextResponse.json({ error: "This Scene is unlisted. You need an invitation." }, { status: 404 });
   }
-  if (scene.visibility === "PRIVATE" && !isFounder && !isActiveMember) {
+  if ((scene.visibility === "PRIVATE" || scene.visibility === "PAID") && !isFounder && !isActiveMember) {
     return NextResponse.json({
       scene: {
         id: scene.id, name: scene.name, slug: scene.slug, description: scene.description,
