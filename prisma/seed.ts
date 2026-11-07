@@ -31,9 +31,9 @@ const catalogueNames = [
 ] as const;
 
 const starterIdentities = ["The Observer", "The Rebel", "The Music Head", "The Night Owl", "The Curator", "The Creative", "The Connector", "The Social One"] as const;
-const iconNames = [...starterIdentities, ...catalogueNames.filter((name) => !(starterIdentities as readonly string[]).includes(name)).slice(0, 112)];
 
-const starterScenes = [
+const iconCategories = ["Royalty","Nightlife","Music","Alternative Culture","Fashion","Social","Creative","Mystery","Competitive","Exclusive","Culture","Culture"] as const;
+const starterScenes [
   ["alte-society","Alté Society","Alternative culture, music, fashion and creative expression.","MUSIC"],
   ["afterhours","Afterhours","Nightlife, clubs, events and afterparty stories.","NIGHTLIFE"],
   ["sound-district","Sound District","New music, unreleased drops, producers and artist talks.","MUSIC"],
@@ -66,19 +66,31 @@ async function main() {
     });
   }
 
-  for (let i = 0; i < iconNames.length; i++) {
-    const name = iconNames[i];
-    const id = `identity-${String(i + 1).padStart(3, "0")}`;
+  const allIcons = [
+    ...catalogueNames.map((name, index) => ({
+      id: `identity-${String(index + 1).padStart(3, "0")}`,
+      name,
+      category: iconCategories[Math.floor(index / 10)] ?? "Culture",
+      rarity: index < 20 ? Rarity.COMMON : index < 50 ? Rarity.UNCOMMON : index < 85 ? Rarity.RARE : index < 108 ? Rarity.EPIC : Rarity.LEGENDARY,
+      unlockCondition: index < 10 ? { type: "STARTER_OR_ACTIVITY" } : { type: "ACHIEVEMENT_OR_ADMIN" },
+    })),
+    ...starterIdentities.map((name, index) => ({
+      id: `starter-${String(index + 1).padStart(3, "0")}`,
+      name,
+      category: "Starter",
+      rarity: Rarity.COMMON,
+      unlockCondition: { type: "STARTER" },
+    })),
+  ];
+
+  for (const icon of allIcons) {
     await prisma.iconCatalog.upsert({
-      where: { id },
-      update: { name, active: true },
+      where: { id: icon.id },
+      update: { name: icon.name, category: icon.category, rarity: icon.rarity, unlockCondition: icon.unlockCondition, active: true },
       create: {
-        id, name,
-        description: `${name} identity from the Nochalant Club collection.`,
-        category: ["Starter","Royalty","Nightlife","Music","Alternative Culture","Fashion","Social","Creative","Mystery","Competitive","Exclusive","Culture"][Math.min(11, Math.floor(i / 10))],
-        rarity: i < 8 ? Rarity.COMMON : i < 40 ? Rarity.UNCOMMON : i < 80 ? Rarity.RARE : i < 100 ? Rarity.EPIC : Rarity.LEGENDARY,
-        unlockCondition: i < 8 ? { type: "STARTER" } : { type: "ADMIN_OR_ACHIEVEMENT" },
-        svgPath: `/icons/identities/${id}.svg`,
+        ...icon,
+        description: `${icon.name} identity from the Nochalant Club collection.`,
+        svgPath: `/icons/identities/${icon.id}.svg`,
       },
     });
   }
