@@ -15,7 +15,7 @@ export default function ClubHome() {
       <button className="story-item"><span className="story-avatar add-story">＋</span><small>Your Story</small></button>
       {stories.map(s=><button className="story-item" key={s.name}><span className={"story-avatar "+s.tone}><b>{s.name.slice(0,1)}</b></span><small>{s.name}</small></button>)}
     </section>
-    <nav className="feed-tabs">{tabs.map(t=><button key={t} onClick={()=>setTab(t)} className={tab===t?"selected":""}>{t}</button>)}</nav>
+    <nav className="feed-tabs">{tabs.map(t=><button key={t} onClick={()=>setTab(t)} className={tab===t?"selected":""}>{t}</button>)}</nav><Link href="/listening-room" className="music-entry"><span>♫</span><div><strong>The Listening Room</strong><small>Discover new sounds and support emerging artists</small></div><b>→</b></Link>
     <article className="post-card">
       <header className="post-author"><span className="author-avatar">♛</span><div><strong>Afterhours <b className="verified">✓</b></strong><small>2h ago · Lagos</small></div><button className="more-button" aria-label="More options">•••</button></header>
       <p className="post-copy">Best club in Lagos right now? 👀</p>
