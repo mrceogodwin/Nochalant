@@ -10,6 +10,9 @@ const DeferredPanel = ({ children }) => <Suspense fallback={<div className="defe
 
 const categories = ["All Gist", "Afrobeats & Jamz", "Nollywood Drama", "BBNaija / Reality", "Fashion & Swag", "Street Buzz", "Lifestyle", "Agenda"];
 const submissionCategories = ["Lifestyle", "Clubs & Nightlife", "Entertainment", "Music", "Nollywood", "Street Buzz", "Business", "Agenda"];
+const demoArtists = [
+["Burna Rex","Afrobeats","BR","Lagos"],["Ayra Nova","Afropop","AN","Lagos"],["Kizz Vale","Afrobeats","KV","Lagos"],["Seyi Vibe","Afrofusion","SV","Lagos"],["Tiva Blaze","Afropop","TB","Abuja"],["Remaq","Afrobeats","RQ","Benin City"],["Omah L.","Alté / R&B","OL","Lagos"],["Asakee","Street-pop","AK","Lagos"],["Bella Rae","Afropop","BR","Port Harcourt"],["Shallipop","Street-pop","SP","Lagos"],["Zino","Afrobeats","ZN","Benin City"],["Vee Sage","R&B","VS","Lagos"],["Jaye Peak","Hip-hop","JP","Abuja"],["Lumi D","Soul","LD","Lagos"],["Dre Cee","Afrofusion","DC","Enugu"],["Mira Gold","R&B","MG","Lagos"],["Tee Wonder","Hip-hop","TW","Ibadan"],["Kael 21","Afrobeats","K21","Lagos"],["Nessa X","Afropop","NX","Abuja"],["Richy K","Afrobeats","RK","Benin City"]
+].map(([name,genre,initials,city],index)=>({id:"demo-artist-"+(index+1),name,genre,initials,city,is_demo:true,bio:"Fictional Nochalant demo profile. Not a real person or verified account."}));
 const ACCOUNT_TYPE_LABELS = { fan: "Fan / Listener", artist: "Artist / Musician", creator: "Creator / Influencer", event_organizer: "Event Organizer", business: "Business / Brand", media: "Media / Publisher" };
 const demoFaces = [
   { username: "thecultureplug", display_name: "Culture Plug", initials: "CP", tone: "lime" },
@@ -203,6 +206,7 @@ function App() {
   const [musicSearch, setMusicSearch] = useState("");
   const [homeChartPage, setHomeChartPage] = useState(0);
   const [homeChartFilter, setHomeChartFilter] = useState("top100");
+  const [mediaNewsTab, setMediaNewsTab] = useState("news");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const podcastLibraryItems = [
@@ -1099,6 +1103,7 @@ function App() {
           <button onClick={() => {setMobileMenu(false);setActiveScreen("home");window.scrollTo({top:0,behavior:"smooth"});}}>Home <span>01</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("social");window.scrollTo({top:0,behavior:"smooth"});}}>Social <span>02</span></button>
           <a href="#artists" onClick={() => setMobileMenu(false)}>Discover <span>03</span></a>
+         <button onClick={() => {setMobileMenu(false);setActiveScreen("media");window.scrollTo({top:0,behavior:"smooth"});}}>Media <span>04</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Promotions <span>04</span></button>
           <button onClick={() => {setMobileMenu(false);setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>Podcast <span>04</span></button>
           {currentUser?.id && accountProfile?.profile?.account_type === "artist" ? <button onClick={() => {setMobileMenu(false);setActiveScreen("dashboard");window.scrollTo({top:0,behavior:"smooth"});}}>Artist Studio <span>05</span></button> : <a href="#artists" onClick={() => setMobileMenu(false)}>Artists <span>05</span></a>}
@@ -1119,6 +1124,51 @@ function App() {
     
 
     <main id="top">
+      {activeScreen === "media" ? <main className="media-news-page container screen-page"><header className="media-news-hero"><span className="eyebrow">NOCHALANT MEDIA</span><h1>News &amp; <em>culture.</em></h1><p>Stories, street conversations and community verdicts from the culture desk.</p><div className="media-news-tabs"><button type="button" className={mediaNewsTab==="news"?"active":""} onClick={()=>setMediaNewsTab("news")}>News</button><button type="button" className={mediaNewsTab==="street-jury"?"active":""} onClick={()=>setMediaNewsTab("street-jury")}>Street Jury</button></div></header>{mediaNewsTab==="news" ? <section className="media-news-feed"><div className="section-heading"><div><span className="eyebrow">THE LATEST CONVERSATION</span><h2>From the <em>news desk.</em></h2></div></div><div className="story-grid">{filtered.map(item=><article className="story-card" key={item.id} role="button" tabIndex="0" onClick={()=>openStory(item)}><div className="story-image"><img src={item.image} alt=""/></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span></div><div className="story-foot"><b>Read story →</b></div></div></article>)}</div><p className="media-demo-note">Editorial preview stories are clearly labelled until published reporting is available.</p></section> : <section className="media-street-jury"><section className="section container split-section" id="hot-or-trash">
+        <div className="jury-image">
+          <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial" />
+          <span className="image-tag">THE STREET JURY</span>
+        </div>
+        <div className="jury-panel">
+          <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
+          <h2>Hot or <em>trash?</em></h2>
+          <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
+          <div className="jury-options">
+            <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
+            <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
+          </div>
+          <div className="vote-results">
+            <div className="vote-labels">
+              <span>{poll ? "COMMUNITY VOTES · " + poll.total_votes : "COMMUNITY VOTES"}</span>
+              <span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : (pollLoading ? "LOADING" : "LIVE RESULTS")}</span>
+            </div>
+            <div className="vote-result-row"><span>🔥 Pure fire</span><b>{(poll?.hot_percent ?? 0) + "%"}</b></div>
+            <div className="vote-bar"><i style={{width: (poll?.hot_percent ?? 0) + "%"}} /></div>
+            <div className="vote-result-row"><span>✕ Off key</span><b>{(poll?.trash_percent ?? 0) + "%"}</b></div>
+            <div className="vote-bar vote-bar-trash"><i style={{width: (poll?.trash_percent ?? 0) + "%"}} /></div>
+          </div>
+          {currentUser && opinions.length > 0 ? (
+            <div className="opinion-rail" aria-label="Opinions from Nochalant users">
+              <div className="opinion-rail-top">
+                <span>COMMUNITY TAKES</span>
+                <span>{opinions.length + (opinions.length === 1 ? " COMMUNITY TAKE" : " COMMUNITY TAKES")}</span>
+              </div>
+              <div className="opinion-rail-window">
+                <div className="opinion-rail-track">
+                  {[...opinions, ...opinions].map((item, index) => (
+                    <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}>
+                      <span className="opinion-topic">{item.topic}</span>
+                      <span className="opinion-quote">“{item.body}”</span>
+                      <span className="opinion-author">— {item.author_name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <small className="muted">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
+        </div>
+      </section></section>}</main> : null}
       {activeScreen === "music" ? (() => {
         const allMusicTracks = artists.flatMap(artist => (artist.tracks || []).map(track => ({
           ...track,
@@ -1204,6 +1254,7 @@ function App() {
             <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">→</span></button>
           </div>
         </div>
+        <div className="demo-artist-grid" aria-label="20 fictional demo artist profiles">{demoArtists.map((artist,index)=><article className={"demo-artist-card demo-artist-tone-"+(index%5)} key={artist.id}><div className="demo-artist-avatar">{artist.initials}</div><div className="demo-artist-meta"><strong>{artist.name}</strong><span>{artist.genre} · {artist.city}</span><small>DEMO PROFILE</small></div></article>)}</div>
         <div className="artists-viewport" ref={artistRailRef} aria-label="Nochalant releases. Swipe or use the arrow controls to browse." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
           {artists.some(artist => artist.tracks?.length) ? <div className="artists-track">{artists.flatMap(artist => artist.tracks || []).map(track => {
             const playableTracks = artists.flatMap(item => item.tracks || []);
@@ -1269,52 +1320,6 @@ function App() {
         </div>
       </section>
 
-      </section>
-
-      <section className="section container split-section" id="hot-or-trash">
-        <div className="jury-image">
-          <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85" alt="Street fashion editorial" />
-          <span className="image-tag">THE STREET JURY</span>
-        </div>
-        <div className="jury-panel">
-          <div className="eyebrow">NO BE EVERY TREND WE GO FOLLOW</div>
-          <h2>Hot or <em>trash?</em></h2>
-          <p>Everybody get opinion. Is this look, sound or trend giving what it should give? Cast your vote.</p>
-          <div className="jury-options">
-            <button className={vote === "hot" ? "jury-option hot selected" : "jury-option hot"} onClick={() => castVote("hot")} disabled={voteBusy || !!vote || pollLoading || !poll}>🔥 Pure fire</button>
-            <button className={vote === "trash" ? "jury-option trash selected" : "jury-option trash"} onClick={() => castVote("trash")} disabled={voteBusy || !!vote || pollLoading || !poll}>✕ Off key</button>
-          </div>
-          <div className="vote-results">
-            <div className="vote-labels">
-              <span>{poll ? "COMMUNITY VOTES · " + poll.total_votes : "COMMUNITY VOTES"}</span>
-              <span>{vote ? (vote === "hot" ? "YOU VOTED PURE FIRE" : "YOU VOTED OFF KEY") : (pollLoading ? "LOADING" : "LIVE RESULTS")}</span>
-            </div>
-            <div className="vote-result-row"><span>🔥 Pure fire</span><b>{(poll?.hot_percent ?? 0) + "%"}</b></div>
-            <div className="vote-bar"><i style={{width: (poll?.hot_percent ?? 0) + "%"}} /></div>
-            <div className="vote-result-row"><span>✕ Off key</span><b>{(poll?.trash_percent ?? 0) + "%"}</b></div>
-            <div className="vote-bar vote-bar-trash"><i style={{width: (poll?.trash_percent ?? 0) + "%"}} /></div>
-          </div>
-          {currentUser && opinions.length > 0 ? (
-            <div className="opinion-rail" aria-label="Opinions from Nochalant users">
-              <div className="opinion-rail-top">
-                <span>COMMUNITY TAKES</span>
-                <span>{opinions.length + (opinions.length === 1 ? " COMMUNITY TAKE" : " COMMUNITY TAKES")}</span>
-              </div>
-              <div className="opinion-rail-window">
-                <div className="opinion-rail-track">
-                  {[...opinions, ...opinions].map((item, index) => (
-                    <button className="opinion-chip" key={item.id + "-" + index} onClick={() => setSelectedOpinion(item)}>
-                      <span className="opinion-topic">{item.topic}</span>
-                      <span className="opinion-quote">“{item.body}”</span>
-                      <span className="opinion-author">— {item.author_name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-          <small className="muted">{pollError || (pollLoading ? "Loading community results…" : (vote ? "Your vote has been recorded. Thanks for having your say." : (currentUser ? "One vote per account. Your choice is saved securely." : "Log in to vote. Community results update as votes are counted.")))}</small>
-        </div>
       </section>
 
       <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
