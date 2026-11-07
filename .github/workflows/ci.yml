@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm cache clean --force\n      - run: npm install --no-audit --no-fund
       - run: npm run prisma:generate
       - run: npm run typecheck
       - run: npm run lint
