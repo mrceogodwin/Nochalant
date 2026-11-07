@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { randomUUID } from "node:crypto";
 
 import { verifyPassword } from "@/lib/auth/password";
+import { enforceAuthRateLimit } from "@/lib/auth/rate-limit";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
@@ -35,6 +36,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             : "";
 
         if (!email || !password || password.length > 128) return null;
+
+        try {
+          const limit = await enforceAuthRateLimit(`login:${email}`);
+          if (!limit.success) return null;
+        } catch {
+          // Fail closed until the shared auth rate-limit service is configured.
+          return null;
+        }
 
         const user = await prisma.user.findUnique({
           where: { email },
