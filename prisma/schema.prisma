@@ -103,6 +103,7 @@ model User {
   profile         UserProfile?
   sessions        UserSession[]
   emailVerificationTokens EmailVerificationToken[]
+  termsAcceptances TermsAcceptance[]
   interests       UserInterest[]
   ageAssurance    AgeAssuranceRecord?
   sceneMemberships SceneMember[]
@@ -145,6 +146,20 @@ model UserProfile {
   @@index([rankId, reputationXp])
 }
 
+
+
+model TermsAcceptance {
+  id                         String   @id @default(cuid())
+  userId                     String
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  termsVersion               String
+  privacyVersion             String
+  communityGuidelinesVersion String
+  acceptedAt                 DateTime @default(now())
+  ipHash                     String?
+
+  @@index([userId, acceptedAt])
+}
 
 model EmailVerificationToken {
   id        String   @id @default(cuid())
