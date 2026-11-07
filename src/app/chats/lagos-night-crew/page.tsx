@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import {useState} from "react";\nimport NochalantKeyboard from "@/components/NochalantKeyboard";
+import {useState} from "react";
+import NochalantKeyboard from "@/components/NochalantKeyboard";
 type Msg={id:number;name:string;body:string;time:string;mine?:boolean;reaction?:string;reply?:string};
 const people=[["Tayo A.","Founder · Admin","T"],["Mira A.","Moderator","M"],["Jude K.","Member","J"],["Nia O.","Member","N"],["You","Member","Y"]];
 const starter:Msg[]=[
