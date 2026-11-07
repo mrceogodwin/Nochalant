@@ -79,6 +79,7 @@ export default function SquadDetailPage({ params }: { params: Promise<{ slug: st
       {isMember && <button className="text-back" disabled={inviteBusy} onClick={createInvite}>{inviteBusy ? "Creating link…" : "＋ Create invite link"}</button>}
       {inviteUrl && <div className="owner-notice"><strong>Invitation link</strong><p>{inviteUrl}</p><button onClick={() => navigator.clipboard.writeText(inviteUrl)}>Copy invite link</button></div>}
     </section>
+    {isMember && <Link className="yellow-cta link-cta" href={`/squads/${slug}/chat`}>Open Squad chat →</Link>}
     <div className="queue-heading"><h2>Members</h2><span className="selection-hint">{squad._count.members}</span></div>
     <div className="scene-list">{squad.members.map(member => <article className="squad-card" key={member.user.id}><span className="squad-mark">{member.user.displayName.slice(0,1).toUpperCase()}</span><div className="scene-info"><strong>{member.user.displayName}</strong><small>@{member.user.username} · {member.role.toLowerCase().replace("_"," ")}</small></div></article>)}</div>
     {!isMember && <p className="selection-hint">Join the Squad to participate. Private Squad invitations are not yet available.</p>}
