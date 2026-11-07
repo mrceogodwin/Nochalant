@@ -9,7 +9,7 @@ export default function DraftsPage() {
  const [ready,setReady]=useState(false);
  const [error,setError]=useState("");
  async function refresh(){try{setDrafts(await listOfflineDrafts());setError("");}catch(e){setError(e instanceof Error?e.message:"Device drafts are unavailable.");}finally{setReady(true);}}
- useEffect(()=>{void refresh();},[]);
+ useEffect(()=>{let active=true;listOfflineDrafts().then(rows=>{if(active)setDrafts(rows);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Device drafts are unavailable.");}).finally(()=>{if(active)setReady(true);});return()=>{active=false;};},[]);
  async function remove(id:string){await deleteOfflineDraft(id);await refresh();}
  return <main className="feed-shell">
   <header className="screen-heading"><p className="onboard-kicker">ON THIS DEVICE</p><h1>Offline drafts</h1><p>Private drafts stored locally on this device.</p></header>
