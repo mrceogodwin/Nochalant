@@ -1939,7 +1939,7 @@ body{background:var(--nocha-ink);color:#f4f5ee}
  .artists-heading h2{font-size:40px;max-width:260px}
  .artists-heading p{max-width:310px;font-size:13px;line-height:1.55}
  .artists-controls button{width:40px;height:40px;font-size:20px}
- .demo-artist-grid{grid-template-columns:repeat(5,132px);gap:9px;margin-top:15px}
+ .demo-artist-grid{grid-auto-flow:column;grid-template-columns:none;grid-template-rows:repeat(4,auto);grid-auto-columns:132px;gap:9px;margin-top:15px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;padding:0 0 10px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
  .demo-artist-avatar{aspect-ratio:1.35/1;font-size:30px}
  .demo-artist-meta{padding:8px}
  .demo-artist-meta strong{font-size:12px}
