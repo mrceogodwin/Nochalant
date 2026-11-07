@@ -1,3 +1,4 @@
+/* eslint react/no-unescaped-entities: off -- Legacy feed copy contains apostrophes in JSX text; copy cleanup tracked separately. */
 /* eslint react-hooks/set-state-in-effect: off -- Existing client effects coordinate asynchronous data loading or display copy; tracked for targeted refactoring. */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getAuthToken } from "./auth.js";
