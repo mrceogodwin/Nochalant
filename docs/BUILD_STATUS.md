@@ -21,8 +21,8 @@ Last updated: 2026-11-07
 | 0 | Prisma relational schema | DONE (UNVERIFIED) | `prisma/schema.prisma` contains 46 models / 11 enums; schema validation and relation/index audit not run |
 | 0 | Reference seed data | DONE (UNVERIFIED) | `prisma/seed.ts` defines ranks, plans, 120 identity names and 8 beta Scenes; seed has not run |
 | 0 | 120 original SVG icon artworks | NOT STARTED | Catalogue paths are defined; artwork files and admin gallery remain to be built |
-| 0 | Shared component library and full app shell | NOT STARTED | — |
-| 0 | Preview deployment and browser verification | BLOCKED | Vercel's latest attempt failed at npm install with EOVERRIDE; corrected root package manifest in commit `542e3ae7d839bbd2489835e411b54f572079104b`; a new build must verify the fix |
+| 0 | Reference-matched mobile UI foundation | DONE (UNVERIFIED) | Black/yellow tokens, responsive mobile shell, cards, onboarding, feed, navigation and supporting screen styles in `src/app/globals.css` |
+| 0 | Core reference screen routes | DONE (UNVERIFIED) | `/join`, `/club`, `/discover`, `/chats`, `/chats/lagos-night-crew`, `/listening-room`, `/listening-room/submit`, `/my-club`, `/club/create` |\n| 0 | Real account, feed, messaging, media and moderation APIs | NOT STARTED | Current UI interactions are local previews; no production publishing, chat delivery or upload claims |\n| 0 | Preview deployment and browser verification | BLOCKED | Vercel previously failed at npm install with EOVERRIDE; fix committed, but new deployment/build still needs verification |
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
@@ -30,7 +30,7 @@ Last updated: 2026-11-07
 - Latest Vercel build log identified the precise cause: root `package.json` retained v1 overrides pinning Better Auth packages and `zod` to `4.6.7`, conflicting with the v2 direct dependency range `zod: ^4.1.12` (`EOVERRIDE`).
 - Commit `542e3ae7d839bbd2489835e411b54f572079104b` removes the obsolete v1 overrides block entirely; v2 dependencies now resolve from the v2 manifest without the stale pins.
 - Fix is committed to `v2`; install, typecheck, tests and Preview build remain unverified until Vercel runs successfully.
-- No production deployment was made.
+- Reference-led screen routes and initial UI interactions have been committed to `v2`; they have not yet passed a build or browser QA.\n- Posting, track submission, likes, chat messages and profile setup are UI previews only and are not persisted to the database.\n- The original build brief and PRD files were not found at the expected `docs/BUILD_BRIEF.md` and `docs/PRD.md` paths; product acceptance details must be restored before declaring the full PRD complete.\n- No production deployment was made.
 
 ## Safety evidence
 
