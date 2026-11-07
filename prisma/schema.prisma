@@ -477,6 +477,7 @@ model Squad {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   members        SquadMember[]
+  invitations    SquadInvitation[]
   @@index([parentSceneId, isDiscoverable])
 }
 
@@ -490,6 +491,21 @@ model SquadMember {
   joinedAt  DateTime @default(now())
   @@unique([squadId, userId])
   @@index([userId, joinedAt])
+}
+
+model SquadInvitation {
+  id             String   @id @default(cuid())
+  squadId        String
+  squad          Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  invitedById    String
+  inviteeUserId  String?
+  tokenHash      String   @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+  @@index([squadId, expiresAt])
+  @@index([inviteeUserId, expiresAt])
 }
 
 model Conversation {
