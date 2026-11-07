@@ -201,6 +201,8 @@ function App() {
   const [musicTab, setMusicTab] = useState("discover");
   const [musicGenre, setMusicGenre] = useState("All genres");
   const [musicSearch, setMusicSearch] = useState("");
+  const [homeChartPage, setHomeChartPage] = useState(0);
+  const [homeChartFilter, setHomeChartFilter] = useState("top100");
   const [leadSlide, setLeadSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const podcastLibraryItems = [
@@ -1219,6 +1221,47 @@ function App() {
               <button type="button" className="artist-track-listen" onClick={() => playArtistTrack(track, playableTracks)} disabled={!track.audio_url}>{track.audio_url ? "PLAY TRACK" : "AUDIO COMING SOON"}</button>
             </article>;
           })}</div> : <div className="artists-empty">{artistsLoading ? "Loading verified artist releases…" : "No artist releases have been published yet. Verified artist releases will appear here with their original cover art."}</div>}
+        </div>
+      </section>
+
+
+      <section className="nocha-top100-section container" id="nochalant-top-100" aria-labelledby="nocha-top100-title">
+        <div className="nocha-chart-shell">
+          <header className="nocha-chart-brand">
+            <div className="nocha-chart-brand-main"><span className="nocha-chart-crown" aria-hidden="true">♛</span><div><span className="nocha-chart-brand-name">Nochalant</span><h2 id="nocha-top100-title">Top <em>100</em></h2><span className="nocha-chart-kicker">▥ &nbsp; THE FLAGSHIP MUSIC CHART</span></div></div>
+            <div className="nocha-chart-explainer"><span className="nocha-chart-laurel">✺<b>#1</b></span><p>The definitive countdown of the hottest songs and biggest movers on Nochalant.</p><span className="nocha-chart-crown-art" aria-hidden="true">♛</span></div>
+          </header>
+          <nav className="nocha-chart-filters" aria-label="Top 100 chart filters">
+            {[["top100","♫","Top 100"],["trending","♨","Trending"],["rising","↗","Rising"],["falling","↘","Falling"],["new","☆","New Entries"],["alltime","◷","All Time"]].map(([id,icon,label])=><button key={id} type="button" className={homeChartFilter===id?"active":""} onClick={()=>{setHomeChartFilter(id);setHomeChartPage(0);}}><span aria-hidden="true">{icon}</span>{label}</button>)}
+          </nav>
+          <div className="nocha-chart-list-heading"><div><span className="nocha-chart-bars" aria-hidden="true">▂▅▇</span><div><h3>{homeChartFilter==="rising"?"Rising tracks":homeChartFilter==="falling"?"Falling tracks":homeChartFilter==="new"?"New entries":homeChartFilter==="alltime"?"All-time leaders":homeChartFilter==="trending"?"Trending now":"Top 10 This Week"}</h3><p>Ranked using eligible plays recorded on Nochalant.</p></div></div><span className="nocha-chart-total">TOP 100 <b>→</b></span></div>
+          {(() => {
+            const chartTracks = artists.flatMap(artist => (artist.tracks || []).map(track => ({...track,artist_name:track.artist_name||artist.name,artist_slug:track.artist_slug||artist.slug,genre:track.genre||artist.genre||"Other"})));
+            const ranked = [...chartTracks].sort((a,b)=>Number(b.plays_count||0)-Number(a.plays_count||0));
+            const filtered = homeChartFilter==="new" ? ranked.filter(track=>track.is_new_entry===true||track.chart_status==="new")
+              : homeChartFilter==="rising" ? ranked.filter(track=>Number(track.rank_change??track.position_change??0)>0)
+              : homeChartFilter==="falling" ? ranked.filter(track=>Number(track.rank_change??track.position_change??0)<0)
+              : ranked;
+            const pageCount=Math.max(1,Math.ceil(filtered.length/10));
+            const page=Math.min(homeChartPage,pageCount-1);
+            const pageTracks=filtered.slice(page*10,page*10+10);
+            return <>
+              {pageTracks.length ? <div className="nocha-chart-rows">{pageTracks.map((track,index)=>{
+                const change=Number(track.rank_change??track.position_change??0);
+                const isNew=track.is_new_entry===true||track.chart_status==="new";
+                return <article className="nocha-chart-row" key={track.id}>
+                  <b className={"nocha-chart-rank"+(page===0&&index===0?" first":"")}>{page*10+index+1}</b>
+                  <button type="button" className="nocha-chart-cover" onClick={()=>openArtistProfile(track.artist_slug)} aria-label={"View "+track.artist_name+" artist profile"}>{track.cover_art_url?<img src={track.cover_art_url} alt={track.title+" cover art"} loading="lazy"/>:<span>{track.artist_name?.slice(0,1)||"♫"}</span>}</button>
+                  <button type="button" className="nocha-chart-play" onClick={()=>playArtistTrack(track,chartTracks)} disabled={!track.audio_url} aria-label={"Play "+track.title}>▶</button>
+                  <div className="nocha-chart-track"><strong>{track.title}{track.explicit&&<small className="nocha-explicit">E</small>}</strong><button type="button" onClick={()=>openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified&&<span className="artist-silver-tick" aria-label="Verified artist">✓</span>}</button></div>
+                  <span className={"nocha-chart-movement "+(isNew?"new":change>0?"up":change<0?"down":"steady")}>{isNew?"NEW":change>0?"↑ +"+change:change<0?"↓ "+change:"—"}</span>
+                  <span className="nocha-chart-plays" title="Eligible plays"><span aria-hidden="true">▥</span> {Number(track.plays_count||0).toLocaleString()}</span>
+                  <button className="nocha-chart-more" type="button" onClick={()=>openArtistProfile(track.artist_slug)} aria-label={"More from "+track.artist_name}>•••</button>
+                </article>;
+              })}</div> : <div className="nocha-chart-empty">{artistsLoading?"Loading verified artist releases…":homeChartFilter==="rising"||homeChartFilter==="falling"||homeChartFilter==="new"?"No chart movement data has been recorded for this filter yet.":"The chart will populate when approved artist releases receive eligible plays. No rankings or streams are fabricated."}</div>}
+              <footer className="nocha-chart-pagination"><button type="button" onClick={()=>setHomeChartPage(Math.max(0,page-1))} disabled={page===0}>← Previous 10</button><span>{page+1} / {pageCount}</span><button type="button" onClick={()=>setHomeChartPage(Math.min(pageCount-1,page+1))} disabled={page>=pageCount-1}>Next 10 <b>→</b></button></footer>
+            </>;
+          })()}
         </div>
       </section>
 
