@@ -17,6 +17,8 @@ export default function SquadDetailPage({ params }: { params: Promise<{ slug: st
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteBusy, setInviteBusy] = useState(false);
 
   async function load() {
     const response = await fetch(`/api/squads/${encodeURIComponent(slug)}`, { cache: "no-store" });
@@ -37,6 +39,17 @@ export default function SquadDetailPage({ params }: { params: Promise<{ slug: st
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [slug]);
+
+  async function createInvite() {
+    setInviteBusy(true); setError("");
+    try {
+      const response = await fetch(`/api/squads/${encodeURIComponent(slug)}/invitations`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Invitation could not be created.");
+      setInviteUrl(window.location.origin + result.inviteUrl);
+    } catch (e) { setError(e instanceof Error ? e.message : "Invitation could not be created."); }
+    finally { setInviteBusy(false); }
+  }
 
   async function membershipAction(action: "JOIN" | "LEAVE") {
     setBusy(true); setError(""); setNotice("");
@@ -63,6 +76,8 @@ export default function SquadDetailPage({ params }: { params: Promise<{ slug: st
     {error && <p role="alert" className="form-error">{error}</p>}
     <section className="owner-notice"><strong>{isMember ? "You're part of this Squad" : "Find your people"}</strong><p>{isMember ? "This is your smaller circle. Keep it welcoming and respectful." : "Join this discoverable Squad to become part of the conversation."}</p>
       {squad.isFounder ? <span className="selection-hint">You are the founder</span> : isMember ? <button className="text-back" disabled={busy} onClick={() => membershipAction("LEAVE")}>{busy ? "Updating…" : "Leave Squad"}</button> : <button className="yellow-cta" disabled={busy || !squad.isDiscoverable} onClick={() => membershipAction("JOIN")}>{busy ? "Joining…" : "Join Squad →"}</button>}
+      {isMember && <button className="text-back" disabled={inviteBusy} onClick={createInvite}>{inviteBusy ? "Creating link…" : "＋ Create invite link"}</button>}
+      {inviteUrl && <div className="owner-notice"><strong>Invitation link</strong><p>{inviteUrl}</p><button onClick={() => navigator.clipboard.writeText(inviteUrl)}>Copy invite link</button></div>}
     </section>
     <div className="queue-heading"><h2>Members</h2><span className="selection-hint">{squad._count.members}</span></div>
     <div className="scene-list">{squad.members.map(member => <article className="squad-card" key={member.user.id}><span className="squad-mark">{member.user.displayName.slice(0,1).toUpperCase()}</span><div className="scene-info"><strong>{member.user.displayName}</strong><small>@{member.user.username} · {member.role.toLowerCase().replace("_"," ")}</small></div></article>)}</div>
