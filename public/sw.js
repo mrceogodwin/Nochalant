@@ -1,6 +1,6 @@
 const CACHE_VERSION = "nochalant-shell-v4";
 const STATIC_CACHE = "nochalant-static-v4";
-const PUBLIC_APP_ROUTES = ["/club", "/discover", "/chats", "/drafts", "/offline"];
+const PUBLIC_APP_ROUTES = ["/drafts", "/offline"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
