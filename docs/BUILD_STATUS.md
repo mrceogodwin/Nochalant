@@ -70,3 +70,19 @@ Last updated: 2026-11-07
 - V2 Neon branch `br-square-fire-ba5g5k9a` was created from production; no migration or seed has been run.
 - No production domain or Vercel production configuration was changed.
 - Direct terminal network access to GitHub is unavailable in this runtime; GitHub repository writes are performed through the connected GitHub integration.
+
+
+| 0 | Member safety centre preview | DONE (UNVERIFIED) | `/safety`; safety principles, report entry, quiet-mode preview and blocked-member navigation; no persistence or enforcement |
+| 0 | Report submission preview | DONE (UNVERIFIED) | `/safety/report`; target type, reason and details form; intentionally does not transmit or save reports |
+| 0 | Blocked members screen | DONE (UNVERIFIED) | `/my-club/blocked`; empty state for future authenticated block list; no live block data |
+| 0 | Moderation case queue preview | DONE (UNVERIFIED) | `/admin/moderation`; illustrative queue, status filters and severity indicators; route is not admin-auth protected |
+| 0 | Moderation case review preview | DONE (UNVERIFIED) | `/admin/moderation/[id]`; schema-aligned action choices, rationale field and explicit non-persistence notice |
+| 0 | Appeals queue preview | DONE (UNVERIFIED) | `/admin/moderation/appeals`; illustrative appeal entry; no reviewer workflow or persistence |
+| 0 | Safety and moderation styling | DONE (UNVERIFIED) | Appended responsive black/white/red styles in `src/app/globals.css`; browser QA pending |
+
+## Safety and moderation implementation notes
+
+- Prisma schema already defines `ContentReport`, `ModerationCase`, `ModerationAction`, `Appeal`, `UserBlock` and `AuditLog`; the new screens use their existing concepts and action enum vocabulary.
+- These routes are UI previews only. No API handlers, authentication guards, database writes, report delivery, blocking enforcement, account restrictions or audit-log writes were added.
+- The admin preview routes are not protected. Do not use them for real moderation or expose them as an operational admin tool before server-side RBAC is implemented.
+- Build, typecheck, lint, tests and browser verification remain unverified while Vercel's deployment quota is exhausted.
