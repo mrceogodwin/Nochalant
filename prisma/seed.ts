@@ -104,9 +104,6 @@ async function main() {
         visibility: SceneVisibility.PUBLIC,
         rules: { rules: ["Respect other members.", "No harassment or doxxing.", "Keep posts relevant.", "Report harmful content."] },
       },
-    }).catch(() => {
-      // Founder account is intentionally not fabricated. Beta Scene rows are inserted
-      // by the controlled bootstrap after the first verified owner account exists.
     });
   }
 }
