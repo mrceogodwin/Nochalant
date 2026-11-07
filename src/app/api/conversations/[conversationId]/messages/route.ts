@@ -28,7 +28,7 @@ export async function GET(_request: NextRequest, context: Context) {
     select: { id: true, senderId: true, body: true, kind: true, createdAt: true, editedAt: true, sender: { select: { id: true, username: true, displayName: true, profile: { select: { avatarUrl: true } } } } },
   });
   await prisma.conversationMember.update({ where: { conversationId_userId: { conversationId, userId } }, data: { lastReadAt: new Date() } });
-  return NextResponse.json({ messages: messages.reverse() });
+  return NextResponse.json({ currentUserId: userId, messages: messages.reverse() });
 }
 
 export async function POST(request: NextRequest, context: Context) {
