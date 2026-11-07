@@ -128,3 +128,15 @@ Last updated: 2026-11-07
 - TypeScript, Prisma schema validation, build and browser tests have not been run. All implementation status remains unverified pending CI/Preview.
 
 - Final review corrections: onboarding now displays the API's generic registration response verbatim, and the verification endpoint distinguishes an invalid token from an expired token. These are source-level fixes only; runtime validation remains pending.
+
+
+## Password recovery — 2026-11-07
+
+- Added a password-reset token model. The schema change is committed but not migrated.
+- Added a privacy-preserving recovery request endpoint. It returns the same success response whether an eligible verified account exists or not.
+- Reset tokens are cryptographically random, stored as SHA-256 hashes, expire after 30 minutes and are emailed through the configured Resend sender/origin.
+- Added a reset confirmation endpoint with Argon2id hashing, fail-closed Upstash rate limiting, one-time token consumption and revocation of all active sessions after a successful password change.
+- Added /forgot-password and /reset-password screens and linked recovery from /sign-in.
+- Hardened token consumption so concurrent submissions cannot reuse the same reset token.
+- Password recovery remains unavailable until the isolated V2 schema is migrated and Preview credentials (Neon v2-dev, Upstash, Resend, sender and AUTH_URL) are configured.
+- No DB migration, database write, deployment, or production change occurred. Build, typecheck, Prisma validation and end-to-end behaviour remain unverified.
