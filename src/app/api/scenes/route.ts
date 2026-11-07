@@ -82,7 +82,7 @@ export async function GET() {
     select: {
       id: true, name: true, slug: true, description: true, category: true,
       coverUrl: true, visibility: true, createdAt: true,
-      _count: { select: { members: true } },
+      _count: { select: { members: { where: { status: "ACTIVE" } } } },
     },
   });
   return NextResponse.json({ scenes });
