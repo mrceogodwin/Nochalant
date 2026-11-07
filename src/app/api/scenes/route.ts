@@ -9,7 +9,7 @@ const schema = z.object({
   name: z.string().trim().min(3).max(48),
   description: z.string().trim().min(15).max(500),
   category: z.string().trim().min(2).max(32),
-  visibility: z.enum(["PUBLIC", "PRIVATE", "UNLISTED"]),
+  visibility: z.enum(["PUBLIC", "PRIVATE", "PAID", "UNLISTED"]),
   rules: z.array(z.string().trim().min(3).max(240)).max(12).default([]),
 }).strict();
 
