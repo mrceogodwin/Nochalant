@@ -80,9 +80,12 @@ export async function POST(request: NextRequest, context: Context) {
   });
   const prior = await prisma.message.findUnique({
     where: { senderId_clientMessageId: { senderId: userId, clientMessageId: parsed.data.clientMessageId } },
-    select: { id: true, body: true, createdAt: true, senderId: true },
+    select: { id: true, conversationId: true, body: true, createdAt: true, senderId: true },
   });
-  if (prior) return NextResponse.json({ message: prior }, { status: 200 });
+  if (prior) {
+    if (prior.conversationId !== conversation.id) return NextResponse.json({ error: "This message ID was already used." }, { status: 409 });
+    return NextResponse.json({ message: prior }, { status: 200 });
+  }
   const message = await prisma.message.create({
     data: { conversationId: conversation.id, senderId: userId, clientMessageId: parsed.data.clientMessageId, kind: "TEXT", body: parsed.data.body },
     select: { id: true, body: true, createdAt: true, senderId: true },
