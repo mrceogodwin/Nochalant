@@ -1731,3 +1731,89 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
     line-height: 1.6;
   }
 }
+
+
+/* Flagship Nochalant Top 100 — homepage chart */
+.nocha-top100-section{padding-top:30px;padding-bottom:42px}
+.nocha-chart-shell{position:relative;overflow:hidden;padding:clamp(18px,3vw,30px);border:1px solid #b8d95a;border-radius:20px;background:radial-gradient(ellipse at 78% 4%,#a9db2617,transparent 35%),linear-gradient(145deg,#11140d,#090b09 60%,#10140b);box-shadow:0 0 0 1px #b8d95a18,0 20px 70px #0008,inset 0 0 44px #a5d51b0b}
+.nocha-chart-brand{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;min-height:150px}
+.nocha-chart-brand-main{display:flex;align-items:flex-start;gap:13px}
+.nocha-chart-crown{color:var(--lime);font-size:38px;line-height:1}
+.nocha-chart-brand-name{font:700 clamp(20px,3vw,30px)/1 'Space Grotesk',sans-serif}
+.nocha-chart-brand-main h2{margin:4px 0 0;font:800 clamp(56px,8vw,88px)/.88 'Space Grotesk',sans-serif;letter-spacing:-5px}
+.nocha-chart-brand-main h2 em{color:var(--lime);font-style:normal}
+.nocha-chart-kicker{display:block;margin-top:13px;color:#f0f1e8;font-size:10px;font-weight:900;letter-spacing:.28em}
+.nocha-chart-explainer{position:relative;display:flex;align-items:center;gap:14px;min-height:110px;padding-left:22px;border-left:1px solid #525a3d}
+.nocha-chart-laurel{display:grid;place-items:center;flex:none;width:72px;height:72px;border:2px solid #b8d95a;border-radius:50%;color:var(--lime);font-size:30px}
+.nocha-chart-laurel b{font-size:20px}
+.nocha-chart-explainer p{max-width:175px;margin:0;color:#d4d7ca;font-size:12px;line-height:1.55}
+.nocha-chart-crown-art{margin-left:auto;color:#b5df32;font-size:78px;filter:drop-shadow(0 0 15px #b8e72b66)}
+.nocha-chart-filters{display:flex;gap:9px;overflow-x:auto;padding:12px 0 20px;scrollbar-width:none}
+.nocha-chart-filters::-webkit-scrollbar{display:none}
+.nocha-chart-filters button{display:inline-flex;align-items:center;gap:8px;flex:none;padding:10px 15px;border:1px solid #4b513e;border-radius:999px;background:#11140f;color:#e7e9df;font-size:12px;font-weight:700;white-space:nowrap}
+.nocha-chart-filters button span{color:var(--lime);font-size:15px}
+.nocha-chart-filters button.active{border-color:var(--lime);background:linear-gradient(135deg,#d5ff54,#a8d927);color:#10140a;box-shadow:0 5px 18px #b6e52b38}
+.nocha-chart-filters button.active span{color:#10140a}
+.nocha-chart-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:7px 0 17px}
+.nocha-chart-list-heading>div{display:flex;align-items:center;gap:14px}
+.nocha-chart-bars{color:var(--lime);font-size:31px;text-shadow:0 0 15px #b6e52b66}
+.nocha-chart-list-heading h3{margin:0;font:750 clamp(18px,3vw,25px)/1.1 'Space Grotesk',sans-serif}
+.nocha-chart-list-heading p{margin:4px 0 0;color:#a7aa9b;font-size:11px}
+.nocha-chart-total{color:var(--lime);font-size:12px;font-weight:800;white-space:nowrap}
+.nocha-chart-total b{padding-left:8px;font-size:20px}
+.nocha-chart-rows{display:grid;gap:5px}
+.nocha-chart-row{display:grid;grid-template-columns:48px 64px 38px minmax(0,1fr) 55px 82px 26px;align-items:center;gap:10px;min-height:68px;padding:5px 9px;border:1px solid #34382d;border-radius:12px;background:linear-gradient(100deg,#151812,#0d0f0d);transition:border-color .18s,background .18s}
+.nocha-chart-row:hover{border-color:#778c3c;background:linear-gradient(100deg,#1a2012,#11140f)}
+.nocha-chart-rank{display:grid;place-items:center;width:42px;height:48px;border:1px solid #373d30;border-radius:9px;background:#1a1e17;color:#f1f2e9;font-size:19px}
+.nocha-chart-rank.first{border-color:#b99a43;background:linear-gradient(145deg,#5b4c20,#1c1b10);color:#f4d75c}
+.nocha-chart-cover{width:60px;height:56px;overflow:hidden;padding:0;border:0;border-radius:9px;background:#242a1c;color:var(--lime)}
+.nocha-chart-cover img{width:100%;height:100%;object-fit:cover}
+.nocha-chart-cover span{display:grid;place-items:center;width:100%;height:100%;font-size:24px}
+.nocha-chart-play{display:grid;place-items:center;width:35px;height:35px;border:2px solid var(--lime);border-radius:50%;background:#12170c;color:var(--lime);font-size:14px}
+.nocha-chart-play:disabled{opacity:.4}
+.nocha-chart-track{display:grid;gap:4px;min-width:0}
+.nocha-chart-track strong{overflow:hidden;color:#f4f5ee;font-size:14px;text-overflow:ellipsis;white-space:nowrap}
+.nocha-chart-track>button{width:max-content;max-width:100%;overflow:hidden;padding:0;border:0;background:none;color:#b9bdb0;font-size:12px;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.nocha-explicit{display:inline-grid;place-items:center;margin-left:6px;width:16px;height:16px;border-radius:3px;background:#454941;color:#f5f5ed;font-size:10px}
+.nocha-chart-movement{font-size:12px;font-weight:900;text-align:center;white-space:nowrap}
+.nocha-chart-movement.up{color:#91ef52}.nocha-chart-movement.down{color:#ff747c}.nocha-chart-movement.new{padding:5px 7px;border-radius:999px;background:var(--lime);color:#111;font-size:9px}.nocha-chart-movement.steady{color:#929789}
+.nocha-chart-plays{color:#d5d8ce;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nocha-chart-plays span{color:var(--lime)}
+.nocha-chart-more{border:0;background:none;color:#d7dbd0;font-size:15px;letter-spacing:2px}
+.nocha-chart-empty{display:grid;place-items:center;min-height:115px;padding:20px;border:1px dashed #444c34;color:#a9ad9c;text-align:center;font-size:12px;line-height:1.6}
+.nocha-chart-pagination{display:flex;align-items:center;justify-content:center;gap:18px;padding-top:19px}
+.nocha-chart-pagination button{min-width:145px;padding:12px 17px;border:1px solid #b8d95a;border-radius:999px;background:linear-gradient(135deg,#d5ff54,#a6d729);color:#10140a;font-weight:900}
+.nocha-chart-pagination button:disabled{opacity:.35;cursor:not-allowed}
+.nocha-chart-pagination span{color:#b9c58e;font-size:11px;font-weight:800}
+@media(max-width:700px){
+ .nocha-top100-section{padding-top:14px;padding-bottom:28px}
+ .nocha-chart-shell{padding:15px 11px;border-radius:15px}
+ .nocha-chart-brand{grid-template-columns:1fr;gap:12px;min-height:0}
+ .nocha-chart-brand-main h2{font-size:61px;letter-spacing:-3.5px}
+ .nocha-chart-crown{font-size:29px}
+ .nocha-chart-kicker{font-size:8px;letter-spacing:.2em}
+ .nocha-chart-explainer{min-height:64px;padding:9px 0 0;border-left:0;border-top:1px solid #424a32}
+ .nocha-chart-laurel{width:48px;height:48px;font-size:21px}
+ .nocha-chart-laurel b{font-size:15px}
+ .nocha-chart-explainer p{max-width:190px;font-size:10px}
+ .nocha-chart-crown-art{font-size:48px}
+ .nocha-chart-filters{gap:6px;margin-right:-11px;padding:13px 0 16px}
+ .nocha-chart-filters button{padding:9px 11px;font-size:10px}
+ .nocha-chart-list-heading{margin:4px 0 12px}
+ .nocha-chart-list-heading h3{font-size:18px}
+ .nocha-chart-list-heading p{max-width:210px;font-size:9px}
+ .nocha-chart-bars{font-size:24px}
+ .nocha-chart-total{font-size:9px}
+ .nocha-chart-row{grid-template-columns:29px 43px 31px minmax(0,1fr) 37px;gap:6px;min-height:58px;padding:4px 5px;border-radius:9px}
+ .nocha-chart-rank{width:27px;height:38px;border-radius:7px;font-size:14px}
+ .nocha-chart-cover{width:42px;height:44px;border-radius:7px}
+ .nocha-chart-play{width:29px;height:29px;font-size:11px}
+ .nocha-chart-track strong{font-size:11px}
+ .nocha-chart-track>button{font-size:10px}
+ .nocha-chart-movement{font-size:10px}
+ .nocha-chart-plays,.nocha-chart-more{display:none}
+ .nocha-chart-pagination{gap:8px;padding-top:14px}
+ .nocha-chart-pagination button{min-width:0;flex:1;padding:11px 8px;font-size:10px}
+ .nocha-chart-pagination span{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.nocha-chart-row{transition:none}}
