@@ -91,7 +91,16 @@ export async function GET(request: NextRequest) {
   }
 
   const posts = visibility.length ? await prisma.clubPost.findMany({
-    where: { status: "PUBLISHED", OR: visibility },
+    where: {
+      status: "PUBLISHED",
+      OR: visibility,
+      ...(userId ? {
+        NOT: [
+          { author: { blocksGiven: { some: { targetId: userId } } } },
+          { author: { blocksReceived: { some: { sourceId: userId } } } },
+        ],
+      } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 40,
     select: {
