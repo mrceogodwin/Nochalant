@@ -41,4 +41,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add prisma/migrations/20261107170000_v2_complete_schema_baseline/migration.sql
           git diff --cached --quiet || git commit -m "Generate complete V2 Prisma baseline"
+          git pull --rebase origin v2
           git push origin HEAD:v2
