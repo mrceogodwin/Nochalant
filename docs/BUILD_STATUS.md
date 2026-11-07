@@ -35,6 +35,10 @@ Last updated: 2026-11-07
 | 0 | Squads directory and creation preview | DONE (UNVERIFIED) | `/squads`, `/squads/create`; illustrative directory and creation form; no real groups created |
 | 0 | Discover community navigation | DONE (UNVERIFIED) | Scene cards link to detail routes; links to create Scene and explore Squads |
 
+| 0 | Interactive social feed preview | DONE (UNVERIFIED) | `/club`; feed tabs, local likes, saved state, comment composer, poll voting and notices; no persistence |
+| 0 | Post composer preview | DONE (UNVERIFIED) | `/club/create`; Post/Scene/Poll modes, poll options, audience selector and validation; no publishing |
+| 0 | Notifications preview | DONE (UNVERIFIED) | `/notifications`; illustrative activity list, clearly labelled sample content |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
