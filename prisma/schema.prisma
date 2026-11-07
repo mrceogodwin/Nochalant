@@ -1,0 +1,657 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AccountStatus { ACTIVE SUSPENDED BANNED DELETED }
+enum SceneVisibility { PUBLIC PRIVATE PAID UNLISTED }
+enum MembershipStatus { PENDING ACTIVE CANCELLED EXPIRED PAST_DUE }
+enum CommunityRole { FOUNDER CO_FOUNDER CURATOR MODERATOR HOST MEMBER }
+enum MessageKind { TEXT IMAGE VIDEO VOICE_NOTE LINK SYSTEM }
+enum ReportStatus { OPEN REVIEWING RESOLVED DISMISSED APPEALED }
+enum ModerationActionType { WARNING REMOVE_CONTENT RESTRICT_POSTING RESTRICT_MESSAGING SUSPEND BAN REMOVE_FROM_COMMUNITY RESTORE }
+enum PaymentStatus { PENDING SUCCESSFUL FAILED REFUNDED }
+enum SubmissionStatus { DRAFT PENDING REVIEW APPROVED PUBLISHED REJECTED TAKEN_DOWN }
+enum Rarity { COMMON UNCOMMON RARE EPIC LEGENDARY FOUNDERS_EDITION }
+enum RoomStatus { SCHEDULED LIVE ENDED CANCELLED }
+
+model User {
+  id              String @id @default(cuid())
+  email           String @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String
+  username        String @unique
+  displayName     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  status          AccountStatus @default(ACTIVE)
+  profile         UserProfile?
+  sessions        UserSession[]
+  interests       UserInterest[]
+  ageAssurance    AgeAssuranceRecord?
+  sceneMemberships SceneMember[]
+  foundedScenes   Scene[] @relation("SceneFounder")
+  squadMemberships SquadMember[]
+  foundedSquads   Squad[] @relation("SquadFounder")
+  sentMessages    Message[] @relation("MessageSender")
+  notifications  Notification[]
+  reports        ContentReport[] @relation("ReportAuthor")
+  follows        UserFollow[] @relation("FollowSource")
+  followers      UserFollow[] @relation("FollowTarget")
+  blocksGiven    UserBlock[] @relation("BlockSource")
+  blocksReceived UserBlock[] @relation("BlockTarget")
+  memberships    Membership[]
+  artistProfile  ArtistProfile?
+  reputationEvents ReputationEvent[]
+  userIcons      UserIcon[]
+  userBadges     UserBadge[]
+  auditActions   AuditLog[] @relation("AuditActor")
+  @@index([createdAt])
+  @@index([status, createdAt])
+}
+
+model UserProfile {
+  id             String @id @default(cuid())
+  userId         String @unique
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio            String? @db.VarChar(280)
+  avatarUrl      String?
+  coverUrl       String?
+  identityIconId String?
+  clubId         String @unique
+  rankId         String?
+  reputationXp   Int @default(0)
+  memberSince    DateTime @default(now())
+  isDiscoverable Boolean @default(true)
+  showMembership Boolean @default(true)
+  showScenes     Boolean @default(true)
+  showSquads     Boolean @default(false)
+  @@index([rankId, reputationXp])
+}
+
+model UserSession {
+  id           String @id @default(cuid())
+  userId       String
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  revokedAt    DateTime?
+  ipHash       String?
+  userAgent    String?
+  @@index([userId, expiresAt])
+}
+
+model AgeAssuranceRecord {
+  id             String @id @default(cuid())
+  userId         String @unique
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  declaredAdult  Boolean
+  method         String @default("SELF_DECLARATION")
+  confirmedAt    DateTime @default(now())
+  policyVersion  String
+}
+
+model UserInterest {
+  id        String @id @default(cuid())
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest  String
+  createdAt DateTime @default(now())
+  @@unique([userId, interest])
+  @@index([interest])
+}
+
+model UserFollow {
+  id         String @id @default(cuid())
+  sourceId   String
+  targetId   String
+  source     User @relation("FollowSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target     User @relation("FollowTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  @@unique([sourceId, targetId])
+  @@index([targetId, createdAt])
+}
+
+model UserBlock {
+  id        String @id @default(cuid())
+  sourceId  String
+  targetId  String
+  source    User @relation("BlockSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target    User @relation("BlockTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([sourceId, targetId])
+}
+
+model MembershipPlan {
+  id             String @id @default(cuid())
+  code           String @unique
+  name           String
+  description    String
+  priceKobo      BigInt @default(0)
+  currency       String @default("NGN")
+  interval       String @default("MONTH")
+  active         Boolean @default(true)
+  entitlements   Json
+  memberships    Membership[]
+  updatedAt      DateTime @updatedAt
+}
+
+model Membership {
+  id                    String @id @default(cuid())
+  userId                String
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                String
+  plan                  MembershipPlan @relation(fields: [planId], references: [id])
+  status                MembershipStatus @default(PENDING)
+  provider              String @default("paystack")
+  providerCustomerId    String?
+  providerSubscriptionId String? @unique
+  startedAt             DateTime?
+  renewsAt              DateTime?
+  cancelledAt           DateTime?
+  createdAt             DateTime @default(now())
+  entitlements          MembershipEntitlement[]
+  @@index([userId, status])
+}
+
+model MembershipEntitlement {
+  id           String @id @default(cuid())
+  membershipId String
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  key          String
+  value        Json
+  active       Boolean @default(true)
+  @@unique([membershipId, key])
+}
+
+model PaymentTransaction {
+  id              String @id @default(cuid())
+  userId          String
+  provider        String @default("paystack")
+  reference       String @unique
+  amountKobo      BigInt
+  currency        String @default("NGN")
+  status          PaymentStatus @default(PENDING)
+  purpose         String
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  webhookEvents   PaymentWebhookEvent[]
+  refunds         Refund[]
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model PaymentWebhookEvent {
+  id             String @id @default(cuid())
+  transactionId  String?
+  transaction    PaymentTransaction? @relation(fields: [transactionId], references: [id])
+  provider       String
+  eventId        String
+  signatureValid Boolean
+  payloadHash    String
+  receivedAt     DateTime @default(now())
+  processedAt    DateTime?
+  @@unique([provider, eventId])
+}
+
+model Refund {
+  id              String @id @default(cuid())
+  transactionId   String
+  transaction     PaymentTransaction @relation(fields: [transactionId], references: [id])
+  providerRef     String? @unique
+  amountKobo      BigInt
+  reason          String
+  status          String
+  createdAt       DateTime @default(now())
+}
+
+model Scene {
+  id             String @id @default(cuid())
+  founderId      String
+  founder        User @relation("SceneFounder", fields: [founderId], references: [id])
+  name           String
+  slug           String @unique
+  description    String
+  category       String
+  coverUrl       String?
+  iconId         String?
+  visibility     SceneVisibility @default(PUBLIC)
+  accessPriceKobo BigInt?
+  rules          Json
+  active         Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  members        SceneMember[]
+  channels       SceneChannel[]
+  posts          ScenePost[]
+  invitations    SceneInvitation[]
+  @@index([visibility, category, active])
+  @@index([founderId, createdAt])
+}
+
+model SceneMember {
+  id        String @id @default(cuid())
+  sceneId   String
+  scene     Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      CommunityRole @default(MEMBER)
+  status    MembershipStatus @default(ACTIVE)
+  joinedAt  DateTime @default(now())
+  @@unique([sceneId, userId])
+  @@index([userId, status])
+}
+
+model SceneChannel {
+  id          String @id @default(cuid())
+  sceneId     String
+  scene       Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  description String?
+  isDefault   Boolean @default(false)
+  archivedAt  DateTime?
+  @@unique([sceneId, slug])
+}
+
+model ScenePost {
+  id        String @id @default(cuid())
+  sceneId   String
+  scene     Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String @db.VarChar(10000)
+  media     Json?
+  status    String @default("PUBLISHED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([sceneId, status, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model SceneInvitation {
+  id        String @id @default(cuid())
+  sceneId   String
+  scene     Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  invitee   String?
+  tokenHash String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Squad {
+  id             String @id @default(cuid())
+  founderId      String
+  founder        User @relation("SquadFounder", fields: [founderId], references: [id])
+  name           String
+  slug           String @unique
+  description    String
+  iconId         String?
+  coverUrl       String?
+  isDiscoverable Boolean @default(false)
+  parentSceneId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  members        SquadMember[]
+  @@index([parentSceneId, isDiscoverable])
+}
+
+model SquadMember {
+  id        String @id @default(cuid())
+  squadId   String
+  squad     Squad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      CommunityRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  @@unique([squadId, userId])
+  @@index([userId, joinedAt])
+}
+
+model Conversation {
+  id        String @id @default(cuid())
+  kind      String
+  sceneId   String?
+  squadId   String?
+  createdAt DateTime @default(now())
+  members   ConversationMember[]
+  messages  Message[]
+  @@index([kind, createdAt])
+}
+
+model ConversationMember {
+  id             String @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime?
+  mutedAt        DateTime?
+  @@unique([conversationId, userId])
+  @@index([userId, joinedAt])
+}
+
+model Message {
+  id              String @id @default(cuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String
+  sender          User @relation("MessageSender", fields: [senderId], references: [id])
+  clientMessageId String
+  kind            MessageKind @default(TEXT)
+  body            String? @db.VarChar(10000)
+  attachment      Json?
+  replyToId       String?
+  editedAt        DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  reactions       MessageReaction[]
+  @@unique([senderId, clientMessageId])
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+}
+
+model MessageReaction {
+  id        String @id @default(cuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  reaction  String
+  createdAt DateTime @default(now())
+  @@unique([messageId, userId, reaction])
+}
+
+model VoiceRoom {
+  id          String @id @default(cuid())
+  title       String
+  description String?
+  sceneId     String?
+  squadId     String?
+  hostUserId  String
+  provider    String @default("livekit")
+  providerRoomId String @unique
+  status      RoomStatus @default(SCHEDULED)
+  startsAt    DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime @default(now())
+  participants VoiceRoomParticipant[]
+  @@index([status, startsAt])
+}
+
+model VoiceRoomParticipant {
+  id          String @id @default(cuid())
+  roomId      String
+  room        VoiceRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId      String
+  role        String
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+  @@unique([roomId, userId])
+}
+
+model RankDefinition {
+  id          String @id @default(cuid())
+  code        String @unique
+  name        String
+  minXp       Int @unique
+  description String
+  active      Boolean @default(true)
+}
+
+model ReputationEvent {
+  id          String @id @default(cuid())
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ruleKey     String
+  points      Int
+  idempotencyKey String @unique
+  sourceType  String
+  sourceId    String?
+  reversedAt  DateTime?
+  createdAt   DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+model IconCatalog {
+  id             String @id
+  name           String @unique
+  description    String
+  category       String
+  rarity         Rarity @default(COMMON)
+  unlockCondition Json
+  season         String?
+  svgPath        String
+  active         Boolean @default(true)
+  userIcons      UserIcon[]
+  @@index([category, rarity, active])
+}
+
+model UserIcon {
+  id         String @id @default(cuid())
+  userId     String
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  iconId     String
+  icon       IconCatalog @relation(fields: [iconId], references: [id])
+  isPrimary  Boolean @default(false)
+  unlockedAt DateTime @default(now())
+  @@unique([userId, iconId])
+  @@index([userId, isPrimary])
+}
+
+model BadgeCatalog {
+  id          String @id
+  name        String @unique
+  description String
+  rarity      Rarity
+  artworkPath String
+  active      Boolean @default(true)
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id        String @id @default(cuid())
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     BadgeCatalog @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+  @@unique([userId, badgeId])
+}
+
+model AchievementDefinition {
+  id          String @id
+  name        String
+  description String
+  criteria    Json
+  active      Boolean @default(true)
+}
+
+model ArtistProfile {
+  id             String @id @default(cuid())
+  ownerId        String @unique
+  owner          User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  stageName      String
+  slug           String @unique
+  bio            String?
+  avatarUrl      String?
+  coverUrl       String?
+  genres         String[]
+  city           String?
+  verificationStatus String @default("UNVERIFIED")
+  verifiedAt     DateTime?
+  createdAt      DateTime @default(now())
+  releases       MusicSubmission[]
+  @@index([verificationStatus, createdAt])
+}
+
+model MusicSubmission {
+  id            String @id @default(cuid())
+  artistId      String
+  artist        ArtistProfile @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  title         String
+  externalUrl   String
+  canonicalUrl  String
+  provider      String
+  genre         String
+  description   String?
+  coverUrl      String?
+  submissionType String
+  rightsDeclared Boolean
+  status        SubmissionStatus @default(PENDING)
+  paidReview    Boolean @default(false)
+  createdAt     DateTime @default(now())
+  feedback      MusicFeedback[]
+  @@unique([canonicalUrl, artistId])
+  @@index([status, createdAt])
+}
+
+model MusicFeedback {
+  id           String @id @default(cuid())
+  submissionId String
+  submission   MusicSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  authorUserId String
+  body         String
+  voiceUrl     String?
+  createdAt    DateTime @default(now())
+  @@index([submissionId, createdAt])
+}
+
+model Venue {
+  id             String @id @default(cuid())
+  name           String
+  slug           String @unique
+  description    String
+  city           String
+  address        String?
+  addressPrivate Boolean @default(false)
+  websiteUrl     String?
+  verified       Boolean @default(false)
+  createdAt      DateTime @default(now())
+  reviews        VenueReview[]
+  events         NightlifeEvent[]
+  @@index([city, verified])
+}
+
+model VenueReview {
+  id        String @id @default(cuid())
+  venueId   String
+  venue     Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  authorId  String
+  music     Int
+  atmosphere Int
+  service   Int
+  value     Int
+  overall   Int
+  body      String?
+  status    String @default("PENDING")
+  createdAt DateTime @default(now())
+  @@unique([venueId, authorId])
+  @@index([venueId, status, createdAt])
+}
+
+model NightlifeEvent {
+  id          String @id @default(cuid())
+  venueId     String?
+  venue       Venue? @relation(fields: [venueId], references: [id])
+  hostUserId  String
+  title       String
+  description String
+  startsAt    DateTime
+  endsAt      DateTime?
+  city        String
+  privateAddress String?
+  addressVisible Boolean @default(false)
+  ticketUrl   String?
+  status      String @default("DRAFT")
+  createdAt   DateTime @default(now())
+  rsvps       EventRsvp[]
+  @@index([city, startsAt, status])
+}
+
+model EventRsvp {
+  id        String @id @default(cuid())
+  eventId   String
+  event     NightlifeEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  status    String @default("GOING")
+  createdAt DateTime @default(now())
+  @@unique([eventId, userId])
+}
+
+model Notification {
+  id        String @id @default(cuid())
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, readAt, createdAt])
+}
+
+model ContentReport {
+  id          String @id @default(cuid())
+  reporterId  String
+  reporter    User @relation("ReportAuthor", fields: [reporterId], references: [id])
+  targetType  String
+  targetId    String
+  reason      String
+  details     String?
+  status      ReportStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  caseId      String?
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model ModerationCase {
+  id          String @id @default(cuid())
+  reportIds   String[]
+  severity    String
+  status      ReportStatus @default(OPEN)
+  assignedTo  String?
+  resolution  String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  actions     ModerationAction[]
+  @@index([status, severity, createdAt])
+}
+
+model ModerationAction {
+  id        String @id @default(cuid())
+  caseId    String
+  case      ModerationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  actorId   String
+  action    ModerationActionType
+  reason    String
+  createdAt DateTime @default(now())
+  @@index([actorId, createdAt])
+}
+
+model Appeal {
+  id        String @id @default(cuid())
+  caseId    String
+  userId    String
+  reason    String
+  status    String @default("OPEN")
+  createdAt DateTime @default(now())
+  resolvedAt DateTime?
+}
+
+model AuditLog {
+  id         String @id @default(cuid())
+  actorId    String?
+  actor      User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json
+  createdAt  DateTime @default(now())
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId, createdAt])
+}
