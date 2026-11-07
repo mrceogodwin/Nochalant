@@ -3,13 +3,12 @@ import Credentials from "next-auth/providers/credentials";
 import { randomUUID } from "node:crypto";
 
 import { verifyPassword } from "@/lib/auth/password";
-import { getServerEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: getServerEnv("AUTH_SECRET"),
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   session: {
     strategy: "jwt",
