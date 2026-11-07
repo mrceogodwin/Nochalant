@@ -32,7 +32,7 @@ function sha256(value: string) {
 
 function requestAddress(request: NextRequest) {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("x-real-ip") || "unknown";
+  return request.headers.get("x-real-ip") || forwarded || "unknown";
 }
 
 export async function POST(request: NextRequest) {
@@ -98,7 +98,15 @@ export async function POST(request: NextRequest) {
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
   const passwordHash = await hashPassword(parsed.data.password);
   const resend = new Resend(resendKey);
-  const verifyUrl = new URL("/verify-email", authUrl);
+  let verifyUrl: URL;
+  try {
+    verifyUrl = new URL("/verify-email", authUrl);
+  } catch {
+    return NextResponse.json(
+      { error: "Account registration is not configured yet." },
+      { status: 503 },
+    );
+  }
   verifyUrl.searchParams.set("token", rawToken);
 
   let userId: string | undefined;
