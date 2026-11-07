@@ -90,5 +90,7 @@ export async function POST(request: NextRequest, context: Context) {
     data: { conversationId: conversation.id, senderId: userId, clientMessageId: parsed.data.clientMessageId, kind: "TEXT", body: parsed.data.body },
     select: { id: true, body: true, createdAt: true, senderId: true },
   });
+  const recipients = await prisma.conversationMember.findMany({ where: { conversationId: conversation.id, userId: { not: userId } }, select: { userId: true } });
+  if (recipients.length) await prisma.notification.createMany({ data: recipients.map(recipient => ({ userId: recipient.userId, type: "SQUAD_MESSAGE", payload: { conversationId: conversation.id, messageId: message.id, senderId: userId, squadSlug: slug } })) });
   return NextResponse.json({ message }, { status: 201 });
 }
