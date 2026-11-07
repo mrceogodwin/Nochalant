@@ -7,7 +7,9 @@ type Conversation = {
   id: string;
   peer: { id: string; username: string; displayName: string; profile: { avatarUrl: string | null } | null };
   lastMessage: { body: string | null; createdAt: string; senderId: string } | null;
-  lastReadAt: string | null;\n  kind: string;\n  unread: boolean;
+  lastReadAt: string | null;
+  kind: string;
+  unread: boolean;
 };
 
 export default function ChatsPage() {
