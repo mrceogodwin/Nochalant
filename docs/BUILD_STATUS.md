@@ -16,7 +16,7 @@ Last updated: 2026-11-07
 | 0 | Product requirements reference | DONE (UNVERIFIED) | `docs/NOCHALANT_CLUB_PRD.md` committed; needs exact verbatim comparison against supplied PRD |
 | 0 | Next.js App Router + TypeScript scaffold | DONE (UNVERIFIED) | Next package manifest, app layout, welcome route, TypeScript and Next config |
 | 0 | Black/white/red design foundation | DONE (UNVERIFIED) | `src/app/globals.css`; final red-token override committed in `5acfbd5` |
-| 0 | PWA manifest and offline shell | DONE (UNVERIFIED) | `src/app/manifest.ts`, `public/sw.js`, offline route; service-worker registration and real icons still need completion |
+| 0 | PWA manifest and offline shell | DONE (UNVERIFIED) | `src/app/manifest.ts`, `public/sw.js`, `/offline`, registered client component and original SVG mark; raster maskable icon variants and install QA remain |
 | 0 | CI pipeline | DONE (UNVERIFIED) | `.github/workflows/ci.yml`; no successful CI run observed |
 | 0 | Prisma relational schema | DONE (UNVERIFIED) | `prisma/schema.prisma` contains 46 models / 11 enums; schema validation and relation/index audit not run |
 | 0 | Reference seed data | DONE (UNVERIFIED) | `prisma/seed.ts` defines ranks, plans, 120 identity names and 8 beta Scenes; seed has not run |
