@@ -95,7 +95,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           sessionToken: token.sid,
           revokedAt: null,
           expiresAt: { gt: new Date() },
-          user: { status: "ACTIVE", emailVerifiedAt: { not: null } },
+          user: {
+            status: "ACTIVE",
+            emailVerifiedAt: { not: null },
+            ageAssurance: { is: { declaredAdult: true } },
+          },
         },
         select: { id: true },
       });
