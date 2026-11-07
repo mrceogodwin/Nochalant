@@ -97,3 +97,6 @@ Last updated: 2026-11-07
 - Added server-only environment access helpers that fail at point of use and do not expose secret values. Build-time static rendering is not forced to have Preview credentials.
 - Authentication, email verification, registration, authorization guards and database persistence remain NOT STARTED. These helpers are infrastructure only.
 - No database connection was made; no Neon branch was changed. No build, typecheck or tests were run in this environment.
+
+
+- Added Argon2id password hashing and verification helpers with explicit input bounds. This is a utility only; no registration, login endpoint, session creation or email verification flow is active.
