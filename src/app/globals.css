@@ -210,3 +210,33 @@ button { font: inherit; }
 .choice-card.chosen i,.yellow-cta,.feed-tabs button.selected,.scene-join,.chat-tabs button.selected,.chat-room-tabs button.selected,.chat-compose button[type=submit],.bottom-nav .create-button{background:linear-gradient(180deg,#f04452,#c9162b);border-color:#e32636;color:#fff}
 .step-track span.active{background:#e32636}
 .post-art{background:radial-gradient(ellipse at 50% 100%,#a80027 0,transparent 50%),linear-gradient(140deg,#3c0b20,#10090d 60%,#350b18)}
+
+/* Final v2 brand lock — PRD §27: black / white / Nochalant red. */
+:root {
+  --yellow: #E11D2E;
+  --yellow-2: #B8121F;
+  --red: #E11D2E;
+  --red-pressed: #B8121F;
+  --red-soft: #FF4D5A;
+}
+.onboard-kicker,.onboard-content h1 em,.choice-icon,.selection-hint strong,
+.profile-preview>b,.finish-crown,.mini-logo,.member-brand,.member-role span,
+.post-actions button.liked,.feed-tabs button.selected,.scene-info .verified,
+.queue-heading button,.hot-label,.track-play,.round-play,.listening-title>span,
+.music-entry>span,.music-entry>b,.membership-row>span,.badge-row span,
+.step-track span.active { color: var(--red-soft) !important; }
+.choice-card.chosen,.club-input:focus,.create-textarea:focus { border-color:var(--red) !important; }
+.choice-card.chosen { background:linear-gradient(145deg,#2a1116,#111) !important; }
+.choice-card.chosen i,.yellow-cta,.feed-tabs button.selected,.scene-join,
+.chat-tabs button.selected,.chat-room-tabs button.selected,
+.chat-compose button[type=submit],.bottom-nav .create-button {
+  background:linear-gradient(180deg,#EF2637,#C91525) !important;
+  border-color:var(--red) !important;
+  color:#fff !important;
+}
+.step-track span.active { background:var(--red) !important; }
+.post-art { background:radial-gradient(ellipse at 50% 100%,#a80027 0,transparent 50%),linear-gradient(140deg,#3c0b20,#10090d 60%,#350b18) !important; }
+.chat-bubble.mine { background:linear-gradient(130deg,#EF2637,#B8121F) !important; }
+.chat-bubble.mine b,.chat-bubble.mine small { color:#fff !important; }
+.member-card { border-color:#87313a !important; }
+.member-role { border-color:#51242a !important; }
