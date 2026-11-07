@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 
 export default function SignInPage() {
   const [verificationNotice, setVerificationNotice] = useState("");
