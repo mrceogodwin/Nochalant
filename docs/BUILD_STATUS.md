@@ -30,6 +30,11 @@ Last updated: 2026-11-07
 | 0 | Member profile editor preview | DONE (UNVERIFIED) | `/my-club/edit`; display name, username, bio, city and discoverability controls; explicitly local preview only |
 | 0 | Scene discovery search and filters | DONE (UNVERIFIED) | `/discover`; category filters, text search, empty state and local join toggles; persistence not connected |
 
+| 0 | Scene detail preview route | DONE (UNVERIFIED) | `/discover/scenes/[slug]`; curated preview information and community rules; no live membership data |
+| 0 | Scene creation preview | DONE (UNVERIFIED) | `/discover/create`; name, description, category, visibility and rules form; no persistence |
+| 0 | Squads directory and creation preview | DONE (UNVERIFIED) | `/squads`, `/squads/create`; illustrative directory and creation form; no real groups created |
+| 0 | Discover community navigation | DONE (UNVERIFIED) | Scene cards link to detail routes; links to create Scene and explore Squads |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
