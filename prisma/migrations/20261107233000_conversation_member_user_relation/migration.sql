@@ -1,4 +1,2 @@
-ALTER TABLE "ConversationMember"
-ADD CONSTRAINT "ConversationMember_userId_fkey"
-FOREIGN KEY ("userId") REFERENCES "User"("id")
-ON DELETE CASCADE ON UPDATE CASCADE;
+-- Superseded by the complete, schema-generated V2 baseline at 20261107170000_v2_complete_schema_baseline.
+-- Kept as a no-op migration entry so existing repository history remains traceable.
