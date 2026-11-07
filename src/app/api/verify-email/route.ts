@@ -22,10 +22,12 @@ export async function GET(request: NextRequest) {
     select: { id: true, userId: true, expiresAt: true, user: { select: { emailVerifiedAt: true } } },
   });
 
-  if (!record || record.expiresAt <= new Date()) {
-    if (record) {
-      await prisma.emailVerificationToken.deleteMany({ where: { id: record.id } });
-    }
+  if (!record) {
+    return NextResponse.redirect(new URL("/sign-in?verification=invalid", request.url));
+  }
+
+  if (record.expiresAt <= new Date()) {
+    await prisma.emailVerificationToken.deleteMany({ where: { id: record.id } });
     return NextResponse.redirect(new URL("/sign-in?verification=expired", request.url));
   }
 
