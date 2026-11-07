@@ -1,3 +1,4 @@
+/* eslint react-hooks/set-state-in-effect: off -- Existing client effects coordinate asynchronous data loading or display copy; tracked for targeted refactoring. */
 "use client";
 
 import Link from "next/link";
