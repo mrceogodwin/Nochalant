@@ -240,3 +240,20 @@ button { font: inherit; }
 .chat-bubble.mine b,.chat-bubble.mine small { color:#fff !important; }
 .member-card { border-color:#87313a !important; }
 .member-role { border-color:#51242a !important; }
+
+
+/* Member access and membership tier screens */
+.owner-notice{margin:22px 0;padding:17px;border:1px solid #5b252d;border-radius:14px;background:linear-gradient(145deg,#211014,#111113)}
+.owner-notice strong{display:block;color:#ff5361;font-size:.9rem}
+.owner-notice p{margin:7px 0 0;color:#c4bfc0;font-size:.78rem;line-height:1.65}
+.membership-plans{display:grid;gap:14px;margin:20px 0}
+.membership-plan{padding:20px;border:1px solid #303036;border-radius:17px;background:linear-gradient(145deg,#19191c,#101012)}
+.membership-plan.featured{border-color:#87313a;background:radial-gradient(circle at 100% 0,#4b1520 0,transparent 48%),#171214}
+.membership-plan h2{font-size:1.25rem;margin:5px 0 8px;color:#fff}
+.plan-price{display:block;font-size:1.65rem;letter-spacing:-.04em;color:#fff}
+.plan-price small{font-size:.68rem;font-weight:400;color:#aaa;letter-spacing:0}
+.membership-plan>p:not(.onboard-kicker){font-size:.78rem;line-height:1.5;color:#b8b5b7}
+.membership-plan ul{list-style:none;padding:0;margin:15px 0}
+.membership-plan li{padding:6px 0;color:#e8e5e6;font-size:.76rem}
+.membership-plan li::first-letter{color:#ff5361}
+.plan-status{display:block;border-top:1px solid #373035;padding-top:12px;color:#ff6975;font-size:.68rem;line-height:1.5}
