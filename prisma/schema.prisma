@@ -119,6 +119,7 @@ model User {
   squadMemberships SquadMember[]
   foundedSquads   Squad[] @relation("SquadFounder")
   sentMessages    Message[] @relation("MessageSender")
+  clubPosts       ClubPost[]
   notifications  Notification[]
   reports        ContentReport[] @relation("ReportAuthor")
   follows        UserFollow[] @relation("FollowSource")
@@ -786,4 +787,20 @@ model AuditLog {
   createdAt  DateTime @default(now())
   @@index([actorId, createdAt])
   @@index([targetType, targetId, createdAt])
+}
+
+
+model ClubPost {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind      String   @default("POST")
+  body      String   @db.VarChar(5000)
+  options   Json?
+  audience  String   @default("EVERYONE")
+  status    String   @default("PUBLISHED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+  @@index([authorId, createdAt])
 }
