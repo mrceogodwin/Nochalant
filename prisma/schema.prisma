@@ -408,9 +408,6 @@ model ScenePost {
   updatedAt DateTime @updatedAt
   @@index([sceneId, status, createdAt])
   @@index([authorId, createdAt])
-  likes     ClubPostLike[]
-  comments  ClubPostComment[]
-  pollVotes ClubPollVote[]
 }
 
 
@@ -848,4 +845,7 @@ model ClubPost {
   updatedAt DateTime @updatedAt
   @@index([status, createdAt])
   @@index([authorId, createdAt])
+  likes     ClubPostLike[]
+  comments  ClubPostComment[]
+  pollVotes ClubPollVote[]
 }
