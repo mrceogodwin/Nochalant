@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Plus, MessageCircle, UserRound } from "lucide-react";
+import { Home, Compass, Plus, MessageCircle, UserRound, Bookmark } from "lucide-react";
 
 const destinations = [
   { href: "/club", label: "Home", Icon: Home },
@@ -12,18 +12,18 @@ const destinations = [
   { href: "/my-club", label: "My Club", Icon: UserRound },
 ];
 
-const appRoots = ["/club", "/discover", "/chats", "/my-club", "/scenes", "/squads", "/listening-room", "/notifications"];
+const appRoots = ["/club", "/discover", "/chats", "/my-club", "/scenes", "/squads", "/listening-room", "/notifications", "/drafts"];
 
 export function MobileAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const showNavigation = appRoots.some((root) => pathname === root || pathname.startsWith(root + "/"));
   if (!showNavigation) return <>{children}</>;
-  const title = pathname.startsWith("/discover") ? "Discover" : pathname.startsWith("/chats") ? "Chats" : pathname.startsWith("/my-club") ? "My Club" : pathname.startsWith("/scenes") ? "Scenes" : pathname.startsWith("/squads") ? "Squads" : pathname.startsWith("/listening-room") ? "Listening Room" : pathname.startsWith("/notifications") ? "Notifications" : "Nochalant Club";
+  const title = pathname.startsWith("/discover") ? "Discover" : pathname.startsWith("/chats") ? "Chats" : pathname.startsWith("/my-club") ? "My Club" : pathname.startsWith("/scenes") ? "Scenes" : pathname.startsWith("/squads") ? "Squads" : pathname.startsWith("/listening-room") ? "Listening Room" : pathname.startsWith("/notifications") ? "Notifications" : pathname.startsWith("/drafts") ? "Offline drafts" : "Nochalant Club";
   return <div className="mobile-app-frame">
     <header className="native-top-dock">
       <Link href="/club" className="native-wordmark" aria-label="Nochalant Club home">NOCHALANT<span>CLUB</span></Link>
       <div className="native-top-title">{title}</div>
-      <Link href="/notifications" className="native-notification" aria-label="Notifications">♧</Link>
+      <div className="native-header-actions"><Link href="/drafts" className="native-notification" aria-label="Offline drafts"><Bookmark size={17}/></Link><Link href="/notifications" className="native-notification" aria-label="Notifications">♧</Link></div>
     </header>
     <div className="native-screen-content">{children}</div>
     <nav className="native-bottom-dock" aria-label="Main navigation">
