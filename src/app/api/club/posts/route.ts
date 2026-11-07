@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -56,17 +57,28 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   const session = await auth();
   const userId = session?.user?.id;
+  const visibility: Prisma.ClubPostWhereInput[] = [{ audience: "EVERYONE" }];
+  if (userId) {
+    visibility.push(
+      { audience: "FOLLOWING", author: { followers: { some: { sourceId: userId } } } },
+      {
+        audience: "MY_SCENES",
+        author: {
+          sceneMemberships: {
+            some: {
+              status: "ACTIVE",
+              scene: {
+                members: { some: { userId, status: "ACTIVE" } },
+              },
+            },
+          },
+        },
+      },
+    );
+  }
+
   const posts = await prisma.clubPost.findMany({
-    where: {
-      status: "PUBLISHED",
-      OR: [
-        { audience: "EVERYONE" },
-        ...(userId ? [
-          { audience: "FOLLOWING", author: { followers: { some: { sourceId: userId } } } },
-          { audience: "MY_SCENES", author: { sceneMemberships: { some: { userId, status: "ACTIVE" } } } },
-        ] : []),
-      ],
-    },
+    where: { status: "PUBLISHED", OR: visibility },
     orderBy: { createdAt: "desc" },
     take: 40,
     select: {
