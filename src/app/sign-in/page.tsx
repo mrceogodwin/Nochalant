@@ -1,8 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function SignInPage() {
+  const [verificationNotice, setVerificationNotice] = useState("");
+
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get("verification");
+    if (status === "complete") setVerificationNotice("Your email is verified. Secure sign-in will be enabled once account setup is complete.");
+    if (status === "expired") setVerificationNotice("That verification link has expired. Request a new one when account setup is available.");
+    if (status === "invalid") setVerificationNotice("That verification link is not valid.");
+  }, []);
+
   return (
     <main className="onboard-shell">
       <header className="onboard-top">
@@ -13,6 +23,7 @@ export default function SignInPage() {
         <p className="onboard-kicker">GOOD TO HAVE YOU BACK</p>
         <h1>Back to<br/><em>your people.</em></h1>
         <p className="onboard-description">Sign-in is being connected as part of the Club's secure account setup.</p>
+        {verificationNotice && <div className="owner-notice" role="status"><strong>Email verification</strong><p>{verificationNotice}</p></div>}
         <div className="profile-preview">
           <div className="avatar-placeholder">N</div>
           <div><strong>Member sign-in</strong><span>Account access is not active yet</span></div>
