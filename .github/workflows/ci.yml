@@ -22,7 +22,7 @@ jobs:
       - run: pnpm exec prisma generate
       - run: pnpm exec tsc --noEmit
       - run: pnpm exec eslint .
-      - run: pnpm exec vitest run
+      - run: node --test tests/*.test.js
       - run: pnpm exec next build
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
