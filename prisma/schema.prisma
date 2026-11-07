@@ -120,6 +120,9 @@ model User {
   foundedSquads   Squad[] @relation("SquadFounder")
   sentMessages    Message[] @relation("MessageSender")
   clubPosts       ClubPost[]
+  clubPostLikes   ClubPostLike[]
+  clubPostComments ClubPostComment[]
+  clubPollVotes   ClubPollVote[]
   notifications  Notification[]
   reports        ContentReport[] @relation("ReportAuthor")
   follows        UserFollow[] @relation("FollowSource")
@@ -405,6 +408,48 @@ model ScenePost {
   updatedAt DateTime @updatedAt
   @@index([sceneId, status, createdAt])
   @@index([authorId, createdAt])
+  likes     ClubPostLike[]
+  comments  ClubPostComment[]
+  pollVotes ClubPollVote[]
+}
+
+
+model ClubPostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ClubPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([postId, userId])
+  @@index([userId, createdAt])
+}
+
+model ClubPostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ClubPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String   @db.VarChar(2000)
+  status    String   @default("PUBLISHED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId, status, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model ClubPollVote {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ClubPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  option    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([postId, userId])
+  @@index([postId, option])
 }
 
 model SceneInvitation {
