@@ -27,7 +27,17 @@ export default function SceneDetail({ params }: { params: Promise<{ slug: string
     if (!response.ok) throw new Error(result.error || "Scene could not be loaded.");
     setData(result as Payload);
   }
-  useEffect(() => { loadScene().catch(e => setError(e.message)); }, [slug]);
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/scenes/${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then(async response => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Scene could not be loaded.");
+        if (active) setData(result as Payload);
+      })
+      .catch(error => { if (active) setError(error instanceof Error ? error.message : "Scene could not be loaded."); });
+    return () => { active = false; };
+  }, [slug]);
 
   async function changeMembership(action: "join" | "leave") {
     setBusy(true); setNotice(""); setError("");
