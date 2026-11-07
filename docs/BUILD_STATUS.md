@@ -13,15 +13,15 @@ Last updated: 2026-11-07
 | 0 | Future-session instructions | DONE & VERIFIED | `AGENTS.md` |
 | 0 | Architecture, security, decisions, owner keys and acceptance docs | DONE & VERIFIED | `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, `docs/OWNER_TODO.md`, `docs/ACCEPTANCE.md` |
 | 0 | Setup guide | DONE (UNVERIFIED) | `docs/SETUP.md` |
-| 0 | Build brief and PRD verbatim | NOT STARTED | Must be committed in full before phase 0 closes |
+| 0 | Product requirements reference | DONE (UNVERIFIED) | `docs/NOCHALANT_CLUB_PRD.md` committed; needs exact verbatim comparison against supplied PRD |
 | 0 | Next.js App Router + TypeScript scaffold | DONE (UNVERIFIED) | Next package manifest, app layout, welcome route, TypeScript and Next config |
-| 0 | Black/white/red design foundation | DONE (UNVERIFIED) | `src/app/globals.css`, initial welcome route |
+| 0 | Black/white/red design foundation | DONE (UNVERIFIED) | `src/app/globals.css`; final red-token override committed in `5acfbd5` |
 | 0 | PWA manifest and offline shell | DONE (UNVERIFIED) | `src/app/manifest.ts`, `public/sw.js`, offline route; service-worker registration and real icons still need completion |
 | 0 | CI pipeline | DONE (UNVERIFIED) | `.github/workflows/ci.yml`; no successful CI run observed |
 | 0 | Prisma relational schema | DONE (UNVERIFIED) | `prisma/schema.prisma` contains 46 models / 11 enums; schema validation and relation/index audit not run |
 | 0 | Reference seed data | DONE (UNVERIFIED) | `prisma/seed.ts` defines ranks, plans, 120 identity names and 8 beta Scenes; seed has not run |
 | 0 | 120 original SVG icon artworks | NOT STARTED | Catalogue paths are defined; artwork files and admin gallery remain to be built |
-| 0 | Reference-matched mobile UI foundation | DONE (UNVERIFIED) | Black/yellow tokens, responsive mobile shell, cards, onboarding, feed, navigation and supporting screen styles in `src/app/globals.css` |
+| 0 | Reference-matched mobile UI foundation | DONE (UNVERIFIED) | Responsive mobile shell, onboarding, feed, navigation and supporting screen styles; red brand correction committed, browser QA pending |
 | 0 | Core reference screen routes | DONE (UNVERIFIED) | `/join`, `/club`, `/discover`, `/chats`, `/chats/lagos-night-crew`, `/listening-room`, `/listening-room/submit`, `/my-club`, `/club/create` |\n| 0 | Real account, feed, messaging, media and moderation APIs | NOT STARTED | Current UI interactions are local previews; no production publishing, chat delivery or upload claims |\n| 0 | Preview deployment and browser verification | BLOCKED | Vercel previously failed at npm install with EOVERRIDE; fix committed, but new deployment/build still needs verification |
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
