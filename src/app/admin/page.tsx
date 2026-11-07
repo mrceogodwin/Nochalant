@@ -54,11 +54,11 @@ export default async function AdminDashboard() {
         <div className="admin-section-heading"><div><p className="onboard-kicker">OPERATIONS</p><h2>Control rooms</h2></div></div>
         <div className="admin-action-list">
           <Link href="/admin/moderation"><span>⚑</span><div><strong>Trust & Safety</strong><small>Reports, cases, decisions and appeals</small></div><b>→</b></Link>
-          <div className="admin-disabled"><span>♙</span><div><strong>Member management</strong><small>Account search, status, roles and access controls</small></div><em>Not enabled</em></div>
+          <Link href="/admin/members"><span>♙</span><div><strong>Member management</strong><small>Search accounts and review verification and status</small></div><b>→</b></Link>
           <div className="admin-disabled"><span>◈</span><div><strong>Scenes & Squads</strong><small>Community review, ownership and visibility</small></div><em>Not enabled</em></div>
           <div className="admin-disabled"><span>₦</span><div><strong>Payments & memberships</strong><small>Transactions, plans, refunds and entitlements</small></div><em>Not enabled</em></div>
           <div className="admin-disabled"><span>⚙</span><div><strong>Platform configuration</strong><small>Feature flags, policies, banners and global settings</small></div><em>Not enabled</em></div>
-          <div className="admin-disabled"><span>♧</span><div><strong>Staff & permissions</strong><small>Invite staff, assign roles and revoke access</small></div><em>Not enabled</em></div>
+          <Link href="/admin/staff"><span>♧</span><div><strong>Staff & permissions</strong><small>Review current staff assignments and access roles</small></div><b>→</b></Link>
         </div>
       </section>
       <section className="admin-section">
