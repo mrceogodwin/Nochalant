@@ -1,4 +1,6 @@
 import Link from "next/link";
+import "./admin-console.css";
+import { requireAdmin } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +16,7 @@ function Metric({ label, value, detail }: { label: string; value: number; detail
 }
 
 export default async function AdminDashboard() {
+  await requireAdmin();
   const [members, activeMembers, scenes, squads, openReports, openCases, payments, staff, recentAudit] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { status: "ACTIVE" } }),
