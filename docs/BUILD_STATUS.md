@@ -89,3 +89,11 @@ Last updated: 2026-11-07
 
 - Safety centre is linked from the member profile, and the Squad details report entry now opens the report form.
 - Corrected the Scene management client route's missing React `use` import discovered during source review; this is a source-level correction, not a verified build result.
+
+
+## Backend foundation — 2026-11-07
+
+- Added a shared Prisma client module with Next.js development hot-reload reuse. It does not run migrations, seed data or issue database queries by itself.
+- Added server-only environment access helpers that fail at point of use and do not expose secret values. Build-time static rendering is not forced to have Preview credentials.
+- Authentication, email verification, registration, authorization guards and database persistence remain NOT STARTED. These helpers are infrastructure only.
+- No database connection was made; no Neon branch was changed. No build, typecheck or tests were run in this environment.
