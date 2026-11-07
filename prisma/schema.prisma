@@ -8,6 +8,13 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum AdminRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  SUPPORT
+}
+
 enum AccountStatus {
   ACTIVE
   SUSPENDED
@@ -124,8 +131,21 @@ model User {
   userIcons      UserIcon[]
   userBadges     UserBadge[]
   auditActions   AuditLog[] @relation("AuditActor")
+  adminAssignments AdminAssignment[]
   @@index([createdAt])
   @@index([status, createdAt])
+}
+
+model AdminAssignment {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      AdminRole
+  grantedAt DateTime  @default(now())
+  grantedBy String?
+  revokedAt DateTime?
+  @@index([userId, revokedAt])
+  @@index([role, revokedAt])
 }
 
 model UserProfile {
