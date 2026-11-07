@@ -54,17 +54,31 @@ export async function POST(request: NextRequest) {
   const passwordHash = await hashPassword(parsed.data.password);
 
   try {
-    await prisma.$transaction([
-      prisma.user.update({
+    await prisma.$transaction(async (transaction) => {
+      const claimed = await transaction.passwordResetToken.deleteMany({
+        where: {
+          id: record.id,
+          tokenHash,
+          expiresAt: { gt: new Date() },
+        },
+      });
+
+      if (claimed.count !== 1) {
+        throw new Error("Reset token was already used or expired.");
+      }
+
+      await transaction.user.update({
         where: { id: record.userId },
         data: { passwordHash },
-      }),
-      prisma.passwordResetToken.deleteMany({ where: { userId: record.userId } }),
-      prisma.userSession.updateMany({
+      });
+      await transaction.passwordResetToken.deleteMany({
+        where: { userId: record.userId },
+      });
+      await transaction.userSession.updateMany({
         where: { userId: record.userId, revokedAt: null },
         data: { revokedAt: new Date() },
-      }),
-    ]);
+      });
+    });
   } catch {
     return NextResponse.json({ error: "We could not update your password. Please request a new link." }, { status: 503 });
   }
