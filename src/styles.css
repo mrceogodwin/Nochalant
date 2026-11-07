@@ -1842,3 +1842,121 @@ button:active:not(:disabled){transform:translateY(1px) scale(.985)}
 .media-news-feed,.media-street-jury{padding-top:26px}
 .media-demo-note{margin-top:18px;color:#929887;font-size:11px}
 @media(max-width:760px){.demo-artist-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:15px 0 20px}.demo-artist-avatar{aspect-ratio:1.5/1;font-size:28px}.demo-artist-meta{padding:8px}.demo-artist-meta strong{font-size:12px}.media-news-page{padding-top:25px}.media-news-hero h1{letter-spacing:-2px}}
+
+
+/* NOCHALANT FLAGSHIP HOMEPAGE — reference-led visual system */
+:root{--nocha-lime:#c9ff35;--nocha-lime-soft:#d7ff73;--nocha-ink:#090a08;--nocha-panel:#11130f;--nocha-line:#34382c}
+html{scroll-behavior:smooth;background:var(--nocha-ink)}
+body{background:var(--nocha-ink);color:#f4f5ee}
+.site-shell{background:radial-gradient(ellipse at 50% 0%,#19200d 0,transparent 34%),#090a08}
+.ticker{display:none!important}
+.site-header{position:sticky;top:0;z-index:80;background:#090a08ed;border-bottom:1px solid #272b21;backdrop-filter:blur(18px)}
+.nav-wrap{max-width:1440px;min-height:68px;padding:0 4.2%;display:flex;align-items:center;justify-content:space-between;gap:28px}
+.header-brand{font-size:27px;letter-spacing:-1.5px;font-weight:900;white-space:nowrap}
+.header-brand span{color:var(--nocha-lime)}
+.main-nav{display:flex;align-items:center;gap:clamp(12px,2.1vw,30px);position:static;inset:auto;width:auto;height:auto;overflow:visible;padding:0;border:0;background:transparent;box-shadow:none}
+.main-nav .drawer-account,.main-nav .drawer-flagship,.main-nav .drawer-quick,.main-nav .drawer-preferences{display:contents}
+.main-nav .drawer-kicker,.main-nav .drawer-flagship>button span,.main-nav .drawer-flagship>a span,.main-nav .drawer-quick{display:none}
+.main-nav .drawer-flagship>button,.main-nav .drawer-flagship>a{display:inline-flex;align-items:center;padding:10px 0;border:0;background:transparent;color:#e7e9df;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+.main-nav .drawer-flagship>button:hover,.main-nav .drawer-flagship>a:hover{color:var(--nocha-lime)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.nav-actions .nav-login{color:#daddd2;font-size:12px}
+.nav-spill,.nav-join{border:1px solid #59633d;border-radius:999px;background:#11150d;color:var(--nocha-lime);padding:9px 14px;font-weight:800}
+.menu-toggle{display:none}
+#top{max-width:1440px;margin:auto}
+.artists-section{padding:34px 4.2% 22px!important;max-width:none!important}
+.artists-heading{align-items:flex-end;margin-bottom:18px}
+.artists-heading .eyebrow{color:var(--nocha-lime);font-size:12px;letter-spacing:.22em;font-weight:900}
+.artists-heading h2{margin:7px 0 4px;font-size:clamp(34px,4.2vw,54px);line-height:1;letter-spacing:-2px}
+.artists-heading h2 em{color:var(--nocha-lime);font-style:normal}
+.artists-heading p{margin:8px 0 0;color:#b4b8aa;font-size:14px}
+.artists-controls{display:flex;gap:12px}
+.artists-controls button{width:48px;height:48px;border:1px solid #3b4430;border-radius:50%;background:#0e110b;color:var(--nocha-lime);font-size:24px}
+.demo-artist-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:16px 0 0}
+.demo-artist-card{position:relative;display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid #292d23;border-radius:14px;background:#11130f;box-shadow:0 8px 24px #0005}
+.demo-artist-avatar{display:grid;place-items:center;aspect-ratio:1.75/1;color:#fff;font:900 clamp(25px,3vw,42px)/1 'Space Grotesk',sans-serif;letter-spacing:-2px;text-shadow:0 4px 15px #000;background:radial-gradient(circle at 50% 22%,#f0d4b0 0 12%,#583e2e 13% 27%,#151710 58%),linear-gradient(130deg,#7a2d26,#18110f)}
+.demo-artist-tone-1 .demo-artist-avatar{background:radial-gradient(circle at 50% 22%,#e7b9a6 0 12%,#41272a 13% 28%,#1b1019 60%),linear-gradient(130deg,#a33d76,#24101d)}
+.demo-artist-tone-2 .demo-artist-avatar{background:radial-gradient(circle at 50% 22%,#c99568 0 12%,#302016 13% 29%,#15120e 60%),linear-gradient(130deg,#98633c,#21140f)}
+.demo-artist-tone-3 .demo-artist-avatar{background:radial-gradient(circle at 50% 22%,#8e654d 0 12%,#111 13% 30%,#151a28 60%),linear-gradient(130deg,#586eaa,#111827)}
+.demo-artist-tone-4 .demo-artist-avatar{background:radial-gradient(circle at 50% 22%,#efc3a8 0 12%,#3b1e2d 13% 28%,#19101b 60%),linear-gradient(130deg,#963d83,#261226)}
+.demo-artist-meta{position:relative;display:grid;gap:3px;padding:8px 10px;background:linear-gradient(90deg,#080907f2,#11130ff0)}
+.demo-artist-meta strong{color:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.demo-artist-meta span{color:#aeb4a2;font-size:10px}
+.demo-artist-meta small{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0;width:15px;height:15px;border-radius:50%;background:var(--nocha-lime);color:#10140a}
+.demo-artist-meta small:after{content:"✓";display:grid;place-items:center;font-size:10px;font-weight:1000}
+.artists-viewport:has(.artists-empty){display:none}
+.artists-viewport:not(:has(.artist-track-card)){display:none}
+.artists-section:after{content:"All 20 artists  →";display:block;width:max-content;margin:17px auto 0;color:var(--nocha-lime);font-size:13px;font-weight:900}
+#latest{max-width:none!important;padding:28px 4.2% 24px!important;border-top:1px solid #272b22;background:linear-gradient(180deg,#0d100b,#090a08)}
+#latest .section-heading{align-items:flex-end;margin-bottom:20px}
+#latest .eyebrow{color:var(--nocha-lime);font-weight:900;letter-spacing:.2em}
+#latest h2{font-size:clamp(32px,4vw,48px);letter-spacing:-2px}
+#latest h2 em{color:var(--nocha-lime);font-style:normal}
+#latest .story-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+#latest .story-card{overflow:hidden;border:1px solid #30352a;border-radius:18px;background:#10120e;box-shadow:0 12px 30px #0005}
+#latest .story-image{height:185px;position:relative}
+#latest .story-image img{width:100%;height:100%;object-fit:cover}
+#latest .story-category{position:absolute;top:12px;left:12px;padding:6px 12px;border-radius:999px;background:var(--nocha-lime);color:#111;font-size:10px;font-weight:900}
+#latest .story-content{padding:15px 16px 17px}
+#latest .story-content h3{font-size:19px;line-height:1.2}
+#latest .story-foot{display:flex;justify-content:space-between;align-items:center}
+#latest .story-foot b{color:var(--nocha-lime)}
+#latest .story-more-wrap{display:none}
+.nocha-top100-section{max-width:none!important;padding:22px 4.2% 38px!important;background:#090a08}
+.nocha-chart-shell{padding:28px 22px!important;border:0!important;border-radius:22px!important;background:radial-gradient(ellipse at 88% 8%,#c9ff351c,transparent 27%),linear-gradient(145deg,#12160e,#090a08 65%,#14190d)!important;box-shadow:0 18px 55px #0008,inset 0 0 55px #a6d72b0a!important}
+.nocha-chart-brand{grid-template-columns:1fr 1fr;min-height:140px}
+.nocha-chart-brand-main h2{font-size:clamp(62px,8vw,94px);letter-spacing:-5px}
+.nocha-chart-crown{color:var(--nocha-lime)}
+.nocha-chart-explainer{border-left:1px solid #414a31}
+.nocha-chart-laurel{border:0;color:var(--nocha-lime);font-size:42px}
+.nocha-chart-crown-art{color:var(--nocha-lime);filter:drop-shadow(0 0 18px #b8ef3777)}
+.nocha-chart-filters button.active{background:var(--nocha-lime);border-color:var(--nocha-lime)}
+.nocha-chart-pagination button{background:var(--nocha-lime);border-color:var(--nocha-lime)}
+.agenda-section,.promo-section,.newsletter-section{background:#0d100b}
+@media(max-width:900px){
+ .nav-wrap{min-height:60px;padding:0 20px}
+ .menu-toggle{display:grid}
+ .main-nav{display:none}
+ .main-nav.open{display:flex;position:fixed;z-index:100;top:60px;left:0;right:0;width:100%;height:calc(100dvh - 60px);overflow:auto;flex-direction:column;align-items:stretch;gap:20px;padding:22px;background:#0b0d09;border-top:1px solid #303629}
+ .main-nav.open .drawer-account{display:block}
+ .main-nav.open .drawer-flagship{display:grid;gap:12px}
+ .main-nav.open .drawer-quick{display:grid;gap:12px}
+ .main-nav.open .drawer-kicker{display:block}
+ .main-nav.open .drawer-flagship>button span,.main-nav.open .drawer-flagship>a span{display:inline}
+ .main-nav.open .drawer-preferences{display:block}
+ .main-nav.open .drawer-flagship>button,.main-nav.open .drawer-flagship>a{justify-content:space-between;padding:12px 0;border-bottom:1px solid #252a20}
+ .nav-actions .nav-login{display:none}
+ .artists-section{padding:27px 20px 18px!important}
+ .demo-artist-grid{grid-template-columns:repeat(5,minmax(112px,1fr));overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+ .demo-artist-card{scroll-snap-align:start}
+ #latest{padding:25px 20px 20px!important}
+ .nocha-top100-section{padding:18px 20px 30px!important}
+}
+@media(max-width:600px){
+ .header-brand{font-size:23px}
+ .nav-actions .nav-spill{display:none}
+ .artists-heading{align-items:flex-start}
+ .artists-heading h2{font-size:40px;max-width:260px}
+ .artists-heading p{max-width:310px;font-size:13px;line-height:1.55}
+ .artists-controls button{width:40px;height:40px;font-size:20px}
+ .demo-artist-grid{grid-template-columns:repeat(5,132px);gap:9px;margin-top:15px}
+ .demo-artist-avatar{aspect-ratio:1.35/1;font-size:30px}
+ .demo-artist-meta{padding:8px}
+ .demo-artist-meta strong{font-size:12px}
+ #latest .section-heading{align-items:flex-start}
+ #latest h2{font-size:34px}
+ #latest .story-grid{grid-template-columns:1fr;gap:12px}
+ #latest .story-card{display:grid;grid-template-columns:38% 1fr;min-height:142px}
+ #latest .story-image{height:100%;min-height:142px}
+ #latest .story-content{padding:12px}
+ #latest .story-content h3{font-size:15px}
+ #latest .story-meta{font-size:10px}
+ .nocha-chart-shell{padding:20px 12px!important;border-radius:0!important;margin:0 -20px}
+ .nocha-chart-brand{grid-template-columns:1fr;gap:12px}
+ .nocha-chart-brand-main h2{font-size:67px}
+ .nocha-chart-explainer{min-height:64px;padding:8px 0 0;border:0;border-top:1px solid #3a432c}
+ .nocha-chart-crown-art{font-size:45px}
+ .nocha-chart-filters{margin-right:-12px}
+ .nocha-chart-row{grid-template-columns:29px 43px 31px minmax(0,1fr) 37px}
+ .nocha-chart-plays,.nocha-chart-more{display:none}
+}
