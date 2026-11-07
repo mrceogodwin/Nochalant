@@ -57,5 +57,6 @@ export async function POST(request: NextRequest, context: Context) {
     data: { conversationId, senderId: userId, clientMessageId: parsed.data.clientMessageId, kind: "TEXT", body: parsed.data.body },
     select: { id: true, body: true, createdAt: true, senderId: true },
   });
+  await prisma.notification.create({ data: { userId: recipientId, type: "MESSAGE", payload: { conversationId, messageId: message.id, senderId: userId } } });
   return NextResponse.json({ message }, { status: 201 });
 }
