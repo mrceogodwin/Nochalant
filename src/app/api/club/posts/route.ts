@@ -97,7 +97,38 @@ export async function GET(request: NextRequest) {
     select: {
       id: true, kind: true, body: true, options: true, audience: true, createdAt: true,
       author: { select: { id: true, username: true, displayName: true, profile: { select: { avatarUrl: true, clubId: true } } } },
+      _count: { select: { likes: true, comments: { where: { status: "PUBLISHED" } } } },
+      likes: userId ? { where: { userId }, select: { id: true }, take: 1 } : false,
+      pollVotes: userId ? { where: { userId }, select: { option: true }, take: 1 } : false,
+      comments: {
+        where: { status: "PUBLISHED" },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: { id: true, body: true, createdAt: true, author: { select: { username: true, displayName: true, profile: { select: { avatarUrl: true } } } } },
+      },
     },
   }) : [];
-  return NextResponse.json({ posts });
+  const postIds = posts.map(post => post.id);
+  const voteGroups = postIds.length ? await prisma.clubPollVote.groupBy({
+    by: ["postId", "option"],
+    where: { postId: { in: postIds } },
+    _count: { _all: true },
+  }) : [];
+  const votesByPost = new Map<string, { option: string; count: number }[]>();
+  for (const vote of voteGroups) {
+    const rows = votesByPost.get(vote.postId) ?? [];
+    rows.push({ option: vote.option, count: vote._count._all });
+    votesByPost.set(vote.postId, rows);
+  }
+  return NextResponse.json({ posts: posts.map(({ _count, likes, pollVotes, comments, ...post }) => ({
+    ...post,
+    engagement: {
+      likeCount: _count.likes,
+      commentCount: _count.comments,
+      voteCounts: votesByPost.get(post.id) ?? [],
+      liked: likes.length > 0,
+      myVote: pollVotes[0]?.option ?? null,
+      comments: comments.reverse(),
+    },
+  })) });
 }
