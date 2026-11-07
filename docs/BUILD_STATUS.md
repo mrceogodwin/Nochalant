@@ -22,15 +22,15 @@ Last updated: 2026-11-07
 | 0 | Reference seed data | DONE (UNVERIFIED) | `prisma/seed.ts` defines ranks, plans, 120 identity names and 8 beta Scenes; seed has not run |
 | 0 | 120 original SVG icon artworks | NOT STARTED | Catalogue paths are defined; artwork files and admin gallery remain to be built |
 | 0 | Shared component library and full app shell | NOT STARTED | — |
-| 0 | Preview deployment and browser verification | BLOCKED | Vercel deployment API quota reached: more than 100 deployments/day; retry after 24 hours |
+| 0 | Preview deployment and browser verification | BLOCKED | Vercel's latest attempt failed at npm install with EOVERRIDE; corrected root package manifest in commit `542e3ae7d839bbd2489835e411b54f572079104b`; a new build must verify the fix |
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
 
-- V2 Preview attempts failed before dependency installation due inherited v1 npm overrides: `EOVERRIDE` — `Override for zod@^4.1.12 conflicts with direct dependency`.
-- Removed the v1 `overrides` block from v2 `package.json`.
-- A fresh deployment was attempted but Vercel returned HTTP 402: deployment API quota `api-deployments-free-per-day` exceeded; retry after 24 hours. No production deployment was made.
-- Latest Vercel deployment state inspected was ERROR for the earlier pre-fix commit; the dependency override fix has not yet received a fresh deployment.
+- Latest Vercel build log identified the precise cause: root `package.json` retained v1 overrides pinning Better Auth packages and `zod` to `4.6.7`, conflicting with the v2 direct dependency range `zod: ^4.1.12` (`EOVERRIDE`).
+- Commit `542e3ae7d839bbd2489835e411b54f572079104b` removes the obsolete v1 overrides block entirely; v2 dependencies now resolve from the v2 manifest without the stale pins.
+- Fix is committed to `v2`; install, typecheck, tests and Preview build remain unverified until Vercel runs successfully.
+- No production deployment was made.
 
 ## Safety evidence
 
