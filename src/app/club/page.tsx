@@ -27,7 +27,7 @@ export default function ClubHome(){
    <footer className="post-actions"><span>{post.kind==="POLL"?"Poll":"Club post"}</span><span>· Published</span></footer>
   </article>)}
   {!loading&&!error&&visible.length===0&&<div className="empty-state"><strong>No posts yet</strong><p>Be the first to share something with the Club.</p><Link href="/club/create">Create a post →</Link></div>}
-  <p className="selection-hint feed-preview-note">Published posts are loaded from Nochalant's database. Likes, comments, story uploads and poll voting are being connected separately.</p>
+  <p className="selection-hint feed-preview-note">Published posts are loaded from Nochalant&apos;s database. Likes, comments, story uploads and poll voting are being connected separately.</p>
   <nav className="bottom-nav"><Link className="active" href="/club"><span>⌂</span>Home</Link><Link href="/discover"><span>◉</span>Discover</Link><Link className="create-button" href="/club/create"><span>＋</span></Link><Link href="/chats"><span>▢</span>Chats</Link><Link href="/my-club"><span>♙</span>My Club</Link></nav>
  </main>;
 }
