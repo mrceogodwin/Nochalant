@@ -48,6 +48,11 @@ Last updated: 2026-11-07
 | 0 | Squad group chat interaction preview | DONE (UNVERIFIED) | `/chats/lagos-night-crew`; Chat/Voice Room/Members tabs, local replies, reactions and pinned-message detail |
 | 0 | Squad conversation details | DONE (UNVERIFIED) | `/chats/lagos-night-crew/info`; mute toggle preview, invite and report entry points, safety notice |
 
+| 0 | Interactive Scene community hub | DONE (UNVERIFIED) | `/discover/scenes/[slug]`; Overview, Discussions, Channels, Members and About tabs; local discussion composer |
+| 0 | Scene channel directory | DONE (UNVERIFIED) | `/discover/scenes/[slug]/channels`; channel directory and descriptions |
+| 0 | Scene channel discussion | DONE (UNVERIFIED) | `/discover/scenes/[slug]/channels/[channel]`; message composer and discussion preview |
+| 0 | Scene founder management | DONE (UNVERIFIED) | `/discover/scenes/[slug]/manage`; channel, roles, moderation, invitations and visibility entry points |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
