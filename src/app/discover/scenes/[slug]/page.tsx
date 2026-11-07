@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import {useState} from "react";
+import {useState, use} from "react";
 const directory:Record<string,{name:string;category:string;members:string;description:string;rules:string[];tone:string}>={
  "alte-society":{name:"Alté Society",category:"MUSIC & CULTURE",members:"23.4K members",description:"A home for alternative culture, independent music, fashion and creative expression. Share discoveries, meet collaborators and shape the next wave.",rules:["Respect every member and creative voice.","Credit artists and creators when sharing their work.","Keep conversations relevant and welcoming."],tone:"violet"},
  "afterhours":{name:"Afterhours",category:"NIGHTLIFE",members:"18.7K members",description:"For the people who know the city after dark. Discover nights out, share recommendations and connect around the Lagos scene.",rules:["Keep event information accurate.","Respect privacy and consent.","No harassment, unsafe meetups or doxxing."],tone:"pink"},
@@ -8,8 +8,7 @@ const directory:Record<string,{name:string;category:string;members:string;descri
  "the-drip-room":{name:"The Drip Room",category:"FASHION",members:"16.9K members",description:"Outfits, sneakers, personal style and fashion battles. Bring your perspective and celebrate originality.",rules:["Critique the fit, never attack the person.","Credit photographers and designers.","Keep it inclusive."],tone:"orange"}
 };
 const posts=[{name:"Mira A.",time:"24 min ago",body:"What independent artist has been on repeat for you this week? Drop your finds below.",likes:18,channel:"general"},{name:"Jude K.",time:"2 hours ago",body:"Sharing a few new releases in the music channel later. Some serious talent coming through.",likes:12,channel:"music"},{name:"Nia O.",time:"Yesterday",body:"Community reminder: credit the photographers and creatives whose work you share here.",likes:31,channel:"announcements"}];
-export default function SceneDetail({params}:{params:Promise<{slug:string}>}){const [tab,setTab]=useState("Overview");const [joined,setJoined]=useState(false);const [liked,setLiked]=useState<number[]>([]);const [draft,setDraft]=useState("");const [notice,setNotice]=useState("");const [localPosts,setLocalPosts]=useState(posts);const [channel,setChannel]=useState("general");
- const [slug,setSlug]=useState("");importParams(params,setSlug);
+export default function SceneDetail({params}:{params:Promise<{slug:string}>}){const {slug}=use(params);const [tab,setTab]=useState("Overview");const [joined,setJoined]=useState(false);const [liked,setLiked]=useState<number[]>([]);const [draft,setDraft]=useState("");const [notice,setNotice]=useState("");const [localPosts,setLocalPosts]=useState(posts);const [channel,setChannel]=useState("general");
  const scene=directory[slug];if(!slug)return <main className="feed-shell"><p className="supporting">Loading Scene…</p></main>;
  if(!scene)return <main className="feed-shell"><Link href="/discover" className="back-link">‹ Back to Discover</Link><h1>Scene not found</h1></main>;
  const channels=[{id:"announcements",name:"announcements",desc:"News and updates",icon:"⚑"},{id:"general",name:"general",desc:"The main conversation",icon:"✦"},{id:"music",name:"music-and-drops",desc:"Share new sounds",icon:"♫"}];
@@ -27,4 +26,3 @@ export default function SceneDetail({params}:{params:Promise<{slug:string}>}){co
  {notice&&tab!=="Discussions"&&<div className="feed-notice">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
  <p className="selection-hint scene-preview-disclaimer">Scene membership, channels, posts and roles are interface previews. No content is stored in the database yet.</p>
  </main>}
-function importParams(params:Promise<{slug:string}>,setSlug:(slug:string)=>void){params.then(v=>setSlug(v.slug));}
