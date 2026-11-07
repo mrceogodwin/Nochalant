@@ -1,3 +1,4 @@
+// V2 schema baseline generation is automated from this source of truth.
 generator client {
   provider = "prisma-client-js"
 }
