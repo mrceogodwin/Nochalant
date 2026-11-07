@@ -13,7 +13,7 @@ export async function GET() {
     where: { userId, conversation: { kind: "DIRECT" } },
     orderBy: { joinedAt: "desc" }, take: 100,
     select: { conversationId: true, lastReadAt: true, mutedAt: true, conversation: { select: {
-      id: true, createdAt: true,
+      id: true, kind: true, createdAt: true,
       members: { where: { userId: { not: userId } }, take: 1, select: { userId: true, user: { select: { id: true, username: true, displayName: true, profile: { select: { avatarUrl: true } } } } } },
       messages: { where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 1, select: { body: true, createdAt: true, senderId: true } },
     } } },
@@ -22,7 +22,7 @@ export async function GET() {
     const peer = item.conversation.members[0]?.user;
     if (!peer) return [];
     const latest = item.conversation.messages[0] || null;
-    return [{ id: item.conversationId, peer, lastMessage: latest, lastReadAt: item.lastReadAt, mutedAt: item.mutedAt }];
+    return [{ id: item.conversationId, kind: item.conversation.kind, peer, lastMessage: latest, lastReadAt: item.lastReadAt, mutedAt: item.mutedAt, unread: Boolean(latest && latest.senderId !== userId && (!item.lastReadAt || latest.createdAt > item.lastReadAt)) }];
   });
   return NextResponse.json({ conversations: items });
 }
