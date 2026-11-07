@@ -42,6 +42,7 @@ export async function GET(_request: NextRequest, context: Context) {
   const posts = await prisma.scenePost.findMany({
     where: {
       sceneId: access.scene.id,
+      channelId: access.channel.id,
       status: "PUBLISHED",
       ...(userId ? {
         NOT: [
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest, context: Context) {
   }
 
   const post = await prisma.scenePost.create({
-    data: { sceneId: access.scene.id, authorId: userId, body: parsed.data.body, status: "PUBLISHED" },
+    data: { sceneId: access.scene.id, channelId: access.channel.id, authorId: userId, body: parsed.data.body, status: "PUBLISHED" },
     select: { id: true, body: true, createdAt: true },
   });
   return NextResponse.json({ post: { ...post, author: { id: userId } } }, { status: 201 });
