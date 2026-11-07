@@ -2,8 +2,9 @@
 import Link from "next/link";
 import {useState} from "react";
 import NochalantKeyboard from "@/components/NochalantKeyboard";
+import { saveOfflineDraft } from "@/lib/offline-drafts";
 export default function CreatePost(){
- const [text,setText]=useState("");const [kind,setKind]=useState("Post");const [options,setOptions]=useState(["",""]);const [scene,setScene]=useState("Everyone");const [submitted,setSubmitted]=useState(false);
+ const [text,setText]=useState("");const [kind,setKind]=useState("Post");const [options,setOptions]=useState(["",""]);const [scene,setScene]=useState("Everyone");const [submitted,setSubmitted]=useState(false);const [savedOffline,setSavedOffline]=useState(false);const [saveError,setSaveError]=useState("");
  const valid=kind!=="Poll"?text.trim().length>0:text.trim().length>0&&options.filter(x=>x.trim()).length>=2;
  return <main className="onboard-shell"><header className="chat-header"><Link href="/club">‹</Link><div><strong>Create in the Club</strong><small>Share something with your people</small></div></header><div className="onboard-content">
  <p className="onboard-kicker">MAKE SOME NOISE</p><h1>What’s happening<br/><em>with you?</em></h1>
@@ -16,6 +17,8 @@ export default function CreatePost(){
  {submitted&&<div className="owner-notice"><strong>Media uploads are not connected</strong><p>Photo, video and music attachment support will be enabled with secure storage integration.</p></div>}
  <div className="owner-notice"><strong>Preview mode</strong><p>This composer validates your post locally. Publishing will be enabled after authentication, moderation checks and database persistence are connected.</p></div>
  <button className="yellow-cta" disabled={!valid} onClick={()=>setSubmitted(true)}>Preview {kind} <span>→</span></button>
+ <button type="button" className="club-secondary" disabled={!text.trim()} onClick={async()=>{try{await saveOfflineDraft({id:crypto.randomUUID(),kind:kind==="Poll"?"post":"post",body:JSON.stringify({text:text.trim(),kind,options:options.filter(x=>x.trim()),audience:scene}),createdAt:Date.now(),syncState:"queued"});setSavedOffline(true);setSaveError("");}catch(error){setSaveError(error instanceof Error?error.message:"Could not save this draft on your device.");}}}>Save draft on this device</button>
+ {savedOffline&&<p className="selection-hint">Saved privately on this device. <Link href="/drafts">View offline drafts</Link></p>}{saveError&&<p role="alert" className="selection-hint">{saveError}</p>}
  {submitted&&<p className="selection-hint">Your {kind.toLowerCase()} is ready for preview, but has not been published or saved.</p>}
  <Link href="/club" className="text-back">Cancel</Link>
  </div></main>;
