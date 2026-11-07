@@ -15,7 +15,7 @@ const ranks = [
   ["CLUB_ROYALTY", "Club Royalty", 50000],
 ] as const;
 
-const iconNames = [
+const catalogueNames = [
   "Crown","Red Crown","Black Crown","Royal Seal","Throne","Royal Ring","Royal Flame","Imperial Star","Royal Wings","Golden Crest",
   "Night Owl","Afterhours","Midnight Star","Moon Walker","Neon Pulse","Club Key","Night Pass","DJ Deck","Disco Ball","Night Mayor",
   "Headphones","Microphone","Vinyl","Soundwave","Speaker","Music Note","Bass Drop","Producer","Studio Rat","Sound Architect",
@@ -29,6 +29,9 @@ const iconNames = [
   "Flame Keeper","Vibe Architect","Sound Hunter","City Explorer","Foodie","Traveller","Film Head","Gamer","Bookworm","Tech Head",
   "Soft Life","Street Reporter","Debate Champion","Voice Room Host","Listening Room Regular","Music Critic","Event Insider","Scene Historian","Squad Legend","Club Royalty",
 ] as const;
+
+const starterIdentities = ["The Observer", "The Rebel", "The Music Head", "The Night Owl", "The Curator", "The Creative", "The Connector", "The Social One"] as const;
+const iconNames = [...starterIdentities, ...catalogueNames.filter((name) => !(starterIdentities as readonly string[]).includes(name)).slice(0, 112)];
 
 const starterScenes = [
   ["alte-society","Alté Society","Alternative culture, music, fashion and creative expression.","MUSIC"],
@@ -72,7 +75,7 @@ async function main() {
       create: {
         id, name,
         description: `${name} identity from the Nochalant Club collection.`,
-        category: ["Royalty","Nightlife","Music","Alternative Culture","Fashion","Social","Creative","Mystery","Competitive","Exclusive","Additional"][Math.floor(i / 10)],
+        category: ["Starter","Royalty","Nightlife","Music","Alternative Culture","Fashion","Social","Creative","Mystery","Competitive","Exclusive","Culture"][Math.min(11, Math.floor(i / 10))],
         rarity: i < 8 ? Rarity.COMMON : i < 40 ? Rarity.UNCOMMON : i < 80 ? Rarity.RARE : i < 100 ? Rarity.EPIC : Rarity.LEGENDARY,
         unlockCondition: i < 8 ? { type: "STARTER" } : { type: "ADMIN_OR_ACHIEVEMENT" },
         svgPath: `/icons/identities/${id}.svg`,
@@ -80,12 +83,23 @@ async function main() {
     });
   }
 
+  const seedOwner = await prisma.user.upsert({
+    where: { email: "seed-owner@nochalant.local" },
+    update: { displayName: "Nochalant Club Seed" },
+    create: {
+      email: "seed-owner@nochalant.local",
+      username: "nochalant-seed-owner",
+      displayName: "Nochalant Club Seed",
+      passwordHash: "DISABLED_SEED_ACCOUNT_CANNOT_SIGN_IN",
+    },
+  });
+
   for (const [slug, name, description, category] of starterScenes) {
     await prisma.scene.upsert({
       where: { slug },
       update: { name, description, category, visibility: SceneVisibility.PUBLIC },
       create: {
-        founderId: "system-seed-owner",
+        founderId: seedOwner.id,
         name, slug, description, category,
         visibility: SceneVisibility.PUBLIC,
         rules: { rules: ["Respect other members.", "No harassment or doxxing.", "Keep posts relevant.", "Report harmful content."] },
