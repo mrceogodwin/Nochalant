@@ -100,3 +100,15 @@ Last updated: 2026-11-07
 
 
 - Added Argon2id password hashing and verification helpers with explicit input bounds. This is a utility only; no registration, login endpoint, session creation or email verification flow is active.
+
+
+## Authentication foundation — 2026-11-07
+
+- Added Auth.js v5 Credentials provider configuration and App Router route handlers.
+- Credential lookup normalizes email and rejects inactive, unverified, or non-adult accounts before password verification.
+- Password verification uses the Argon2id helper. Successful sign-in creates a revocable server-side UserSession row; subsequent JWT validation checks that row and rechecks account status, email verification and 18+ assurance.
+- Sign-out revokes the corresponding server-side session record.
+- Added a server-only requireMember() guard for protected server components and handlers.
+- Added Auth.js TypeScript session/JWT augmentation.
+- Authentication is NOT READY FOR PUBLIC USE: registration, email verification delivery/token lifecycle, password recovery, login UI, rate limiting/abuse controls, admin role/RBAC and end-to-end tests remain outstanding. The existing /sign-in holding screen remains intentionally honest.
+- No database connection, schema migration, seed, Vercel deployment or production change was made. Auth.js/Prisma type compatibility and runtime behaviour have not been tested; build/typecheck remain unverified.
