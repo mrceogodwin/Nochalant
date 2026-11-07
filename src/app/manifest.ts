@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     categories: ["social", "entertainment", "music"],
     icons: [
-      { src: "/icons/nochalant-mark.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
+      { src: "/icons/nochalant-mark.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" }
     ],
     shortcuts: [
       { name: "Home", short_name: "Home", url: "/club" },
