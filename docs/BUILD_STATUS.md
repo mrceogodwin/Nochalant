@@ -27,6 +27,9 @@ Last updated: 2026-11-07
 | 0 | Honest member sign-in holding screen | DONE (UNVERIFIED) | `/sign-in`; clearly explains authentication is not active and does not collect credentials |
 | 0 | Membership tier comparison screen | DONE (UNVERIFIED) | `/my-club/membership`; displays tiers and explicitly states checkout is not active |
 
+| 0 | Member profile editor preview | DONE (UNVERIFIED) | `/my-club/edit`; display name, username, bio, city and discoverability controls; explicitly local preview only |
+| 0 | Scene discovery search and filters | DONE (UNVERIFIED) | `/discover`; category filters, text search, empty state and local join toggles; persistence not connected |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
