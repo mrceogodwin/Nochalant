@@ -1,0 +1,25 @@
+
+.admin-console{padding-bottom:48px}
+.admin-welcome{padding:28px 22px 18px}
+.admin-welcome h1{font-size:clamp(38px,9vw,58px);line-height:.98;letter-spacing:-.05em;margin:8px 0 14px}
+.admin-welcome h1 em{color:#ff414d;font-style:normal}
+.admin-welcome>p:last-child{max-width:560px;color:#aaa;line-height:1.6}
+.admin-metrics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 16px}
+.admin-metric{min-width:0;border:1px solid rgba(255,65,77,.25);background:linear-gradient(145deg,#171719,#0b0b0d);border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:6px}
+.admin-metric span,.admin-metric small{color:#aaa;font-size:12px}
+.admin-metric strong{font-size:28px;letter-spacing:-.04em;color:#fff}
+.admin-section{padding:22px 16px}
+.admin-section-heading h2{font-size:22px;margin:4px 0 14px}
+.admin-action-list,.admin-audit-list{display:flex;flex-direction:column;gap:9px}
+.admin-action-list>a,.admin-disabled,.admin-audit-list article{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #29292d;border-radius:14px;background:#111113;color:#fff;text-decoration:none}
+.admin-action-list>a>span,.admin-disabled>span{font-size:22px;color:#ff414d;width:28px;text-align:center}
+.admin-action-list>a div,.admin-disabled div,.admin-audit-list article div{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.admin-action-list small,.admin-disabled small,.admin-audit-list small{font-size:12px;color:#999}
+.admin-action-list>a>b{color:#ff414d}
+.admin-disabled{opacity:.7}
+.admin-disabled em{font-size:10px;color:#ff9ba2;font-style:normal;white-space:nowrap}
+.admin-audit-list article{align-items:flex-start}
+.admin-audit-list time{font-size:11px;color:#999;text-align:right}
+.admin-empty,.admin-security-note{margin:12px 16px;padding:14px;border:1px solid #393034;border-radius:12px;color:#aaa;font-size:12px;line-height:1.6}
+.admin-security-note{background:#171113;color:#ffb9bd}
+@media(min-width:700px){.admin-metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.admin-section{padding-left:24px;padding-right:24px}}
