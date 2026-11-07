@@ -1136,6 +1136,8 @@ function App() {
         const genres = ["All genres", ...Array.from(new Set(allMusicTracks.map(track => String(track.genre || "").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
         
         const trackCard = (track, index) => <article className="music-release-card" key={track.id}>
+          {/* The legacy playback helper reads its audio ref only after this click; keep the ref access out of render. */}
+          {/* eslint-disable-next-line react-hooks/refs */}
           <button className="music-release-art" type="button" onClick={() => playArtistTrack(track, allMusicTracks)} disabled={!track.audio_url} aria-label={"Play " + track.title}>
             {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy"/> : <span>♫</span>}
             <i>▶</i>
