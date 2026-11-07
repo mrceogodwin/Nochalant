@@ -1134,9 +1134,9 @@ function App() {
         });
         const rankedTracks = [...searchableTracks].sort((a,b) => Number(b.plays_count || 0) - Number(a.plays_count || 0));
         const genres = ["All genres", ...Array.from(new Set(allMusicTracks.map(track => String(track.genre || "").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b))];
-        const playTrack = track => playArtistTrack(track, allMusicTracks);
+        
         const trackCard = (track, index) => <article className="music-release-card" key={track.id}>
-          <button className="music-release-art" type="button" onClick={() => playTrack(track)} disabled={!track.audio_url} aria-label={"Play " + track.title}>
+          <button className="music-release-art" type="button" onClick={() => playArtistTrack(track, allMusicTracks)} disabled={!track.audio_url} aria-label={"Play " + track.title}>
             {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy"/> : <span>♫</span>}
             <i>▶</i>
           </button>
