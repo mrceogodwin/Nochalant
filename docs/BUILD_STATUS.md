@@ -112,3 +112,17 @@ Last updated: 2026-11-07
 - Added Auth.js TypeScript session/JWT augmentation.
 - Authentication is NOT READY FOR PUBLIC USE: registration, email verification delivery/token lifecycle, password recovery, login UI, rate limiting/abuse controls, admin role/RBAC and end-to-end tests remain outstanding. The existing /sign-in holding screen remains intentionally honest.
 - No database connection, schema migration, seed, Vercel deployment or production change was made. Auth.js/Prisma type compatibility and runtime behaviour have not been tested; build/typecheck remain unverified.
+
+
+## Registration and email verification foundation — 2026-11-07
+
+- Added Prisma models for one-time email verification tokens and versioned Terms, Privacy and Community Guidelines acceptance. Schema changes are committed only; no migration has been generated or applied.
+- Added a registration API that validates display name, username, email, 12–128 character password, explicit 18+ declaration, minimum three interests and policy acceptance.
+- Registration hashes passwords with Argon2id, stores the 18+ self-declaration and accepted policy version identifiers, creates a profile/Club ID and selected interests, and stores only a SHA-256 hash of the one-time verification token.
+- Added fail-closed Upstash sliding-window rate limiting. Registration returns unavailable until Redis credentials are configured; it does not silently run without rate limiting.
+- Added Resend email delivery using the configured AUTH_URL as the verification origin. Registration remains unavailable until Resend, sender and origin settings are configured.
+- Added a one-time verification endpoint. Valid unexpired tokens mark the account email as verified and are deleted; expired tokens are invalidated.
+- Connected the final onboarding step to the registration endpoint and added a verification result notice on the sign-in holding screen.
+- No credentials or API keys were added to the repository. No database was contacted, no migration or seed was run, and no deployment was attempted.
+- NOT READY FOR PUBLIC REGISTRATION: migration, terms/privacy/guidelines publication and legal review, resend-verification flow, password reset, automated abuse controls, end-to-end tests and verified Preview build remain outstanding.
+- TypeScript, Prisma schema validation, build and browser tests have not been run. All implementation status remains unverified pending CI/Preview.
