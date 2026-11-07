@@ -55,7 +55,7 @@ export default function JoinPage() {
       }
 
       setRegistrationMessage(
-        "Check your inbox for a verification link. You must verify your email before signing in.",
+        result.message || "Check your inbox for a verification link. You must verify your email before signing in.",
       );
     } catch {
       setRegistrationError("We could not reach the server. Please try again.");
