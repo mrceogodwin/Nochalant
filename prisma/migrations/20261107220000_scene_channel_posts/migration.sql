@@ -1,11 +1,2 @@
--- Add channel-level ownership to Scene discussions without changing existing posts.
-ALTER TABLE "ScenePost"
-ADD COLUMN "channelId" TEXT;
-
-CREATE INDEX "ScenePost_channelId_status_createdAt_idx"
-ON "ScenePost"("channelId", "status", "createdAt");
-
-ALTER TABLE "ScenePost"
-ADD CONSTRAINT "ScenePost_channelId_fkey"
-FOREIGN KEY ("channelId") REFERENCES "SceneChannel"("id")
-ON DELETE SET NULL ON UPDATE CASCADE;
+-- Superseded by the complete, schema-generated V2 baseline at 20261107170000_v2_complete_schema_baseline.
+-- Kept as a no-op migration entry so existing repository history remains traceable.
