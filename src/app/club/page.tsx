@@ -15,7 +15,7 @@ export default function ClubHome(){
  const [busy,setBusy]=useState<Record<string,boolean>>({});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
- useEffect(()=>{let active=true;setLoading(true);setError("");setEngagement({});const feed=tab==="Following"?"following":tab==="Scenes"?"scenes":"for-you";if(tab==="Music"){setPosts([]);setLoading(false);return()=>{active=false;};}fetch("/api/club/posts?feed="+feed).then(async response=>{if(!response.ok)throw new Error("The Club feed is temporarily unavailable.");const result=await response.json();if(active)setPosts(Array.isArray(result.posts)?result.posts:[]);}).catch(reason=>{if(active)setError(reason instanceof Error?reason.message:"Could not load the Club feed.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[tab]);
+ useEffect(()=>{let active=true;if(tab==="Music")return()=>{active=false;};const feed=tab==="Following"?"following":tab==="Scenes"?"scenes":"for-you";fetch("/api/club/posts?feed="+feed).then(async response=>{if(!response.ok)throw new Error("The Club feed is temporarily unavailable.");const result=await response.json();if(active)setPosts(Array.isArray(result.posts)?result.posts:[]);}).catch(reason=>{if(active)setError(reason instanceof Error?reason.message:"Could not load the Club feed.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[tab]);
  useEffect(()=>{let active=true;posts.forEach(post=>{if(!engagement[post.id])fetch("/api/club/posts/"+post.id+"/engagement").then(r=>r.ok?r.json():null).then(data=>{if(active&&data)setEngagement(current=>({...current,[post.id]:data}));}).catch(()=>{});});return()=>{active=false;};},[posts,engagement]);
  const act=async(postId:string,payload:Record<string,string>)=>{
   setBusy(current=>({...current,[postId]:true}));
@@ -28,7 +28,7 @@ export default function ClubHome(){
  return <main className="feed-shell">
   <header className="feed-header"><Link href="/" className="feed-brand">Nochalant<small>CLUB</small></Link><div className="feed-actions"><Link href="/discover" aria-label="Search">⌕</Link><Link href="/notifications" aria-label="Notifications">♧</Link></div></header>
   <section className="stories-row" aria-label="Club stories"><Link href="/club/create" className="story-item"><span className="story-avatar add-story">＋</span><small>Your Story</small></Link>{stories.map(story=><div className="story-item" key={story.name}><span className={"story-avatar "+story.tone}><b>{story.name.slice(0,1)}</b></span><small>{story.name}</small></div>)}</section>
-  <nav className="feed-tabs">{["For You","Following","Scenes","Music"].map(value=><button key={value} onClick={()=>setTab(value)} className={tab===value?"selected":""}>{value}</button>)}</nav>
+  <nav className="feed-tabs">{["For You","Following","Scenes","Music"].map(value=><button key={value} onClick={()=>{setTab(value);setLoading(value!=="Music");setError("");setEngagement({});if(value==="Music")setPosts([]);}} className={tab===value?"selected":""}>{value}</button>)}</nav>
   <Link href="/listening-room" className="music-entry"><span>♫</span><div><strong>The Listening Room</strong><small>Discover new sounds and support emerging artists</small></div><b>→</b></Link>
   <div className="feed-create-prompt"><span className="author-avatar">N</span><Link href="/club/create">What’s happening with you?</Link><Link href="/club/create" className="prompt-plus">＋</Link></div>
   {loading&&<div className="empty-state"><strong>Loading the Club…</strong></div>}
