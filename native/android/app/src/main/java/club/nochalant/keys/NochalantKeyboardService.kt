@@ -65,6 +65,7 @@ class NochalantKeyboardService : InputMethodService() {
 
     private fun handleKey(key: String) {
         val connection = currentInputConnection ?: return
+        NochalantSoundEngine.play(this, soundEventFor(key), key.hashCode())
         when (key) {
             "⇧" -> { shifted = !shifted; setInputView(onCreateInputView()) }
             "⌫" -> connection.deleteSurroundingText(1, 0)
@@ -82,6 +83,16 @@ class NochalantKeyboardService : InputMethodService() {
                 if (shifted) { shifted = false; setInputView(onCreateInputView()) }
             }
         }
+    }
+
+    private fun soundEventFor(key: String): String = when (key) {
+        "⇧" -> "shift"
+        "⌫" -> "delete"
+        "space" -> "space"
+        "↵" -> "return"
+        "123", "#+=", "ABC" -> "layout"
+        "☺" -> "emoji"
+        else -> "type"
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
