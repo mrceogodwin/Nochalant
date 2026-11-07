@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import {useState} from "react";\nimport NochalantKeyboard from "@/components/NochalantKeyboard";
+import {useState} from "react";
+import NochalantKeyboard from "@/components/NochalantKeyboard";
 export default function CreatePost(){
  const [text,setText]=useState("");const [kind,setKind]=useState("Post");const [options,setOptions]=useState(["",""]);const [scene,setScene]=useState("Everyone");const [submitted,setSubmitted]=useState(false);
  const valid=kind!=="Poll"?text.trim().length>0:text.trim().length>0&&options.filter(x=>x.trim()).length>=2;
