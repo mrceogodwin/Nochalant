@@ -1218,122 +1218,7 @@ function App() {
           {musicTab === "artists" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">THE PEOPLE BEHIND THE SOUND</span><h2>Artists on <em>Nochalant.</em></h2></div><span>{artists.length} ARTISTS</span></div>{artists.length?<div className="music-artist-grid">{artists.map(artist=><button type="button" className="music-artist-card" key={artist.id || artist.slug} onClick={()=>openArtistProfile(artist.slug)}>{artist.image_url?<img src={artist.image_url} alt="" loading="lazy"/>:<span className="music-artist-placeholder">{String(artist.name||"N").slice(0,1)}</span>}<b>{artist.name}</b><small>{artist.genre || "Artist"}</small></button>)}</div>:<div className="music-hub-empty">{artistsLoading?"Loading artists…":"No artist profiles are published yet."}</div>}</section>}
           {musicTab === "library" && <section className="music-hub-section"><div className="music-hub-section-heading"><div><span className="eyebrow">YOUR PERSONAL COLLECTION</span><h2>My <em>library.</em></h2></div></div><div className="music-hub-empty">Your saved songs, liked releases and followed artists will appear here when Music Library saving is enabled.</div></section>}
         </section>;
-      })() : activeScreen === "home" ? <>
-      <section className="container lead-layout">
-        <div className="lead-copy"><div className="eyebrow"><span className="live-dot"></span> THE CULTURE DESK · EDITORIAL PREVIEW</div>
-          <h1>Worry no more.<br/><em>Nochalant is here.</em></h1>
-          <p>Your plug for Nigerian entertainment, music, nightlife, lifestyle and everything happening around you. No long talk — just the gist that matters.</p>
-          <div className="hero-actions"><button className="button button-green" onClick={() => setModal("submit")}>Spill the gist</button><a className="button button-outline" href="#latest">Catch up on gist</a></div>
-          
-        </div>
-        <article className="lead-story" aria-label="Featured Nochalant carousel" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
-          {leadSlides.map((slide, index) => <div className={index === leadSlide ? "lead-slide active" : "lead-slide"} key={slide.story.id} aria-hidden={index !== leadSlide}>
-            <img className="lead-media" src={slide.story.image} alt={slide.story.title}/>
-            <div className="lead-overlay"></div>
-            <div className="lead-story-top"><span className="pill pill-hot">HOT DROP</span><span className="demo-label">EDITORIAL PREVIEW</span><button className="lead-next-overlay" type="button" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT »</button></div>
-            <div className="lead-story-bottom"><div className="story-meta"><span>{slide.story.category}</span><span>· {slide.story.read}</span></div><h2>{slide.story.title}</h2><p>{slide.story.excerpt}</p><div className="lead-actions"><button onClick={e => {e.stopPropagation(); openStory(slide.story);}}>Read story</button><b>{index + 1} / {leadSlides.length}</b></div></div>
-          </div>)}
-          <div className="lead-carousel-controls">
-            <button className="lead-carousel-arrow" aria-label="Previous featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide-1);}}>PREV</button>
-            <div className="lead-carousel-dots">{leadSlides.map((slide,index)=><button key={slide.story.id} className={index===leadSlide?"active":""} aria-label={`Go to featured slide ${index+1}`} aria-current={index===leadSlide?"true":undefined} onClick={e=>{e.stopPropagation();changeLeadSlide(index);}}/>)}</div>
-            <button className="lead-carousel-arrow" aria-label="Next featured slide" onClick={e => {e.stopPropagation();changeLeadSlide(leadSlide+1);}}>NEXT</button>
-          </div>
-        </article>
-      </section>
-
-      {currentUser?.id && <section className="container home-community-timeline" aria-label="Your Nochalant timeline">
-        <div className="section-heading"><div><span className="eyebrow">THE CULTURE · THE COMMUNITY</span><h2>Your <em>timeline.</em></h2><p>Public posts and conversations from fans, artists, creators, businesses, media and event organisers.</p></div></div>
-        <DeferredPanel><SocialFeed currentUser={currentUser} onJoin={() => {setAuthMessage("");setModal("signup");}} onLogin={() => {setAuthMessage("");setModal("login");}} onShare={() => {if (!currentUser) setModal("login"); else {setOpinionsPanelMode("dashboard");setOpinionsPanelOpen(true);}}}/></DeferredPanel>
-      </section>}
-
-      <section className="artists-section container" id="artists" aria-labelledby="artists-title">
-        <div className="artists-heading">
-          <div><span className="eyebrow">THE SOUND OF THE CULTURE</span><h2 id="artists-title">Artists on <em>Nochalant.</em></h2><p>Released music, original cover art and the artists moving the culture.</p></div>
-          <div className="artists-controls" aria-label="Artist carousel controls">
-            <button type="button" onClick={() => moveArtistRail(-1)} aria-label="Previous releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">←</span></button>
-            <button type="button" onClick={() => moveArtistRail(1)} aria-label="Next releases" disabled={!artists.some(artist => artist.tracks?.length)}><span aria-hidden="true">→</span></button>
-          </div>
-        </div>
-        <div className="demo-artist-grid" aria-label="20 fictional demo artist profiles">{demoArtists.map((artist,index)=><article className={"demo-artist-card demo-artist-tone-"+(index%5)} key={artist.id}><div className="demo-artist-avatar">{artist.initials}</div><div className="demo-artist-meta"><strong>{artist.name}</strong><span>{artist.genre} · {artist.city}</span><small>DEMO PROFILE</small></div></article>)}</div>
-        <div className="artists-viewport" ref={artistRailRef} aria-label="Nochalant releases. Swipe or use the arrow controls to browse." tabIndex="0" onMouseEnter={() => setArtistRailPaused(true)} onMouseLeave={() => setArtistRailPaused(false)} onFocus={() => setArtistRailPaused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setArtistRailPaused(false); }} onTouchStart={() => setArtistRailPaused(true)} onTouchEnd={() => setArtistRailPaused(false)}>
-          {artists.some(artist => artist.tracks?.length) ? <div className="artists-track">{artists.flatMap(artist => artist.tracks || []).map(track => {
-            const playableTracks = artists.flatMap(item => item.tracks || []);
-            return <article className="artist-card artist-track-card" key={track.id}>
-              <button type="button" className="artist-avatar artist-track-art" onClick={() => openArtistProfile(track.artist_slug)} aria-label={"View " + track.artist_name + "'s artist profile"}>
-                {track.cover_art_url ? <img src={track.cover_art_url} alt={track.title + " cover art"} loading="lazy" /> : <span>{track.artist_name?.slice(0,1).toUpperCase() || "N"}</span>}
-                <span className="artist-track-play" aria-hidden="true">▶</span>
-              </button>
-              <button type="button" className="artist-name artist-track-title" onClick={() => openArtistProfile(track.artist_slug)}>{track.title}</button>
-              <button type="button" className="artist-track-artist" onClick={() => openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified && <span className="artist-silver-tick" title="Nochalant verified artist" aria-label="Nochalant verified artist">✓</span>}</button>
-              <div className="artist-track-stats">
-                <span title="Eligible plays"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>{Number(track.plays_count || 0).toLocaleString()}</span>
-                {track.audio_url ? <a href={"/api/music/download?trackId=" + encodeURIComponent(track.id)} title="Download track" aria-label={"Download " + track.title}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</a> : <span title="Downloads"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8m0 0 3-3m-3 3-3-3M2.5 11v2.5h11V11"/></svg>{Number(track.download_count || 0).toLocaleString()}</span>}
-              </div>
-              <button type="button" className="artist-track-listen" onClick={() => playArtistTrack(track, playableTracks)} disabled={!track.audio_url}>{track.audio_url ? "PLAY TRACK" : "AUDIO COMING SOON"}</button>
-            </article>;
-          })}</div> : <div className="artists-empty">{artistsLoading ? "Loading verified artist releases…" : "No artist releases have been published yet. Verified artist releases will appear here with their original cover art."}</div>}
-        </div>
-      </section>
-
-
-      <section className="section container" id="latest"><div className="section-heading"><div><div className="eyebrow">FRESH FROM THE CULTURE</div><h2>Latest <em>crispy gist.</em></h2></div><span className="demo-label">SAMPLE CONTENT · NOT LIVE NEWS</span></div>
-        <div className="filter-row" id="categories"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? "category-tab active" : "category-tab"} onClick={() => setCategory(item)}>{item}</button>)}</div><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search stories" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search the gist"/></label></div>
-        <div className="story-grid">{filtered.map(item => <article className="story-card" key={item.id} role="button" tabIndex="0" aria-label={`Open story: ${item.title}`} onClick={() => openStory(item)} onKeyDown={e => e.key === "Enter" && e.target === e.currentTarget && openStory(item)}><div className="story-image"><img src={item.image} alt=""/><span className="story-category" aria-label={item.category}><span className="story-category-mark" aria-hidden="true">✦</span><span className="story-category-label">{item.category}</span></span></div><div className="story-content"><div className="story-meta"><span>{item.time}</span><span>{item.read}</span></div><h3>{item.title}</h3><div className="story-byline"><span>By {item.author}</span><span>{typeof viewCounts[item.id] === "number" ? `${viewCounts[item.id].toLocaleString()} views` : "Views loading"}</span></div><div className="story-foot"><button className={likes[item.id] ? "like-action liked" : "like-action"} onClick={e => {e.stopPropagation();toggleLike(item.id);}} aria-pressed={!!likes[item.id]}>♡ {likes[item.id] ? "Liked" : "Like"}</button><span>◌ {comments[item.id]?.length || 0} comments</span><b>Full gist </b></div></div></article>)}{filtered.length === 0 && <div className="empty-state">No stories in this category yet. Check back soon.</div>}</div><div className="story-more-wrap"><button type="button" className="story-more-link" onClick={() => {setCategory("All Gist");document.getElementById("latest")?.scrollIntoView({behavior:"smooth",block:"start"});}}>MORE <span aria-hidden="true">››</span></button></div>
-
-      <section className="nocha-top100-section container" id="nochalant-top-100" aria-labelledby="nocha-top100-title">
-        <div className="nocha-chart-shell">
-          <header className="nocha-chart-brand">
-            <div className="nocha-chart-brand-main"><span className="nocha-chart-crown" aria-hidden="true">♛</span><div><span className="nocha-chart-brand-name">Nochalant</span><h2 id="nocha-top100-title">Top <em>100</em></h2><span className="nocha-chart-kicker">▥ &nbsp; THE FLAGSHIP MUSIC CHART</span></div></div>
-            <div className="nocha-chart-explainer"><span className="nocha-chart-laurel">✺<b>#1</b></span><p>The definitive countdown of the hottest songs and biggest movers on Nochalant.</p><span className="nocha-chart-crown-art" aria-hidden="true">♛</span></div>
-          </header>
-          <nav className="nocha-chart-filters" aria-label="Top 100 chart filters">
-            {[["top100","♫","Top 100"],["trending","♨","Trending"],["rising","↗","Rising"],["falling","↘","Falling"],["new","☆","New Entries"],["alltime","◷","All Time"]].map(([id,icon,label])=><button key={id} type="button" className={homeChartFilter===id?"active":""} onClick={()=>{setHomeChartFilter(id);setHomeChartPage(0);}}><span aria-hidden="true">{icon}</span>{label}</button>)}
-          </nav>
-          <div className="nocha-chart-list-heading"><div><span className="nocha-chart-bars" aria-hidden="true">▂▅▇</span><div><h3>{homeChartFilter==="rising"?"Rising tracks":homeChartFilter==="falling"?"Falling tracks":homeChartFilter==="new"?"New entries":homeChartFilter==="alltime"?"All-time leaders":homeChartFilter==="trending"?"Trending now":"Top 10 This Week"}</h3><p>Ranked using eligible plays recorded on Nochalant.</p></div></div><span className="nocha-chart-total">TOP 100 <b>→</b></span></div>
-          {(() => {
-            const chartTracks = artists.flatMap(artist => (artist.tracks || []).map(track => ({...track,artist_name:track.artist_name||artist.name,artist_slug:track.artist_slug||artist.slug,genre:track.genre||artist.genre||"Other"})));
-            const ranked = [...chartTracks].sort((a,b)=>Number(b.plays_count||0)-Number(a.plays_count||0));
-            const filtered = homeChartFilter==="new" ? ranked.filter(track=>track.is_new_entry===true||track.chart_status==="new")
-              : homeChartFilter==="rising" ? ranked.filter(track=>Number(track.rank_change??track.position_change??0)>0)
-              : homeChartFilter==="falling" ? ranked.filter(track=>Number(track.rank_change??track.position_change??0)<0)
-              : ranked;
-            const pageCount=Math.max(1,Math.ceil(filtered.length/10));
-            const page=Math.min(homeChartPage,pageCount-1);
-            const pageTracks=filtered.slice(page*10,page*10+10);
-            return <>
-              {pageTracks.length ? <div className="nocha-chart-rows">{pageTracks.map((track,index)=>{
-                const change=Number(track.rank_change??track.position_change??0);
-                const isNew=track.is_new_entry===true||track.chart_status==="new";
-                return <article className="nocha-chart-row" key={track.id}>
-                  <b className={"nocha-chart-rank"+(page===0&&index===0?" first":"")}>{page*10+index+1}</b>
-                  <button type="button" className="nocha-chart-cover" onClick={()=>openArtistProfile(track.artist_slug)} aria-label={"View "+track.artist_name+" artist profile"}>{track.cover_art_url?<img src={track.cover_art_url} alt={track.title+" cover art"} loading="lazy"/>:<span>{track.artist_name?.slice(0,1)||"♫"}</span>}</button>
-                  <button type="button" className="nocha-chart-play" onClick={()=>playArtistTrack(track,chartTracks)} disabled={!track.audio_url} aria-label={"Play "+track.title}>▶</button>
-                  <div className="nocha-chart-track"><strong>{track.title}{track.explicit&&<small className="nocha-explicit">E</small>}</strong><button type="button" onClick={()=>openArtistProfile(track.artist_slug)}>{track.artist_name}{track.is_verified&&<span className="artist-silver-tick" aria-label="Verified artist">✓</span>}</button></div>
-                  <span className={"nocha-chart-movement "+(isNew?"new":change>0?"up":change<0?"down":"steady")}>{isNew?"NEW":change>0?"↑ +"+change:change<0?"↓ "+change:"—"}</span>
-                  <span className="nocha-chart-plays" title="Eligible plays"><span aria-hidden="true">▥</span> {Number(track.plays_count||0).toLocaleString()}</span>
-                  <button className="nocha-chart-more" type="button" onClick={()=>openArtistProfile(track.artist_slug)} aria-label={"More from "+track.artist_name}>•••</button>
-                </article>;
-              })}</div> : <div className="nocha-chart-empty">{artistsLoading?"Loading verified artist releases…":homeChartFilter==="rising"||homeChartFilter==="falling"||homeChartFilter==="new"?"No chart movement data has been recorded for this filter yet.":"The chart will populate when approved artist releases receive eligible plays. No rankings or streams are fabricated."}</div>}
-              <footer className="nocha-chart-pagination"><button type="button" onClick={()=>setHomeChartPage(Math.max(0,page-1))} disabled={page===0}>← Previous 10</button><span>{page+1} / {pageCount}</span><button type="button" onClick={()=>setHomeChartPage(Math.min(pageCount-1,page+1))} disabled={page>=pageCount-1}>Next 10 <b>→</b></button></footer>
-            </>;
-          })()}
-        </div>
-      </section>
-
-      </section>
-
-      <section className="agenda-section" id="agenda"><div className="container"><div className="section-heading"><div><div className="eyebrow">THE CITY NEVER SLEEPS</div><h2>What's on the <em>Agenda?</em></h2></div><span className="agenda-note">EVENTS · HANGOUTS · EXPERIENCES</span></div>
-        <div className="nochalant-faces">
-          <div className="faces-heading"><div className="faces-title"><span className="faces-brand-mark" aria-hidden="true"><span></span></span><h3>Nochalant Faces</h3></div></div>
-          <div className="faces-viewport" aria-label="Nochalant community profiles">
-            <div className="faces-track">{[...communityFaces, ...communityFaces].map((face, index) => <button className="face-item" key={face.username + "-" + index} type="button" aria-label={face.display_name + " demo profile"} title={face.display_name}><span className={"face-avatar tone-" + (face.tone || "lime")}><span>{face.initials || face.display_name.slice(0,2).toUpperCase()}</span></span><span className="face-name">{face.display_name}</span></button>)}</div>
-          </div>
-          
-        </div>
-        <div className="agenda-empty"><h3>Your next link-up belongs here.</h3><p>Upcoming events will appear after they are submitted and approved by the Nochalant team.</p><button className="button button-outline" onClick={() => {setFormCategory("Agenda");setModal("submit");}}>Submit an event</button></div></div></section>
-
-      <section className="promo-section container"><div className="promo-copy"><div className="eyebrow">GOT SOMETHING TO SAY?</div><h2>Don't just watch<br/>the buzz. <em>Be the buzz.</em></h2><p>Got a new song, event, club night, brand, talent or lifestyle story? Send it to Nochalant. Free daily submissions are welcome.</p><button className="button button-green" onClick={() => setModal("submit")}>Spill your gist</button></div><div className="pricing-card"><div className="pricing-top"><span className="pill pill-gold">PROMOTIONS</span></div><h3>Put your brand in the <em>spotlight.</em></h3><p>Promote videos, images, products, events and campaigns with a dedicated Nochalant placement.</p><div className="price">From ₦2,000 <small>/ campaign</small></div><ul><li>Image and video packages</li><li>7, 14 and 30-day campaigns</li><li>Payment and admin review before publishing</li></ul><button className="button button-dark" onClick={() => {setActiveScreen("promotions");window.scrollTo({top:0,behavior:"smooth"});}}>Explore promotions</button></div></section>
-      </> : activeScreen === "promotions" ? <section className="promotions-page container screen-page">
+      })() : activeScreen === "home" ? <></> : activeScreen === "promotions" ? <section className="promotions-page container screen-page">
         <div className="promotions-hero"><span className="eyebrow">NOCHALANT FOR BRANDS</span><h1>Make some <em>noise.</em></h1><p>Promote your brand, event, product, video or creative work to the Nochalant audience.</p></div>
         {!promotionPackageChosen && <div className="promotion-package-grid">
           <article className="promotion-package"><span className="eyebrow">IMAGE · 7 DAYS</span><h2>₦2,000 <small>/ $1.99</small></h2><p>One promotional image or flyer with caption and destination link.</p><button className="button button-outline" onClick={() => {setPromotionPackage("image_7d");setPromotionKind("image");setPromotionPackageChosen(true);document.getElementById("promotion-submit")?.scrollIntoView({behavior:"smooth"});}}>Choose image</button></article>
@@ -1445,21 +1330,6 @@ function App() {
 </form>
 <div className="artist-release-list"><h3>Your releases</h3>{artistStudio?.releases?.length ? artistStudio.releases.map(release => <div className="artist-release-row" key={release.id}><div><strong>{release.title}</strong><small>{release.release_type.toUpperCase()} · {release.genre} · {release.track_count} tracks</small></div><span className="dashboard-status">{release.status.toUpperCase()}</span>{release.status === "draft" && <button className="button button-outline" disabled={artistStudioBusy} onClick={async () => {setArtistStudioBusy(true);try{const token=await getAuthToken();const response=await fetch("/api/artist/studio",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action:"submit_release",releaseId:release.id})});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||"Release could not be submitted.");const refreshed=await fetch("/api/artist/studio",{headers:{Authorization:`Bearer ${token}`},cache:"no-store"});const latest=await refreshed.json().catch(()=>({}));if(refreshed.ok&&latest.ok)setArtistStudio(latest);notify("Release sent for editorial review.");}catch(error){setArtistStudioError(error.message||"Release submission failed.");}finally{setArtistStudioBusy(false);}}}>Submit for review</button>}</div>) : <p className="fine-print">No releases yet. Create your first release draft above.</p>}</div></div>}<div className="account-dashboard-footer"><button className="button button-outline" onClick={() => setActiveScreen("home")}>Back to Nochalant</button></div></>}</section> : null}
     </main>
-    {activeScreen === "home" && (
-      <section className="home-podcast-section container" aria-labelledby="home-podcast-title">
-              <div className="home-podcast-head"><div><span className="eyebrow">NOCHALANT PODCAST</span><h2 id="home-podcast-title">Watch the <em>latest episode.</em></h2><p>Unfiltered conversations. Culture. Music. People. Only on Nochalant Podcast.</p></div><button className="podcast-see-more" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}}>See more <span>→</span></button></div>
-              <div className="podcast-feature-player"><div className="podcast-screen"><div className="podcast-screen-brand"><span className="podcast-screen-mark">N.</span><strong>NOCHALANT<br/>PODCAST</strong></div><span className="podcast-screen-status">NOCHALANT ORIGINALS · EPISODES COMING SOON</span></div><div className="podcast-player-meta"><div><span className="podcast-status">FEATURED SHOW</span><h3>Nochalant Podcast</h3><p>Original conversations from the culture desk</p></div><button type="button" className="podcast-brand-emblem" onClick={() => {setActiveScreen("podcast");window.scrollTo({top:0,behavior:"smooth"});}} aria-label="Open Nochalant Podcast"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30"/><path d="M18 17v30h7V28l17 19h5V17h-7v19L23 17z"/><path d="m30 26 13 7-13 7z" className="podcast-brand-play-cut"/></svg></button></div></div>
-      </section>
-    )}
-
-    {activeScreen === "home" && <section className="newsletter-section container" aria-labelledby="newsletter-title">
-      <div className="newsletter-copy"><span className="eyebrow">THE NOCHALANT DROP</span><h2 id="newsletter-title">The gist, straight to <em>you.</em></h2><p>Fresh stories, new music and what's happening next. No noise.</p></div>
-      <form className="newsletter-form" onSubmit={e => {e.preventDefault();setModal("newsletter-success");}}>
-        <label className="sr-only" htmlFor="newsletter-email">Your email address</label>
-        <input id="newsletter-email" type="email" required value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} placeholder="Your email address"/>
-        <button type="submit">Gimme Update</button>
-      </form>
-    </section>}
     {!currentUser?.id && <footer className="footer"><div className="container footer-main footer-main-expanded"><div className="footer-about"><a className="brand footer-brand" href="#top">NOCHALANT<span>.</span></a><p>Nigeria’s premier high-energy entertainment network. Bringing you the hottest Afrobeats gist, Nollywood drama, and street buzz with zero form!</p></div><div className="footer-column"><h3>QUICK NAVIGATION</h3><a href="#latest">Afrobeats Top 50</a><a href="#latest">Nollywood Box Office</a><a href="#hot-or-trash">BBNaija Highlights</a><a href="#latest">Celebrity Fashion &amp; Glam</a></div><div className="footer-column footer-confidential"><h3>GOT CONFIDENTIAL GIST?</h3><p>Drop hot tips, video evidence or street gist anonymously. No account or registration needed.</p><button className="footer-anonymous" onClick={() => setModal("submit")}><svg className="anonymous-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M5 10l1.5-5h11L19 10M7 14a3 3 0 1 0 6 0M11 14a3 3 0 1 0 6 0M3 14h2m14 0h2"/></svg><span>Spill Anonymous Gist</span></button><div className="footer-social"><h3>CONNECT WITH THE SWAG</h3><div className="footer-social-links"><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a><a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.4C17.2 1.2 16.1 1 15 1c-3.3 0-5.5 2-5.5 5.7V9H6v4h3.5v8z"/></svg></a><a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M15 3c.4 2.2 1.7 3.5 4 3.7v3.2a8 8 0 0 1-4-1.2v6.5a6 6 0 1 1-6-6h1v3.4h-1a2.6 2.6 0 1 0 2.6 2.6V3z"/></svg></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7a3 3 0 0 0-2-2C19 4.5 12 4.5 12 4.5s-7 0-9 .5a3 3 0 0 0-2 2A31 31 0 0 0 .5 12 31 31 0 0 0 1 17a3 3 0 0 0 2 2c2 .5 9 .5 9 .5s7 0 9-.5a3 3 0 0 0 2-2 31 31 0 0 0 .5-5A31 31 0 0 0 23 7zM10 15.5v-7l6 3.5z"/></svg></a></div></div></div></div><div className="container footer-bottom"><span>© 2026 Nochalant Media Nigeria Ltd. All Rights Reserved.</span><span className="footer-credit">Powered by Squadglobal.</span></div></footer>}
 
     <audio ref={audioRef} preload="metadata" />
