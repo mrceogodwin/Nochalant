@@ -1,58 +1,97 @@
 "use client";
+
 import Link from "next/link";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import NochalantKeyboard from "@/components/NochalantKeyboard";
 
-const channelInfo: Record<string, { name: string; description: string; icon: string }> = {
-  announcements: { name: "announcements", description: "Official updates and important Scene news.", icon: "⚑" },
-  general: { name: "general", description: "Introductions, questions and everyday conversation.", icon: "✦" },
-  music: { name: "music-and-drops", description: "New releases, recommendations and artist discoveries.", icon: "♫" },
+type ChannelPost = {
+  id: string; body: string; createdAt: string;
+  author: { id: string; username: string; displayName: string; profile: { avatarUrl: string | null } | null } | null;
 };
-const seed = [
-  { author: "Mira A.", time: "Today · 9:12 AM", body: "Welcome in! Share what brought you to this Scene and what you’re excited to discover." },
-  { author: "Jude K.", time: "Today · 10:05 AM", body: "Found three independent releases this morning. Will share my favourites later." },
-  { author: "Nia O.", time: "Yesterday", body: "Quick reminder: keep feedback thoughtful and always credit the original creator." },
-];
+type ChannelPayload = { channel: { name: string; description: string | null }; posts: ChannelPost[] };
 
 export default function ChannelPage({ params }: { params: Promise<{ slug: string; channel: string }> }) {
   const { slug, channel } = use(params);
-  const info = channelInfo[channel] || channelInfo.general;
   const [draft, setDraft] = useState("");
-  const [posts, setPosts] = useState(seed);
+  const [posts, setPosts] = useState<ChannelPost[]>([]);
+  const [channelName, setChannelName] = useState(channel);
+  const [description, setDescription] = useState("Join the conversation and share with your Scene.");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  function sendMessage() {
-    if (!draft.trim()) return;
-    setPosts((current) => [{ author: "You", time: "Just now", body: draft.trim() }, ...current]);
-    setDraft("");
-    setNotice("Message added to this local channel preview.");
+  async function loadPosts() {
+    const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}/channels/${encodeURIComponent(channel)}/posts`, { cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Channel conversations could not be loaded.");
+    const payload = result as ChannelPayload;
+    setPosts(payload.posts || []);
+    setChannelName(payload.channel.name);
+    setDescription(payload.channel.description || "Join the conversation and share with your Scene.");
   }
 
-  return (
-    <main className="feed-shell">
-      <header className="chat-header">
-        <Link href={"/discover/scenes/" + slug + "/channels"}>‹</Link>
-        <div><strong>#{info.name}</strong><small>Scene channel · Preview</small></div>
-        <Link className="group-more" href={"/discover/scenes/" + slug + "/manage"}>•••</Link>
-      </header>
-      <section className="channel-conversation-head">
-        <span>{info.icon}</span><h1>#{info.name}</h1><p>{info.description}</p>
-        <small>Be part of the conversation. Keep it thoughtful.</small>
-      </section>
-      <div className="channel-posts">
-        {posts.map((post, index) => (
-          <article className="channel-post" key={index}>
-            <span className="group-message-avatar">{post.author.slice(0, 1)}</span>
-            <div><small><b>{post.author}</b> · {post.time}</small><p>{post.body}</p>
-              <button onClick={() => setNotice("Reactions are a local preview in this channel.")}>♡ React</button>
-              <button onClick={() => setNotice("Reply threads will be connected to channel messages.")}>Reply</button>
-            </div>
-          </article>
-        ))}
-      </div>
-      {notice && <div className="feed-notice">{notice}<button onClick={() => setNotice("")}>×</button></div>}
-      <NochalantKeyboard value={draft} onChange={setDraft} onSubmit={sendMessage} placeholder={"Message #" + info.name + "..."} />
-      <p className="selection-hint channel-disclaimer">Channel messages are local preview data and are not delivered or saved.</p>
-    </main>
-  );
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/scenes/${encodeURIComponent(slug)}/channels/${encodeURIComponent(channel)}/posts`, { cache: "no-store" })
+      .then(async response => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Channel conversations could not be loaded.");
+        if (active) {
+          const payload = result as ChannelPayload;
+          setPosts(payload.posts || []);
+          setChannelName(payload.channel.name);
+          setDescription(payload.channel.description || "Join the conversation and share with your Scene.");
+        }
+      })
+      .catch(e => { if (active) setError(e instanceof Error ? e.message : "Unable to load this channel."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [slug, channel]);
+
+  async function sendMessage() {
+    const body = draft.trim();
+    if (!body || busy) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}/channels/${encodeURIComponent(channel)}/posts`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Your message could not be posted.");
+      setDraft("");
+      await loadPosts();
+      setNotice("Your message was published to this Scene channel.");
+    } catch (e) { setError(e instanceof Error ? e.message : "Your message could not be posted."); }
+    finally { setBusy(false); }
+  }
+
+  function formatTime(value: string) {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  }
+
+  return <main className="feed-shell">
+    <header className="chat-header">
+      <Link href={`/discover/scenes/${slug}/channels`}>‹</Link>
+      <div><strong>#{channelName}</strong><small>Scene channel</small></div>
+      <Link className="group-more" href={`/discover/scenes/${slug}/manage`}>•••</Link>
+    </header>
+    <section className="channel-conversation-head">
+      <span>✦</span><h1>#{channelName}</h1><p>{description}</p>
+      <small>Be part of the conversation. Keep it thoughtful.</small>
+    </section>
+    {loading ? <div className="empty-state">Loading conversations…</div> : error && !posts.length ? <div className="empty-state"><strong>Channel unavailable</strong><p>{error}</p><button onClick={() => { setLoading(true); setError(""); loadPosts().catch(e => setError(e.message)).finally(() => setLoading(false)); }}>Try again</button></div> : <div className="channel-posts">
+      {posts.length ? posts.map(post => (
+        <article className="channel-post" key={post.id}>
+          <span className="group-message-avatar">{(post.author?.displayName || "M").slice(0, 1).toUpperCase()}</span>
+          <div><small><b>{post.author?.displayName || "Club member"}</b> · {formatTime(post.createdAt)}</small><p>{post.body}</p></div>
+        </article>
+      )) : <div className="empty-state"><strong>The conversation starts here.</strong><p>Be the first to share something with this Scene.</p></div>}
+    </div>}
+    {notice && <div role="status" className="feed-notice">{notice}<button onClick={() => setNotice("")}>×</button></div>}
+    {error && posts.length > 0 && <p role="alert" className="form-error">{error}</p>}
+    <NochalantKeyboard value={draft} onChange={setDraft} onSubmit={sendMessage} placeholder={"Message #" + channelName + "..."} />
+    {busy && <p className="selection-hint">Publishing…</p>}
+    <p className="selection-hint channel-disclaimer">Messages are saved to the Scene channel. Only members with access can read them.</p>
+  </main>;
 }
