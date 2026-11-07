@@ -25,7 +25,17 @@ export default function SceneManage({ params }: { params: Promise<{ slug: string
     setActiveCount(result.activeCount || 0);
   }
 
-  useEffect(() => { load().catch(e => setError(e.message)); }, [slug]);
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/scenes/${encodeURIComponent(slug)}/members`, { cache: "no-store" })
+      .then(async response => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "You cannot manage this Scene.");
+        if (active) { setPending(result.pending || []); setActiveCount(result.activeCount || 0); }
+      })
+      .catch(error => { if (active) setError(error instanceof Error ? error.message : "Unable to load Scene members."); });
+    return () => { active = false; };
+  }, [slug]);
 
   async function decide(userId: string, action: "APPROVE" | "REJECT") {
     setBusy(true); setError(""); setNotice("");
