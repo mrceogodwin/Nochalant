@@ -15,7 +15,7 @@ export default function ClubHome(){
  const [busy,setBusy]=useState<Record<string,boolean>>({});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
- useEffect(()=>{let active=true;fetch("/api/club/posts").then(async response=>{if(!response.ok)throw new Error("The Club feed is temporarily unavailable.");const result=await response.json();if(active)setPosts(Array.isArray(result.posts)?result.posts:[]);}).catch(reason=>{if(active)setError(reason instanceof Error?reason.message:"Could not load the Club feed.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[]);
+ useEffect(()=>{let active=true;setLoading(true);setError("");setEngagement({});const feed=tab==="Following"?"following":tab==="Scenes"?"scenes":"for-you";if(tab==="Music"){setPosts([]);setLoading(false);return()=>{active=false;};}fetch("/api/club/posts?feed="+feed).then(async response=>{if(!response.ok)throw new Error("The Club feed is temporarily unavailable.");const result=await response.json();if(active)setPosts(Array.isArray(result.posts)?result.posts:[]);}).catch(reason=>{if(active)setError(reason instanceof Error?reason.message:"Could not load the Club feed.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[tab]);
  useEffect(()=>{let active=true;posts.forEach(post=>{if(!engagement[post.id])fetch("/api/club/posts/"+post.id+"/engagement").then(r=>r.ok?r.json():null).then(data=>{if(active&&data)setEngagement(current=>({...current,[post.id]:data}));}).catch(()=>{});});return()=>{active=false;};},[posts,engagement]);
  const act=async(postId:string,payload:Record<string,string>)=>{
   setBusy(current=>({...current,[postId]:true}));
@@ -24,7 +24,7 @@ export default function ClubHome(){
    if(payload.action==="COMMENT")setCommentDrafts(current=>({...current,[postId]:""}));
   }catch(reason){setError(reason instanceof Error?reason.message:"Please sign in and try again.");}finally{setBusy(current=>({...current,[postId]:false}));}
  };
- const visible=tab==="Music"?posts.filter(post=>post.kind==="POLL"):tab==="Following"?posts.filter(post=>post.author.username!==""):posts;
+ const visible=posts;
  return <main className="feed-shell">
   <header className="feed-header"><Link href="/" className="feed-brand">Nochalant<small>CLUB</small></Link><div className="feed-actions"><Link href="/discover" aria-label="Search">⌕</Link><Link href="/notifications" aria-label="Notifications">♧</Link></div></header>
   <section className="stories-row" aria-label="Club stories"><Link href="/club/create" className="story-item"><span className="story-avatar add-story">＋</span><small>Your Story</small></Link>{stories.map(story=><div className="story-item" key={story.name}><span className={"story-avatar "+story.tone}><b>{story.name.slice(0,1)}</b></span><small>{story.name}</small></div>)}</section>
@@ -40,7 +40,7 @@ export default function ClubHome(){
    <footer className="post-actions"><button type="button" disabled={busy[post.id]} onClick={()=>act(post.id,{action:"LIKE"})}>{state?.liked?"♥ Liked":"♡ Like"} · {state?.likeCount??"—"}</button><span>Comments · {state?.commentCount??"—"}</span></footer>
    <section className="post-comments" aria-label="Comments"><div>{(state?.comments||[]).slice(-3).map(comment=><p key={comment.id}><strong>{comment.author.displayName}</strong> {comment.body}</p>)}</div><form onSubmit={event=>{event.preventDefault();const body=commentDrafts[post.id]?.trim();if(body)act(post.id,{action:"COMMENT",body});}}><input aria-label="Write a comment" placeholder="Add a comment…" value={commentDrafts[post.id]||""} onChange={event=>setCommentDrafts(current=>({...current,[post.id]:event.target.value}))}/><button type="submit" disabled={busy[post.id]||!commentDrafts[post.id]?.trim()}>Send</button></form></section>
   </article>;})}
-  {!loading&&!error&&visible.length===0&&<div className="empty-state"><strong>No posts yet</strong><p>Be the first to share something with the Club.</p><Link href="/club/create">Create a post →</Link></div>}
+  {!loading&&!error&&visible.length===0&&<div className="empty-state"><strong>{tab==="Music"?"Music feed is coming soon":"No posts yet"}</strong><p>{tab==="Music"?"Artist releases and listening activity will appear here.":"Be the first to share something with the Club."}</p><Link href="/club/create">Create a post →</Link></div>}
   <p className="selection-hint feed-preview-note">Likes, comments and poll votes are saved to the Club database. Stories and media uploads are still in development.</p>
   <nav className="bottom-nav"><Link className="active" href="/club"><span>⌂</span>Home</Link><Link href="/discover"><span>◉</span>Discover</Link><Link className="create-button" href="/club/create"><span>＋</span></Link><Link href="/chats"><span>▢</span>Chats</Link><Link href="/my-club"><span>♙</span>My Club</Link></nav>
  </main>;
