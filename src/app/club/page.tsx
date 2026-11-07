@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Post = { id:string; author:string; handle:string; time:string; city:string; body:string; kind:"Post"|"Poll"; options?:string[]; votes?:number[]; comments:string[]; liked:boolean; saved:boolean; };
 const initialPosts:Post[]=[
@@ -17,9 +17,9 @@ export default function ClubHome(){
  const [commentFor,setCommentFor]=useState<string|null>(null);
  const [commentText,setCommentText]=useState("");
  const [notice,setNotice]=useState("");
- const visible=useMemo(()=>posts.filter(p=>tab==="Following"?p.author==="Afterhours":tab==="Scenes"?p.author==="Alté Society":tab==="Music"?p.author==="Sound District":true),[posts,tab]);
+ const visible=useMemo(()=>posts.filter(p=>tab==="Following"?false:tab==="Scenes"?false:tab==="Music"?p.kind==="Poll":true),[posts,tab]);
  function update(id:string,patch:Partial<Post>){setPosts(current=>current.map(p=>p.id===id?{...p,...patch}:p));}
- function vote(post:Post,index:number){if(!post.votes)return;const next=[...post.votes];next[index]+=1;update(post.id,{votes:next});setNotice("Your preview vote has been counted locally.");}
+ function vote(post:Post,index:number){if(!post.votes)return;const next=[...post.votes];next[index]+=1;update(post.id,{votes:next});setNotice("Vote recording is not enabled yet.");}
  function addComment(id:string){if(!commentText.trim())return;const post=posts.find(p=>p.id===id);if(!post)return;update(id,{comments:[...post.comments,commentText.trim()]});setCommentText("");setNotice("Comment added to this local preview.");}
  return <main className="feed-shell">
   <header className="feed-header"><Link href="/" className="feed-brand">Nochalant<small>CLUB</small></Link><div className="feed-actions"><Link href="/discover" aria-label="Search">⌕</Link><Link href="/notifications" aria-label="Notifications">♧</Link></div></header>
@@ -28,7 +28,7 @@ export default function ClubHome(){
   <Link href="/listening-room" className="music-entry"><span>♫</span><div><strong>The Listening Room</strong><small>Discover new sounds and support emerging artists</small></div><b>→</b></Link>
   <div className="feed-create-prompt"><span className="author-avatar">N</span><Link href="/club/create">What’s happening with you?</Link><Link href="/club/create" className="prompt-plus">＋</Link></div>
   {notice&&<div className="feed-notice" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
-  {visible.map(post=><article className="post-card" key={post.id}>
+  {loading&&<div className="empty-state"><strong>Loading the Club…</strong></div>}\n  {!loading&&visible.map(post=><article className="post-card" key={post.id}>
    <header className="post-author"><span className="author-avatar">{post.author.slice(0,1)}</span><div><strong>{post.author} <b className="verified">✓</b></strong><small>{post.handle} · {post.time} · {post.city}</small></div><button className="more-button" aria-label="More options" onClick={()=>setNotice("Post reporting and moderation options will be available after sign-in.")}>•••</button></header>
    <p className="post-copy">{post.body}</p>
    {post.id==="p1"&&<div className="post-art"><span>LAGOS</span><strong>AFTERHOURS</strong><small>THE CITY NEVER SLEEPS</small></div>}
@@ -36,8 +36,8 @@ export default function ClubHome(){
    <footer className="post-actions"><button onClick={()=>update(post.id,{liked:!post.liked})} className={post.liked?"liked":""}>♡ <span>{post.liked?"Liked":"Like"}</span></button><button onClick={()=>setCommentFor(commentFor===post.id?null:post.id)}>▢ <span>{post.comments.length} comments</span></button><button onClick={()=>setNotice("Sharing will be available when public post links are enabled.")}>↗</button><button className={post.saved?"save-post liked":"save-post"} onClick={()=>update(post.id,{saved:!post.saved})}>{post.saved?"Saved":"♧"}</button></footer>
    {commentFor===post.id&&<div className="comment-panel"><div className="comment-list">{post.comments.map((comment,i)=><p key={i}><b>Club member</b>{comment}</p>)}</div><form onSubmit={e=>{e.preventDefault();addComment(post.id);}}><input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Write a comment..." maxLength={500}/><button disabled={!commentText.trim()}>Send</button></form></div>}
   </article>)}
-  {visible.length===0&&<div className="empty-state"><strong>Nothing here just yet</strong><p>Try another feed tab.</p></div>}
-  <p className="selection-hint feed-preview-note">Feed interactions are local previews. Posts, votes, likes and comments are not saved to an account or database yet.</p>
+  {!loading&&visible.length===0&&<div className="empty-state"><strong>No posts yet</strong><p>Be the first to share something with the Club.</p><Link href="/club/create">Create a post →</Link></div>}
+  <p className="selection-hint feed-preview-note">Club posts are loaded from the Nochalant database. Likes, comments and poll voting are being connected separately.</p>
   <nav className="bottom-nav"><Link className="active" href="/club"><span>⌂</span>Home</Link><Link href="/discover"><span>◉</span>Discover</Link><Link className="create-button" href="/club/create"><span>＋</span></Link><Link href="/chats"><span>▢</span>Chats</Link><Link href="/my-club"><span>♙</span>My Club</Link></nav>
  </main>;
 }
