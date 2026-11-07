@@ -23,6 +23,10 @@ Last updated: 2026-11-07
 | 0 | 120 original SVG icon artworks | NOT STARTED | Catalogue paths are defined; artwork files and admin gallery remain to be built |
 | 0 | Reference-matched mobile UI foundation | DONE (UNVERIFIED) | Responsive mobile shell, onboarding, feed, navigation and supporting screen styles; red brand correction committed, browser QA pending |
 | 0 | Core reference screen routes | DONE (UNVERIFIED) | `/join`, `/club`, `/discover`, `/chats`, `/chats/lagos-night-crew`, `/listening-room`, `/listening-room/submit`, `/my-club`, `/club/create` |\n| 0 | Real account, feed, messaging, media and moderation APIs | NOT STARTED | Current UI interactions are local previews; no production publishing, chat delivery or upload claims |\n| 0 | Preview deployment and browser verification | BLOCKED | Vercel previously failed at npm install with EOVERRIDE; fix committed, but new deployment/build still needs verification |
+
+| 0 | Honest member sign-in holding screen | DONE (UNVERIFIED) | `/sign-in`; clearly explains authentication is not active and does not collect credentials |
+| 0 | Membership tier comparison screen | DONE (UNVERIFIED) | `/my-club/membership`; displays tiers and explicitly states checkout is not active |
+
 | 0 | Local install/typecheck/lint/test/build | BLOCKED | Runtime cannot resolve github.com; direct clone/install not available |
 
 ## Vercel deployment evidence
