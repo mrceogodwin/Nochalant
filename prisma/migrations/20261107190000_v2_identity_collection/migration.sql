@@ -1,8 +1,2 @@
-CREATE TYPE "Rarity" AS ENUM ('COMMON','UNCOMMON','RARE','EPIC','LEGENDARY','FOUNDERS_EDITION');
-CREATE TABLE "RankDefinition" ("id" TEXT PRIMARY KEY,"code" TEXT NOT NULL UNIQUE,"name" TEXT NOT NULL,"minXp" INTEGER NOT NULL UNIQUE,"description" TEXT NOT NULL,"active" BOOLEAN NOT NULL DEFAULT true);
-CREATE TABLE "IconCatalog" ("id" TEXT PRIMARY KEY,"name" TEXT NOT NULL UNIQUE,"description" TEXT NOT NULL,"category" TEXT NOT NULL,"rarity" "Rarity" NOT NULL DEFAULT 'COMMON',"unlockCondition" JSONB NOT NULL,"season" TEXT,"svgPath" TEXT NOT NULL,"active" BOOLEAN NOT NULL DEFAULT true);
-CREATE INDEX "IconCatalog_category_rarity_active_idx" ON "IconCatalog"("category","rarity","active");
-CREATE TABLE "UserIcon" ("id" TEXT PRIMARY KEY,"userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,"iconId" TEXT NOT NULL REFERENCES "IconCatalog"("id"),"isPrimary" BOOLEAN NOT NULL DEFAULT false,"unlockedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE("userId","iconId"));
-CREATE INDEX "UserIcon_userId_isPrimary_idx" ON "UserIcon"("userId","isPrimary");
-CREATE TABLE "BadgeCatalog" ("id" TEXT PRIMARY KEY,"name" TEXT NOT NULL UNIQUE,"description" TEXT NOT NULL,"rarity" "Rarity" NOT NULL,"artworkPath" TEXT NOT NULL,"active" BOOLEAN NOT NULL DEFAULT true);
-CREATE TABLE "UserBadge" ("id" TEXT PRIMARY KEY,"userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,"badgeId" TEXT NOT NULL REFERENCES "BadgeCatalog"("id"),"earnedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE("userId","badgeId"));
+-- Superseded by the complete, schema-generated V2 baseline at 20261107170000_v2_complete_schema_baseline.
+-- Kept as a no-op migration entry so existing repository history remains traceable.
