@@ -33,6 +33,7 @@ export default function SignInPage() {
           <strong>Almost there.</strong>
           <p>We’re finishing secure authentication before enabling member accounts. Your sign-in details will never be requested on this preview screen.</p>
         </div>
+        <Link href="/forgot-password" className="text-back">Forgot your password?</Link>
         <Link href="/join" className="yellow-cta link-cta">Explore joining the Club <span>→</span></Link>
         <Link href="/" className="text-back">Back to welcome</Link>
       </section>
