@@ -2,7 +2,7 @@
 import Link from "next/link";
 import {useEffect,useState} from "react";
 
-type FeedPost={id:string;kind:"POST"|"SCENE"|"POLL";body:string;options?:unknown;createdAt:string;author:{username:string;displayName:string;profile?:{avatarUrl?:string|null}|null}};
+type FeedPost={id:string;kind:"POST"|"SCENE"|"POLL";body:string;options?:unknown;createdAt:string;engagement:Engagement;author:{username:string;displayName:string;profile?:{avatarUrl?:string|null}|null}};
 type Comment={id:string;body:string;createdAt:string;author:{username:string;displayName:string}};
 type Engagement={likeCount:number;commentCount:number;voteCounts:{option:string;count:number}[];liked:boolean;myVote:string|null;comments:Comment[]};
 const stories=[{name:"Afterhours",tone:"pink"},{name:"Alté Society",tone:"violet"},{name:"Sound District",tone:"silver"},{name:"The Drip",tone:"orange"}];
@@ -15,8 +15,7 @@ export default function ClubHome(){
  const [busy,setBusy]=useState<Record<string,boolean>>({});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
- useEffect(()=>{let active=true;if(tab==="Music")return()=>{active=false;};const feed=tab==="Following"?"following":tab==="Scenes"?"scenes":"for-you";fetch("/api/club/posts?feed="+feed).then(async response=>{if(!response.ok)throw new Error("The Club feed is temporarily unavailable.");const result=await response.json();if(active)setPosts(Array.isArray(result.posts)?result.posts:[]);}).catch(reason=>{if(active)setError(reason instanceof Error?reason.message:"Could not load the Club feed.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[tab]);
- useEffect(()=>{let active=true;posts.forEach(post=>{if(!engagement[post.id])fetch("/api/club/posts/"+post.id+"/engagement").then(r=>r.ok?r.json():null).then(data=>{if(active&&data)setEngagement(current=>({...current,[post.id]:data}));}).catch(()=>{});});return()=>{active=false;};},[posts,engagement]);
+ useEffect(()=>{let active=true;if(tab==="Music")return()=>{active=false;};const feed=tab==="Following"?"following":tab==="Scenes"?"scenes":"for-you";fetch("/api/club/posts?feed="+feed).then(async response=>{if(!response.ok)throw new Error("The Club feed is temporarily unavailable.");const result=await response.json();if(active){const nextPosts=Array.isArray(result.posts)?result.posts:[];setPosts(nextPosts);setEngagement(Object.fromEntries(nextPosts.map((post:FeedPost)=>[post.id,post.engagement])));}}).catch(reason=>{if(active)setError(reason instanceof Error?reason.message:"Could not load the Club feed.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[tab]);
  const act=async(postId:string,payload:Record<string,string>)=>{
   setBusy(current=>({...current,[postId]:true}));
   try{const response=await fetch("/api/club/posts/"+postId+"/engagement",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not complete that action.");
