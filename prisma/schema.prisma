@@ -393,6 +393,7 @@ model SceneChannel {
   description String?
   isDefault   Boolean @default(false)
   archivedAt  DateTime?
+  posts       ScenePost[]
   @@unique([sceneId, slug])
 }
 
@@ -400,6 +401,8 @@ model ScenePost {
   id        String @id @default(cuid())
   sceneId   String
   scene     Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  channelId String?
+  channel   SceneChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
   authorId  String
   body      String @db.VarChar(10000)
   media     Json?
@@ -407,6 +410,7 @@ model ScenePost {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([sceneId, status, createdAt])
+  @@index([channelId, status, createdAt])
   @@index([authorId, createdAt])
 }
 
