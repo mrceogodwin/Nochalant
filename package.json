@@ -55,18 +55,5 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.8",
     "@types/web-push": "^3.6.4"
-  },
-  "overrides": {
-    "better-auth": "1.7.7",
-    "@better-auth/core": "1.7.7",
-    "@better-auth/drizzle-adapter": "1.7.7",
-    "@better-auth/oauth-provider": "1.7.7",
-    "@better-auth/mongo-adapter": "1.7.7",
-    "@better-auth/kysely-adapter": "1.7.7",
-    "@better-auth/memory-adapter": "1.7.7",
-    "@better-auth/prisma-adapter": "1.7.7",
-    "@better-auth/telemetry": "1.7.7",
-    "zod": "4.6.7",
-    "html-to-text": "10.0.1"
   }
 }
