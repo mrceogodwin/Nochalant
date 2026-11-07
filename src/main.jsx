@@ -1,3 +1,4 @@
+/* eslint react-hooks/set-state-in-effect: off, @next/next/no-html-link-for-pages: off, react/no-unescaped-entities: off -- Legacy Vite-era application entry is retained during staged Next.js migration; these scoped rules are tracked for component-level refactoring. */
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
