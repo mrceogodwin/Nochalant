@@ -17,11 +17,6 @@ export async function GET(_request: Request, context: Context) {
       id: true, name: true, slug: true, description: true, category: true,
       coverUrl: true, visibility: true, rules: true, founderId: true, createdAt: true,
       _count: { select: { members: { where: { status: "ACTIVE" } } } },
-      members: userId ? {
-        where: { userId },
-        take: 1,
-        select: { status: true, role: true, joinedAt: true },
-      } : false,
       channels: {
         where: { archivedAt: null },
         orderBy: [{ isDefault: "desc" }, { name: "asc" }],
@@ -31,7 +26,10 @@ export async function GET(_request: Request, context: Context) {
   });
 
   if (!scene) return NextResponse.json({ error: "Scene not found." }, { status: 404 });
-  const membership = scene.members[0] ?? null;
+  const membership = userId ? await prisma.sceneMember.findUnique({
+    where: { sceneId_userId: { sceneId: scene.id, userId } },
+    select: { status: true, role: true, joinedAt: true },
+  }) : null;
   const isFounder = scene.founderId === userId;
   const isActiveMember = membership?.status === "ACTIVE";
   if (scene.visibility === "UNLISTED" && !isFounder && !membership) {
