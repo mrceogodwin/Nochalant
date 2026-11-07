@@ -34,7 +34,17 @@ async function canViewPost(postId: string, viewerId?: string) {
     } } } },
   );
   return prisma.clubPost.findFirst({
-    where: { id: postId, status: "PUBLISHED", OR: visibility },
+    where: {
+      id: postId,
+      status: "PUBLISHED",
+      OR: visibility,
+      ...(viewerId ? {
+        NOT: [
+          { author: { blocksGiven: { some: { targetId: viewerId } } } },
+          { author: { blocksReceived: { some: { sourceId: viewerId } } } },
+        ],
+      } : {}),
+    },
     select: { id: true, kind: true, options: true },
   });
 }
