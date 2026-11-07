@@ -142,3 +142,14 @@ Last updated: 2026-11-07
 - No DB migration, database write, deployment, or production change occurred. Build, typecheck, Prisma validation and end-to-end behaviour remain unverified.
 
 - Added fail-closed rate limiting to the Auth.js credentials authorize path and connected the sign-in screen to Auth.js. The UI is now wired to the endpoint, but live sign-in remains unavailable until Preview credentials, schema migration and CI/browser validation are completed.
+
+
+## Staff access control foundation — 2026-11-07
+
+- Added `AdminRole` and revocable `AdminAssignment` records to the Prisma schema. Roles are OWNER, ADMIN, MODERATOR and SUPPORT; assignments are separate from ordinary member/community roles.
+- Added server-only `requireStaff()`, `requireModerator()` and `requireAdmin()` guards. Each protected request resolves the active assignment from Neon via Prisma and checks that the account is active and email-verified; roles are not trusted from client input or JWT claims.
+- Added a server route layout protecting the moderation workspace for OWNER/ADMIN/MODERATOR, and a stricter nested appeals layout for OWNER/ADMIN.
+- No staff assignments have been granted. Until an authorised owner assignment is provisioned on the isolated v2 development database, all moderation routes intentionally deny access and redirect to the member area.
+- Schema change is committed only. No Prisma migration was generated or applied, no seed or database write occurred, and no production resource was touched.
+- The moderation screens remain illustrative preview data. This change secures access but does not create live report ingestion, case persistence, moderation actions, appeals processing, or audit logging.
+- Build, Prisma validation, typecheck, tests and browser QA remain unverified.
