@@ -389,3 +389,47 @@ button { font: inherit; }
 .chat-compose button:disabled{opacity:.45}
 .link-cta{display:block;text-align:center;text-decoration:none}
 @media(min-width:700px){.inbox-shell,.chat-screen{max-width:620px;margin:0 auto;border-left:1px solid #29262a;border-right:1px solid #29262a}.voice-room-list{grid-template-columns:1fr 1fr}.voice-hero{margin-top:28px}}
+
+
+/* Squad group conversation and details */
+.group-chat-screen{padding-bottom:108px}
+.group-more{margin-left:auto;color:#fff;text-decoration:none;font-size:1rem;letter-spacing:2px}
+.group-chat-screen .chat-room-tabs{position:sticky;top:0;z-index:2;background:#111}
+.pinned-note{display:block;width:calc(100% - 32px);margin:14px 16px;padding:12px 14px;border:1px solid #5d3038;border-radius:11px;background:#211317;color:#ffbdc3;text-align:left;font-size:.73rem}
+.pinned-note small{display:block;margin:5px 0 0 22px;color:#c8b8bc;font-size:.66rem}
+.group-messages{display:flex;flex-direction:column;gap:15px;padding:12px 16px 25px}
+.group-message{display:flex;align-items:flex-start;gap:9px;max-width:92%}
+.group-message.mine{align-self:flex-end;justify-content:flex-end}
+.group-message-avatar,.group-member-row>span{width:31px;height:31px;display:grid;place-items:center;flex-shrink:0;border-radius:11px;background:#3a1a22;color:#ff9ba4;font-size:.72rem}
+.group-message-content{min-width:0}
+.group-message-content>small{display:block;margin:0 0 5px 2px;color:#888;font-size:.58rem}
+.group-message-content>p{margin:0;padding:11px 13px;border:1px solid #353036;border-radius:4px 13px 13px 13px;background:#211e22;color:#f0ecee;font-size:.77rem;line-height:1.55}
+.group-message.mine .group-message-content>p{border-color:#842c38;border-radius:13px 4px 13px 13px;background:linear-gradient(140deg,#b91f31,#711522);color:#fff}
+.group-message-content blockquote{margin:0 0 5px;padding:7px 9px;border-left:2px solid #e34b5b;background:#191619;color:#aaa;font-size:.64rem}
+.group-message-tools{display:flex;gap:12px;padding:5px 2px}
+.group-message-tools button{border:0;background:none;color:#9c9297;font-size:.6rem}
+.replying-to{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 15px;background:#241317;color:#d7c5c9;font-size:.67rem}
+.replying-to button{border:0;background:none;color:#ff6874;font-size:1.1rem}
+.group-voice-panel{display:grid;justify-items:center;padding:45px 22px;text-align:center}
+.voice-live-orb{width:94px;height:94px;display:grid;place-items:center;border:1px solid #8b3440;border-radius:50%;background:radial-gradient(circle,#66202c,#211116 68%);color:#ff8290;font-size:2.1rem;box-shadow:0 0 45px #b21c3030}
+.group-voice-panel h2{margin:9px 0;color:#fff;font-size:1.35rem}
+.group-voice-panel>p:not(.onboard-kicker),.group-voice-panel>small{color:#aaa;font-size:.72rem}
+.voice-avatars{display:flex;margin:15px 0 22px}
+.voice-avatars span{width:36px;height:36px;display:grid;place-items:center;margin-left:-5px;border:2px solid #111;border-radius:50%;background:#3a1a22;color:#ffb4bc}
+.group-voice-panel>button{padding:11px 22px;border:0;border-radius:10px;background:#d51e30;color:#fff;font-size:.75rem}
+.group-members-panel{padding:18px 17px}
+.group-member-row{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid #302c30}
+.group-member-row>div{display:grid;gap:4px;flex:1}
+.group-member-row b{color:#fff;font-size:.75rem}
+.group-member-row small{color:#999;font-size:.63rem}
+.group-member-row>i{font-size:.61rem;color:#ff6874}
+.group-member-row>button{padding:7px 10px;border:1px solid #593039;border-radius:8px;background:#211317;color:#ff8993;font-size:.62rem}
+.group-preview-note{padding:8px 16px 20px}
+.group-info-hero{display:grid;justify-items:center;padding:35px 20px 25px;text-align:center;border-bottom:1px solid #302c30}
+.group-info-hero .chat-avatar{width:76px;height:76px;border-radius:23px;font-size:2rem}
+.group-info-hero h1{margin:14px 0 5px;color:#fff;font-size:1.6rem;letter-spacing:-.04em}
+.group-info-hero p{margin:0 0 8px;color:#c4bdc0;font-size:.78rem}
+.group-info-hero small{color:#ff6874;font-size:.65rem}
+.group-info-actions{display:grid;gap:0;padding:8px 20px}
+.group-info-actions button{display:grid;gap:5px;padding:16px 0;border:0;border-bottom:1px solid #302c30;background:none;color:#eee;text-align:left;font-size:.8rem}
+.group-info-actions button small{color:#999;font-size:.66rem}
