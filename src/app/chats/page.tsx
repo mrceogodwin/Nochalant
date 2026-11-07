@@ -7,7 +7,7 @@ type Conversation = {
   id: string;
   peer: { id: string; username: string; displayName: string; profile: { avatarUrl: string | null } | null };
   lastMessage: { body: string | null; createdAt: string; senderId: string } | null;
-  lastReadAt: string | null;
+  lastReadAt: string | null;\n  kind: string;\n  unread: boolean;
 };
 
 export default function ChatsPage() {
@@ -31,7 +31,7 @@ export default function ChatsPage() {
   }, []);
 
   const filtered = useMemo(() => conversations.filter(item =>
-    (item.peer.displayName + " " + item.peer.username + " " + (item.lastMessage?.body || "")).toLowerCase().includes(query.toLowerCase())
+    (tab === "All" || (tab === "Unread" ? item.unread : tab === "Direct" ? item.kind === "DIRECT" : item.kind !== "DIRECT")) && (item.peer.displayName + " " + item.peer.username + " " + (item.lastMessage?.body || "")).toLowerCase().includes(query.toLowerCase())
   ), [conversations, query]);
 
   return <main className="feed-shell inbox-shell">
@@ -40,7 +40,7 @@ export default function ChatsPage() {
     <label className="chat-search">⌕ <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search conversations"/></label>
     <div className="chat-tabs">{["All","Unread","Direct","Group"].map(item=><button key={item} className={tab===item?"selected":""} onClick={()=>setTab(item)}>{item}</button>)}</div>
     {loading ? <div className="empty-state">Loading your conversations…</div> : error ? <div className="empty-state"><strong>Chats unavailable</strong><p>{error}</p><button onClick={()=>window.location.reload()}>Try again</button></div> : <div className="inbox-list">
-      {filtered.map(item=><Link href={`/chats/conversation/${item.id}`} className="chat-row" key={item.id}><span className="chat-avatar">{item.peer.displayName.slice(0,1).toUpperCase()}</span><span className="chat-copy"><strong>{item.peer.displayName}</strong><small>{item.lastMessage?.body || "Start a conversation"}</small></span><span className="chat-meta"><time>{item.lastMessage ? new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"}).format(new Date(item.lastMessage.createdAt)) : ""}</time></span></Link>)}
+      {filtered.map(item=><Link href={`/chats/conversation/${item.id}`} className="chat-row" key={item.id}><span className="chat-avatar">{item.peer.displayName.slice(0,1).toUpperCase()}</span><span className="chat-copy"><strong>{item.peer.displayName}</strong><small>{item.lastMessage?.body || "Start a conversation"}</small></span><span className="chat-meta"><time>{item.lastMessage ? new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"}).format(new Date(item.lastMessage.createdAt)) : ""}</time>{item.unread&&<b>1</b>}</span></Link>)}
       {!filtered.length&&<div className="empty-state"><strong>No conversations yet</strong><p>When you message another member, your conversation will appear here.</p></div>}
     </div>}
     <p className="selection-hint inbox-note">Your direct conversations are loaded from your Nochalant account.</p>
