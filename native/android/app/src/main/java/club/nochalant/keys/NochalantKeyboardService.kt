@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 
 class NochalantKeyboardService : InputMethodService() {
     private val red = Color.rgb(255, 65, 77)
@@ -47,7 +48,11 @@ class NochalantKeyboardService : InputMethodService() {
                 isAllCaps = false
                 textSize = if (suggestions) 13f else if (label == "space") 14f else 18f
                 setTextColor(if (special) black else red)
-                setBackgroundColor(if (special) red else Color.TRANSPARENT)
+                background = GradientDrawable().apply {
+                    setColor(if (special) red else black)
+                    cornerRadius = dp(9).toFloat()
+                    setStroke(dp(1.5f), red)
+                }
                 typeface = Typeface.DEFAULT
                 setOnClickListener { handleKey(label) }
             }
@@ -80,4 +85,5 @@ class NochalantKeyboardService : InputMethodService() {
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Float) = (value * resources.displayMetrics.density).toInt()
 }
