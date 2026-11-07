@@ -97,7 +97,7 @@ export default function SceneDetail({ params }: { params: Promise<{ slug: string
     </div>
     {notice && <p role="status" className="feed-notice">{notice}</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
-    {access === "RESTRICTED" ? <div className="owner-notice"><strong>Private community</strong><p>You can see this Scene's introduction. Its channels and member content are only available after a moderator approves your request.</p></div> : <>
+    {access === "RESTRICTED" ? <div className="owner-notice"><strong>Private community</strong><p>You can see this Scene&apos;s introduction. Its channels and member content are only available after a moderator approves your request.</p></div> : <>
       <div className="scene-detail-tabs">{["Overview", "Channels", "Members", "About"].map(t => <button key={t} className={tab === t ? "selected" : ""} onClick={() => { setTab(t); if (t === "Members" && isManager) loadPendingMembers(); }}>{t}</button>)}</div>
       {tab === "Overview" && <><div className="scene-section-head"><h2>Community channels</h2><button onClick={() => setTab("Channels")}>View all →</button></div>{(scene.channels || []).map(channel => <div className="scene-channel-row" key={channel.id}><span>✦</span><div><b>#{channel.name}</b><small>{channel.description || "Scene conversation"}</small></div></div>)}{!scene.channels?.length && <p className="selection-hint">No channels have been created yet.</p>}</>}
       {tab === "Channels" && (scene.channels || []).map(channel => <div className="scene-channel-row" key={channel.id}><span>✦</span><div><b>#{channel.name}</b><small>{channel.description || "Scene conversation"}</small></div></div>)}
