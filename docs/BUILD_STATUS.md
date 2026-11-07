@@ -86,3 +86,6 @@ Last updated: 2026-11-07
 - These routes are UI previews only. No API handlers, authentication guards, database writes, report delivery, blocking enforcement, account restrictions or audit-log writes were added.
 - The admin preview routes are not protected. Do not use them for real moderation or expose them as an operational admin tool before server-side RBAC is implemented.
 - Build, typecheck, lint, tests and browser verification remain unverified while Vercel's deployment quota is exhausted.
+
+- Safety centre is linked from the member profile, and the Squad details report entry now opens the report form.
+- Corrected the Scene management client route's missing React `use` import discovered during source review; this is a source-level correction, not a verified build result.
