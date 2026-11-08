@@ -122,7 +122,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Refund amount or currency does not match the payment." }, { status: 400 });
       }
       const refundId = typeof event.data.refund_id === "string" ? event.data.refund_id : "";
-      if (!refundId || refundId.length > 200) {
+      if (!providerRefundId || refundId.length > 200) {
         await prisma.paymentWebhookEvent.update({
           where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
           data: { processedAt: new Date() },
@@ -132,16 +132,16 @@ export async function POST(request: Request) {
       const sceneId = payment.purpose.slice("SCENE_ACCESS:".length);
       const refundResult = await prisma.$transaction(async tx => {
         const existingRefund = await tx.refund.findUnique({
-          where: { providerRef: refundId },
+          where: { providerRef: providerRefundId },
           select: { transactionId: true, amountKobo: true },
         });
         if (existingRefund && (existingRefund.transactionId !== payment.id || existingRefund.amountKobo !== BigInt(refundedMinor))) {
           throw new Error("Conflicting Bachs refund identifier or amount.");
         }
         await tx.refund.upsert({
-          where: { providerRef: refundId },
+          where: { providerRef: providerRefundId },
           create: {
-            transactionId: payment.id, providerRef: refundId,
+            transactionId: payment.id, providerRef: providerRefundId,
             amountKobo: BigInt(refundedMinor), reason: "Bachs provider refund",
             status: "successful",
           },
