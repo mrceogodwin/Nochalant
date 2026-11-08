@@ -6,12 +6,10 @@ ALTER TABLE "PaymentTransaction"
   ADD COLUMN IF NOT EXISTS "metadata" JSONB;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "PaymentTransaction_idempotencyKey_key"
-  ON "PaymentTransaction"("idempotencyKey")
-  WHERE "idempotencyKey" IS NOT NULL;
+  ON "PaymentTransaction"("idempotencyKey");
 
 CREATE UNIQUE INDEX IF NOT EXISTS "PaymentTransaction_providerCheckoutId_key"
-  ON "PaymentTransaction"("providerCheckoutId")
-  WHERE "providerCheckoutId" IS NOT NULL;
+  ON "PaymentTransaction"("providerCheckoutId");
 
 CREATE INDEX IF NOT EXISTS "PaymentTransaction_provider_status_createdAt_idx"
   ON "PaymentTransaction"("provider", "status", "createdAt");
