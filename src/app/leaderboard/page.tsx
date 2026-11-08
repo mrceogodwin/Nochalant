@@ -29,7 +29,7 @@ export default function LeaderboardPage() {
     <main className="feed-shell">
       <header className="screen-heading">
         <Link href="/my-club" className="selection-hint inline-flex items-center gap-2"><ArrowLeft size={15}/> My Club</Link>
-        <p className="mt-5 text-[10px] font-black tracking-[.25em] text-[#ed5266]">THE CLUB'S CONTRIBUTION BOARD</p>
+        <p className="mt-5 text-[10px] font-black tracking-[.25em] text-[#ed5266]">THE CLUB&apos;S CONTRIBUTION BOARD</p>
         <h1>Leaderboard</h1>
         <p>Recognition earned through real participation, not purchases.</p>
       </header>
@@ -52,7 +52,7 @@ export default function LeaderboardPage() {
               <strong className="text-right tabular-nums">{item.xp.toLocaleString("en-NG")}<small className="block text-[9px] font-normal text-white/45">XP</small></strong>
             </article>
           ))}
-          {!rows.length ? <div className="empty-state">No discoverable member rankings yet. Your community's progress will appear here.</div> : null}
+          {!rows.length ? <div className="empty-state">No discoverable member rankings yet. Your community&apos;s progress will appear here.</div> : null}
         </section>
       )}
       <p className="selection-hint">Rankings use active reputation events. Reversed events do not count. Members who hide their profile are excluded.</p>
