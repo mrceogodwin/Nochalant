@@ -22,14 +22,12 @@ export async function GET() {
           clubId: true,
           bio: true,
           identityIconId: true,
-          reputationXp: true,
-          isDiscoverable: true,
-          userIcons: {
-            where: { isPrimary: true },
-            take: 1,
-            select: { icon: { select: { id: true, name: true, rarity: true } } },
-          },
         },
+      },
+      userIcons: {
+        where: { isPrimary: true },
+        take: 1,
+        select: { icon: { select: { id: true, name: true, rarity: true } } },
       },
       sceneMemberships: {
         where: { status: "ACTIVE" },
@@ -40,7 +38,7 @@ export async function GET() {
       },
       reputationEvents: {
         where: { reversedAt: null },
-        select: { points: true, createdAt: true },
+        select: { points: true },
       },
       userBadges: {
         orderBy: { earnedAt: "desc" },
@@ -79,17 +77,14 @@ export async function GET() {
       displayName: user.displayName,
       clubId: user.profile?.clubId ?? null,
       bio: user.profile?.bio ?? null,
-      identity: user.profile?.userIcons[0]?.icon ?? null,
+      identity: user.userIcons[0]?.icon ?? null,
       xp,
       rank: rank ? { code: rank.code, name: rank.name, minXp: rank.minXp } : null,
       nextRank: nextRank ? { name: nextRank.name, minXp: nextRank.minXp } : null,
       progress,
       scenesCount: user.sceneMemberships.length,
       squadsCount: user.squadMemberships.length,
-      badges: user.userBadges.map((item) => ({
-        ...item.badge,
-        earnedAt: item.earnedAt,
-      })),
+      badges: user.userBadges.map((item) => ({ ...item.badge, earnedAt: item.earnedAt })),
       membership: user.memberships[0]?.plan ?? { name: "Free", code: "FREE" },
     },
   }, { headers: { "Cache-Control": "private, no-store" } });
