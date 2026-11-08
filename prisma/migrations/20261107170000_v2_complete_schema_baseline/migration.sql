@@ -554,6 +554,7 @@ CREATE TABLE "BadgeCatalog" (
     "rarity" "Rarity" NOT NULL,
     "artworkPath" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "criteria" JSONB NOT NULL DEFAULT '{}',
 
     CONSTRAINT "BadgeCatalog_pkey" PRIMARY KEY ("id")
 );
@@ -564,6 +565,9 @@ CREATE TABLE "UserBadge" (
     "userId" TEXT NOT NULL,
     "badgeId" TEXT NOT NULL,
     "earnedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revokedAt" TIMESTAMP(3),
+    "revokedById" TEXT,
+    "revocationReason" VARCHAR(500),
 
     CONSTRAINT "UserBadge_pkey" PRIMARY KEY ("id")
 );
@@ -1012,6 +1016,9 @@ CREATE UNIQUE INDEX "UserIcon_userId_iconId_key" ON "UserIcon"("userId", "iconId
 CREATE UNIQUE INDEX "BadgeCatalog_name_key" ON "BadgeCatalog"("name");
 
 -- CreateIndex
+CREATE INDEX "UserBadge_revokedAt_earnedAt_idx" ON "UserBadge"("revokedAt", "earnedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "UserBadge_userId_badgeId_key" ON "UserBadge"("userId", "badgeId");
 
 -- CreateIndex
@@ -1211,6 +1218,9 @@ ALTER TABLE "UserBadge" ADD CONSTRAINT "UserBadge_userId_fkey" FOREIGN KEY ("use
 
 -- AddForeignKey
 ALTER TABLE "UserBadge" ADD CONSTRAINT "UserBadge_badgeId_fkey" FOREIGN KEY ("badgeId") REFERENCES "BadgeCatalog"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserBadge" ADD CONSTRAINT "UserBadge_revokedById_fkey" FOREIGN KEY ("revokedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ArtistProfile" ADD CONSTRAINT "ArtistProfile_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
