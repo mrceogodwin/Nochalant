@@ -648,6 +648,7 @@ model BadgeCatalog {
   rarity      Rarity
   artworkPath String
   active      Boolean @default(true)
+  criteria    Json @default("{}")
   userBadges  UserBadge[]
 }
 
@@ -658,7 +659,12 @@ model UserBadge {
   badgeId   String
   badge     BadgeCatalog @relation(fields: [badgeId], references: [id])
   earnedAt  DateTime @default(now())
+  revokedAt DateTime?
+  revokedById String?
+  revokedBy User? @relation("BadgeRevoker", fields: [revokedById], references: [id], onDelete: SetNull)
+  revocationReason String? @db.VarChar(500)
   @@unique([userId, badgeId])
+  @@index([revokedAt, earnedAt])
 }
 
 model AchievementDefinition {
