@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       const chargeId = typeof event.data.charge_id === "string" ? event.data.charge_id : "";
       const currency = typeof event.data.currency === "string" ? event.data.currency.toUpperCase() : "";
       const refundText = typeof event.data.refunded_amount === "string" ? event.data.refunded_amount : "";
-      const refundMatch = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(refundText);
+      const refundMatch = /^(0|[1-9]\d*)(?:\.(\d{1,2}))?$/.exec(refundText);
       const refundedMinor = refundMatch ? Number(refundMatch[1]) * 100 + Number((refundMatch[2] || "").padEnd(2, "0")) : NaN;
       if (!chargeId || !Number.isSafeInteger(refundedMinor) || refundedMinor <= 0 || !/^[A-Z]{3}$/.test(currency)) {
         await prisma.paymentWebhookEvent.update({
