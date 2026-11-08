@@ -18,7 +18,7 @@ function isValidBachsEventEnvelope(value: unknown): value is BachsEvent {
 
 function matchesBachsSuccessfulPayment(data: Record<string, unknown>, amountKobo: bigint, currencyExpected: string) {
   const amountText = typeof data.amount === "number" || typeof data.amount === "string" ? String(data.amount).trim() : "";
-  const match = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(amountText);
+  const match = /^(0|[1-9]\d*)(?:\.(\d{1,2}))?$/.exec(amountText);
   const amountMinor = match ? Number(match[1]) * 100 + Number((match[2] || "").padEnd(2, "0")) : NaN;
   const currency = typeof data.currency === "string" ? data.currency.trim().toUpperCase() : "";
   return Number.isSafeInteger(amountMinor) && amountMinor > 0 &&
