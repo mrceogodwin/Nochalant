@@ -28,12 +28,13 @@ export async function GET() {
       select: { id: true, ruleKey: true, points: true, sourceType: true, createdAt: true, reversedAt: true },
     }),
     prisma.reputationEvent.aggregate({ where: { userId, reversedAt: null }, _sum: { points: true }, _count: { _all: true } }),
-    prisma.userProfile.findUnique({ where: { userId }, select: { rank: { select: { name: true, minXp: true } } } }),
+    prisma.userProfile.findUnique({ where: { userId }, select: { rankId: true } }),
   ]);
+  const rank = profile?.rankId ? await prisma.rankDefinition.findUnique({ where: { id: profile.rankId }, select: { name: true, minXp: true } }) : null;
   return NextResponse.json({
     xp: Math.max(0, aggregate._sum.points ?? 0),
     activeEvents: aggregate._count._all,
-    rank: profile?.rank ?? null,
+    rank,
     events: events.map((event) => ({
       ...event,
       label: labels[event.ruleKey] ?? "Community contribution",
