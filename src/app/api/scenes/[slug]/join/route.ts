@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { awardReputation } from "@/lib/reputation";
+import { evaluateBadgesForUser } from "@/lib/badges";
 
 export const runtime = "nodejs";
 
@@ -86,6 +87,12 @@ export async function POST(_request: Request, context: { params: Promise<{ slug:
       } catch (error) {
         console.error("Nochalant Scene-join reputation award failed.", error);
       }
+    }
+
+    if (!pending && membership.createdNow) {
+      await evaluateBadgesForUser(userId).catch((error) => {
+        console.error("Nochalant Scene badge evaluation failed.", error);
+      });
     }
 
     return NextResponse.json({
