@@ -1,7 +1,130 @@
 "use client";
+
 import Link from "next/link";
-import {useState, type ComponentType} from "react";
-import {ArrowLeft,Crown,Flame,Ghost,Zap,Skull,Moon,Music2,Eye,Swords,Sparkles,Mic,Heart,Shield,Star} from "lucide-react";
-const groups=[{name:"Royalty",items:["Crown","Royal Seal","Throne","Imperial Star"]},{name:"Nightlife",items:["Night Owl","Afterhours","Midnight Star","Neon Pulse"]},{name:"Music",items:["Sound","Music Head","Producer","Sound Architect"]},{name:"Alternative",items:["Phantom","Rebel","Electric Soul","Misfit"]},{name:"Social",items:["Connector","Social Butterfly","Squad Captain","People’s Choice"]},{name:"Mystery",items:["Observer","Oracle","Enigma","The Watcher"]},{name:"Competitive",items:["Warrior","Champion","Rising Star","The Finisher"]}];
-const iconMap:Record<string,ComponentType<{size?:number}>>={"Royalty":Crown,"Crown":Crown,"Royal Seal":Shield,"Throne":Crown,"Imperial Star":Star,"Night Owl":Moon,"Afterhours":Flame,"Midnight Star":Star,"Neon Pulse":Zap,"Sound":Music2,"Music Head":Music2,"Producer":Mic,"Sound Architect":Music2,"Phantom":Ghost,"Rebel":Skull,"Electric Soul":Zap,"Misfit":Ghost,"Connector":Heart,"Social Butterfly":Heart,"Squad Captain":Swords,"People’s Choice":Star,"Observer":Eye,"Oracle":Eye,"Enigma":Ghost,"The Watcher":Eye,"Warrior":Swords,"Champion":Crown,"Rising Star":Star,"The Finisher":Zap};
-export default function BadgeCollection(){const [filter,setFilter]=useState("All"),[selected,setSelected]=useState("Night Owl");const all=groups.flatMap(g=>g.items.map(name=>({name,group:g.name})));const shown=all.filter(x=>filter==="All"||x.group===filter);return <main className="min-h-screen bg-[#070708] px-4 pb-24 text-white"><div className="mx-auto max-w-4xl"><header className="flex items-center justify-between py-5"><Link href="/my-club" className="flex items-center gap-2 text-sm text-white/55 no-underline"><ArrowLeft size={16}/> My Club ID</Link><span className="text-xs font-black tracking-[.2em]">ICON ARCHIVE</span></header><p className="mt-8 text-[10px] font-black tracking-[.25em] text-[#ff5967]">YOUR SYMBOL. YOUR STORY.</p><h1 className="mt-2 text-4xl font-black tracking-[-.06em]">Identity collection.</h1><p className="mt-2 text-sm text-white/45">A growing catalogue of Club identities and achievements.</p><div className="my-6 flex gap-2 overflow-x-auto pb-2">{["All",...groups.map(g=>g.name)].map(g=><button key={g} onClick={()=>setFilter(g)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold ${filter===g?"bg-[#ed2939]":"border border-white/10 bg-white/[.04] text-white/55"}`}>{g}</button>)}</div><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{shown.map(({name,group})=>{const Icon=iconMap[name]||Sparkles;return <button key={name} onClick={()=>setSelected(name)} className={`rounded-2xl border p-4 text-left ${selected===name?"border-[#ed2939] bg-[#271116]":"border-white/10 bg-[#121214]"}`}><span className="grid h-12 w-12 place-items-center rounded-xl bg-white/[.04] text-[#ff5967]"><Icon size={25}/></span><strong className="mt-4 block text-xs">{name}</strong><small className="mt-1 block text-[10px] text-white/35">{group} collection</small><span className="mt-3 inline-block rounded-full border border-white/10 px-2 py-1 text-[9px] text-white/45">Preview</span></button>})}</div><div className="mt-6 rounded-xl border border-white/10 bg-[#121214] p-4"><p className="text-[10px] font-black tracking-[.2em] text-[#ff5967]">SELECTED IDENTITY</p><h2 className="mt-2 text-xl font-black">{selected}</h2><p className="mt-1 text-xs text-white/45">Identity selection will be saved to your member profile when account services are active.</p></div><p className="mt-5 text-[10px] text-white/30">This is the first visual catalogue pass. The full 120 original icon assets, rarity rules and unlock conditions will be added as the collection system is implemented.</p></div></main>}
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Award, Lock, ShieldCheck } from "lucide-react";
+
+type BadgeItem = {
+  id: string;
+  name: string;
+  description: string;
+  rarity: string;
+  artworkPath: string;
+  earned: boolean;
+  revoked: boolean;
+  earnedAt: string | null;
+  progress: number;
+  progressLabel: string;
+};
+
+const rarityLabels: Record<string, string> = {
+  COMMON: "Common",
+  UNCOMMON: "Uncommon",
+  RARE: "Rare",
+  EPIC: "Epic",
+  LEGENDARY: "Legendary",
+  FOUNDERS_EDITION: "Founders Edition",
+};
+
+export default function BadgeCollection() {
+  const [badges, setBadges] = useState<BadgeItem[]>([]);
+  const [filter, setFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/me/badges", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to load your achievements.");
+        return data.badges as BadgeItem[];
+      })
+      .then((data) => { if (active) setBadges(data ?? []); })
+      .catch((reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Unable to load your achievements.");
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const earnedCount = badges.filter((badge) => badge.earned).length;
+  const visible = useMemo(() => badges.filter((badge) => {
+    if (filter === "EARNED") return badge.earned;
+    if (filter === "LOCKED") return !badge.earned && !badge.revoked;
+    if (filter === "REVOKED") return badge.revoked;
+    return true;
+  }), [badges, filter]);
+
+  return (
+    <main className="feed-shell">
+      <header className="screen-heading">
+        <Link href="/my-club" className="selection-hint inline-flex items-center gap-2"><ArrowLeft size={15}/> My Club ID</Link>
+        <p className="mt-5 text-[10px] font-black tracking-[.25em] text-[#ed5266]">YOUR SYMBOL. YOUR STORY.</p>
+        <h1>Achievements & badges</h1>
+        <p>Earn recognition through real participation in the Club.</p>
+      </header>
+
+      <section className="membership-row" aria-label="Achievement progress">
+        <div className="w-full">
+          <div className="flex items-center justify-between gap-3">
+            <strong>{earnedCount} of {badges.length} earned</strong>
+            <span className="selection-hint">{badges.length ? Math.round(earnedCount / badges.length * 100) : 0}% complete</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-[#ed2939]" style={{ width: `${badges.length ? earnedCount / badges.length * 100 : 0}%` }} />
+          </div>
+        </div>
+      </section>
+
+      <div className="feed-tabs discover-filters" aria-label="Filter achievements">
+        {[
+          ["ALL", "All"],
+          ["EARNED", "Earned"],
+          ["LOCKED", "In progress"],
+          ["REVOKED", "Revoked"],
+        ].map(([value, label]) => (
+          <button key={value} className={filter === value ? "selected" : ""} onClick={() => setFilter(value)}>{label}</button>
+        ))}
+      </div>
+
+      {error ? <div className="empty-state" role="alert">{error}</div> : null}
+      {loading ? <div className="empty-state" role="status">Loading your achievements…</div> : (
+        <div className="identity-icon-grid">
+          {visible.map((badge) => (
+            <article key={badge.id} className={`identity-icon-card ${badge.earned ? "is-selected" : ""} ${badge.revoked ? "opacity-55" : ""}`}>
+              <span className="identity-icon-art">
+                <svg viewBox="0 0 64 64" role="img" aria-label={badge.name}><use href={badge.artworkPath}/></svg>
+              </span>
+              <strong>{badge.name}</strong>
+              <small>{rarityLabels[badge.rarity] ?? badge.rarity.replaceAll("_", " ")}</small>
+              <span className={badge.earned ? "identity-owned" : "identity-locked"}>
+                {badge.earned ? "Earned" : badge.revoked ? "Revoked" : "In progress"}
+              </span>
+              <p className="text-[10px] leading-relaxed text-white/45">{badge.description}</p>
+              {badge.earned ? (
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300"><ShieldCheck size={12}/> {badge.earnedAt ? new Date(badge.earnedAt).toLocaleDateString() : "Unlocked"}</span>
+              ) : badge.revoked ? (
+                <span className="inline-flex items-center gap-1 text-[10px] text-rose-300"><Lock size={12}/> Moderation action</span>
+              ) : (
+                <>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#ed5266]" style={{ width: `${badge.progress}%` }}/></div>
+                  <small>{badge.progressLabel}</small>
+                </>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+      {!loading && !error && visible.length === 0 ? <div className="empty-state"><Award size={22}/> No badges in this filter yet.</div> : null}
+      <p className="selection-hint">Badges are awarded from verified activity. Paid memberships and purchases do not grant achievement badges.</p>
+      <nav className="bottom-nav">
+        <Link href="/club">⌂<small>Home</small></Link>
+        <Link href="/discover">◉<small>Discover</small></Link>
+        <Link className="create-button" href="/club/create">＋</Link>
+        <Link href="/chats">▢<small>Chats</small></Link>
+        <Link className="active" href="/my-club">♙<small>My Club</small></Link>
+      </nav>
+    </main>
+  );
+}
