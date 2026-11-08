@@ -44,6 +44,18 @@ const starterScenes = [
   ["the-film-room","The Film Room","Film, series, Nollywood and screen culture.","ENTERTAINMENT"],
 ] as const;
 
+const badgeDefinitions = [
+  { id: "scene-starter", name: "Scene Starter", description: "Joined your first public Scene.", rarity: Rarity.COMMON, artworkPath: "/icons/badges/badge-sprite.svg#scene-starter", criteria: { metric: "SCENE_COUNT", threshold: 1 } },
+  { id: "scene-regular", name: "Scene Regular", description: "Became an active member of five Scenes.", rarity: Rarity.UNCOMMON, artworkPath: "/icons/badges/badge-sprite.svg#scene-regular", criteria: { metric: "SCENE_COUNT", threshold: 5 } },
+  { id: "scene-explorer", name: "Scene Explorer", description: "Joined ten public Scenes.", rarity: Rarity.RARE, artworkPath: "/icons/badges/badge-sprite.svg#scene-explorer", criteria: { metric: "SCENE_COUNT", threshold: 10 } },
+  { id: "first-post", name: "First Post", description: "Published your first Club post.", rarity: Rarity.COMMON, artworkPath: "/icons/badges/badge-sprite.svg#first-post", criteria: { metric: "POST_COUNT", threshold: 1 } },
+  { id: "conversation-starter", name: "Conversation Starter", description: "Published ten Club posts.", rarity: Rarity.UNCOMMON, artworkPath: "/icons/badges/badge-sprite.svg#conversation-starter", criteria: { metric: "POST_COUNT", threshold: 10 } },
+  { id: "community-voice", name: "Community Voice", description: "Published fifty Club posts.", rarity: Rarity.EPIC, artworkPath: "/icons/badges/badge-sprite.svg#community-voice", criteria: { metric: "POST_COUNT", threshold: 50 } },
+  { id: "squad-builder", name: "Squad Builder", description: "Joined three Squads.", rarity: Rarity.RARE, artworkPath: "/icons/badges/badge-sprite.svg#squad-builder", criteria: { metric: "SQUAD_COUNT", threshold: 3 } },
+  { id: "rising-reputation", name: "Rising Reputation", description: "Earned 100 reputation XP through verified participation.", rarity: Rarity.UNCOMMON, artworkPath: "/icons/badges/badge-sprite.svg#rising-reputation", criteria: { metric: "REPUTATION_XP", threshold: 100 } },
+  { id: "culture-keeper", name: "Culture Keeper", description: "Earned 1,000 reputation XP through verified participation.", rarity: Rarity.LEGENDARY, artworkPath: "/icons/badges/badge-sprite.svg#culture-keeper", criteria: { metric: "REPUTATION_XP", threshold: 1000 } },
+] as const;
+
 async function main() {
   for (const [code, name, minXp] of ranks) {
     await prisma.rankDefinition.upsert({
@@ -94,6 +106,14 @@ async function main() {
         description: `${icon.name} identity from the Nochalant Club collection.`,
         svgPath: `/icons/identities/sprite.svg#${icon.id}`,
       },
+    });
+  }
+
+  for (const badge of badgeDefinitions) {
+    await prisma.badgeCatalog.upsert({
+      where: { id: badge.id },
+      update: { name: badge.name, description: badge.description, rarity: badge.rarity, artworkPath: badge.artworkPath, criteria: badge.criteria, active: true },
+      create: { ...badge, active: true },
     });
   }
 
