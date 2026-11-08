@@ -12,7 +12,7 @@ export async function GET() {
     orderBy: { _sum: { points: "desc" } },
     take: 100,
   });
-  const users = await prisma.user.findMany({
+  const [users, ranks] = await Promise.all([prisma.user.findMany({
     where: {
       id: { in: totals.map((item) => item.userId) },
       status: "ACTIVE",
@@ -20,10 +20,11 @@ export async function GET() {
     },
     select: {
       id: true, username: true, displayName: true,
-      profile: { select: { reputationXp: true, rank: { select: { name: true, code: true } }, identityIconId: true } },
+      profile: { select: { reputationXp: true, rankId: true, identityIconId: true } },
       userIcons: { where: { isPrimary: true }, take: 1, select: { icon: { select: { name: true } } } },
     },
-  });
+  }), prisma.rankDefinition.findMany({ where: { active: true }, select: { id: true, name: true } })]);
+  const rankById = new Map(ranks.map((rank) => [rank.id, rank.name]));
   const byId = new Map(users.map((user) => [user.id, user]));
   const rows = totals.flatMap((total) => {
     const user = byId.get(total.userId);
@@ -33,7 +34,7 @@ export async function GET() {
       username: user.username,
       displayName: user.displayName,
       xp: Math.max(0, total._sum.points ?? 0),
-      rank: user.profile?.rank?.name ?? "New Face",
+      rank: user.profile?.rankId ? rankById.get(user.profile.rankId) ?? "New Face" : "New Face",
       identity: user.userIcons[0]?.icon.name ?? null,
     }];
   }).sort((a, b) => b.xp - a.xp).slice(0, 50)
