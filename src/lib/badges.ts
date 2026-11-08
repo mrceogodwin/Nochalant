@@ -35,8 +35,10 @@ export async function evaluateBadgesForUser(userId: string) {
 
   for (const badge of badges) {
     const criteria = badge.criteria as BadgeCriteria;
-    if (!criteria.metric || typeof criteria.threshold !== "number") continue;
-    if (metrics[criteria.metric] < criteria.threshold) continue;
+    const metric = criteria.metric;
+    if (!metric || typeof criteria.threshold !== "number") continue;
+    const value = metrics[metric];
+    if (value < criteria.threshold) continue;
 
     try {
       const existing = await prisma.userBadge.findUnique({
@@ -57,7 +59,7 @@ export async function evaluateBadgesForUser(userId: string) {
             action: "BADGE_AUTO_AWARDED",
             targetType: "USER_BADGE",
             targetId: earned.id,
-            metadata: { userId, badgeId: badge.id, badgeName: badge.name, metric: criteria.metric, value: metrics[criteria.metric], threshold: criteria.threshold },
+            metadata: { userId, badgeId: badge.id, badgeName: badge.name, metric, value, threshold: criteria.threshold },
           },
         });
       });
