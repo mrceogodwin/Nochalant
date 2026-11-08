@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { evaluateBadgesForUser } from "@/lib/badges";
 
 /**
  * Reputation can only be awarded by trusted server-side feature handlers.
@@ -67,7 +68,7 @@ export async function awardReputation(input: {
   }
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const existing = await tx.reputationEvent.findUnique({
         where: { idempotencyKey: input.idempotencyKey },
         select: { id: true, points: true },
@@ -100,6 +101,12 @@ export async function awardReputation(input: {
       const profile = await refreshProfileRank(tx, input.userId);
       return { awarded: true as const, reason: "AWARDED", xpAwarded: rule.points, ...profile };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    if (result.awarded) {
+      await evaluateBadgesForUser(input.userId).catch((error) => {
+        console.error("Nochalant automatic badge evaluation failed.", error);
+      });
+    }
+    return result;
   } catch (error) {
     // A concurrent retry with the same idempotency key is a harmless duplicate.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
