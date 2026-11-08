@@ -15,7 +15,7 @@ export async function GET(_request: Request, context: Context) {
     where: { slug, active: true },
     select: {
       id: true, name: true, slug: true, description: true, category: true,
-      coverUrl: true, visibility: true, rules: true, founderId: true, createdAt: true,
+      coverUrl: true, visibility: true, accessPriceKobo: true, rules: true, founderId: true, createdAt: true,
       _count: { select: { members: { where: { status: "ACTIVE" } } } },
       channels: {
         where: { archivedAt: null },
@@ -40,6 +40,7 @@ export async function GET(_request: Request, context: Context) {
       scene: {
         id: scene.id, name: scene.name, slug: scene.slug, description: scene.description,
         category: scene.category, coverUrl: scene.coverUrl, visibility: scene.visibility,
+        accessPriceKobo: scene.accessPriceKobo?.toString() ?? null,
         memberCount: scene._count.members, createdAt: scene.createdAt,
       },
       membership: membership ? { status: membership.status, role: membership.role } : null,
@@ -50,6 +51,7 @@ export async function GET(_request: Request, context: Context) {
     scene: {
       id: scene.id, name: scene.name, slug: scene.slug, description: scene.description,
       category: scene.category, coverUrl: scene.coverUrl, visibility: scene.visibility,
+      accessPriceKobo: scene.accessPriceKobo?.toString() ?? null,
       rules: scene.rules, memberCount: scene._count.members, createdAt: scene.createdAt,
       channels: scene.channels,
     },
