@@ -5,7 +5,7 @@ import { use, useEffect, useState } from "react";
 
 type Scene = {
   id: string; name: string; slug: string; description: string; category: string;
-  coverUrl: string | null; visibility: "PUBLIC" | "PRIVATE" | "PAID" | "UNLISTED";
+  coverUrl: string | null; visibility: "PUBLIC" | "PRIVATE" | "PAID" | "UNLISTED"; accessPriceKobo?: string | null;
   memberCount: number; rules?: unknown; channels?: { id: string; name: string; slug: string; description: string | null; isDefault: boolean }[];
 };
 type Membership = { status: string; role: string; joinedAt?: string } | null;
@@ -51,6 +51,17 @@ export default function SceneDetail({ params }: { params: Promise<{ slug: string
     finally { setBusy(false); }
   }
 
+  async function startPaidCheckout() {
+    setBusy(true); setNotice(""); setError("");
+    try {
+      const response = await fetch(`/api/scenes/${encodeURIComponent(slug)}/checkout`, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Checkout could not be started.");
+      if (typeof result.checkoutUrl !== "string" || !result.checkoutUrl.startsWith("https://")) throw new Error("The payment provider returned an invalid checkout link.");
+      window.location.assign(result.checkoutUrl);
+    } catch (e) { setError(e instanceof Error ? e.message : "Checkout could not be started."); setBusy(false); }
+  }
+
   async function loadPendingMembers() {
     setLoadingMembers(true); setError("");
     try {
@@ -91,13 +102,14 @@ export default function SceneDetail({ params }: { params: Promise<{ slug: string
     <div className="scene-member-actions">
       {isMember ? <button className="yellow-cta" disabled={busy || membership?.role === "FOUNDER"} onClick={() => changeMembership("leave")}>{busy ? "Please wait…" : membership?.role === "FOUNDER" ? "Scene founder" : "Leave Scene"}</button>
       : isPending ? <button className="yellow-cta" disabled>Request pending</button>
+      : access === "RESTRICTED" && scene.visibility === "PAID" ? <button className="yellow-cta" disabled={busy} onClick={startPaidCheckout}>{busy ? "Preparing checkout…" : "Unlock Scene"}</button>
       : access === "RESTRICTED" ? <button className="yellow-cta" disabled>Private Scene</button>
       : <button className="yellow-cta" disabled={busy} onClick={() => changeMembership("join")}>{busy ? "Please wait…" : scene.visibility === "PRIVATE" ? "Request to join" : "Join Scene +"}</button>}
-      <span>{isMember ? membership?.role.replace("_", " ") : isPending ? "Awaiting approval" : "Discover and connect"}</span>
+      <span>{isMember ? membership?.role.replace("_", " ") : isPending ? "Awaiting approval" : scene.visibility === "PAID" && scene.accessPriceKobo ? `₦${(Number(scene.accessPriceKobo) / 100).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · one-time access` : "Discover and connect"}</span>
     </div>
     {notice && <p role="status" className="feed-notice">{notice}</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
-    {access === "RESTRICTED" ? <div className="owner-notice"><strong>Private community</strong><p>You can see this Scene&apos;s introduction. Its channels and member content are only available after a moderator approves your request.</p></div> : <>
+    {access === "RESTRICTED" ? <div className="owner-notice"><strong>{scene.visibility === "PAID" ? "Members-only Scene" : "Private community"}</strong><p>{scene.visibility === "PAID" ? "Unlock this Scene with a secure payment to access its channels and member community." : "You can see this Scene&apos;s introduction. Its channels and member content are only available after a moderator approves your request."}</p></div> : <>
       <div className="scene-detail-tabs">{["Overview", "Channels", "Members", "About"].map(t => <button key={t} className={tab === t ? "selected" : ""} onClick={() => { setTab(t); if (t === "Members" && isManager) loadPendingMembers(); }}>{t}</button>)}</div>
       {tab === "Overview" && <><div className="scene-section-head"><h2>Community channels</h2><button onClick={() => setTab("Channels")}>View all →</button></div>{(scene.channels || []).map(channel => <div className="scene-channel-row" key={channel.id}><span>✦</span><div><b>#{channel.name}</b><small>{channel.description || "Scene conversation"}</small></div></div>)}{!scene.channels?.length && <p className="selection-hint">No channels have been created yet.</p>}</>}
       {tab === "Channels" && (scene.channels || []).map(channel => <div className="scene-channel-row" key={channel.id}><span>✦</span><div><b>#{channel.name}</b><small>{channel.description || "Scene conversation"}</small></div></div>)}
