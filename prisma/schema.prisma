@@ -139,6 +139,8 @@ model User {
   badgeRevocations UserBadge[] @relation("BadgeRevoker")
   auditActions   AuditLog[] @relation("AuditActor")
   adminAssignments AdminAssignment[]
+  creatorApplications CreatorMonetizationApplication[]
+  creatorLedgerEntries CreatorLedgerEntry[]
   @@index([createdAt])
   @@index([status, createdAt])
 }
@@ -591,6 +593,49 @@ model VoiceRoomParticipant {
   joinedAt    DateTime @default(now())
   leftAt      DateTime?
   @@unique([roomId, userId])
+}
+
+enum CreatorApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model CreatorMonetizationApplication {
+  id              String @id @default(cuid())
+  applicantUserId String
+  applicant       User @relation(fields: [applicantUserId], references: [id], onDelete: Cascade)
+  sceneId         String?
+  sceneName       String?
+  requestedFeatures String[]
+  audienceSummary String @db.VarChar(2000)
+  status          CreatorApplicationStatus @default(PENDING)
+  reviewedById    String?
+  reviewNote      String? @db.VarChar(1000)
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([applicantUserId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model CreatorLedgerEntry {
+  id             String @id @default(cuid())
+  userId         String
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryType      String
+  amountKobo     BigInt
+  currency       String @default("NGN")
+  sourceType     String
+  sourceId       String?
+  idempotencyKey String @unique
+  availableAt    DateTime?
+  reversedAt     DateTime?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  @@index([userId, createdAt])
+  @@index([userId, availableAt, reversedAt])
 }
 
 model RankDefinition {
