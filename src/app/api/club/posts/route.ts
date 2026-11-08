@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { evaluateBadgesForUser } from "@/lib/badges";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,9 @@ export async function POST(request: NextRequest) {
         id: true, kind: true, body: true, options: true, audience: true, createdAt: true,
         author: { select: { id: true, username: true, displayName: true, profile: { select: { avatarUrl: true, clubId: true } } } },
       },
+    });
+    await evaluateBadgesForUser(authorId).catch((error) => {
+      console.error("Nochalant post badge evaluation failed.", error);
     });
     return NextResponse.json({ post }, { status: 201 });
   } catch {
