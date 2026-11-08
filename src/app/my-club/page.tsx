@@ -62,6 +62,7 @@ export default function MyClub() {
               </div>
             </div>
           </section>
+          <Link href="/my-club/earnings" className="membership-row"><span>₦</span><div><strong>Creator earnings</strong><small>Apply to monetise your community and track earnings</small></div><b>›</b></Link>
           <Link href="/my-club/reputation" className="membership-row"><span>↗</span><div><strong>Reputation history</strong><small>See every XP award and moderation reversal</small></div><b>›</b></Link>
           <Link href="/leaderboard" className="membership-row"><span>♛</span><div><strong>Club leaderboard</strong><small>Discover the community&apos;s top contributors</small></div><b>›</b></Link>
           <div className="queue-heading"><h2>My Badges</h2><Link href="/my-club/badges">View collection</Link></div>
