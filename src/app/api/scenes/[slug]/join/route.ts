@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { awardReputation } from "@/lib/reputation";
 
 export const runtime = "nodejs";
 
@@ -54,20 +55,39 @@ export async function POST(_request: Request, context: { params: Promise<{ slug:
         where: { sceneId_userId: { sceneId: scene.id, userId } },
         select: { id: true, status: true, role: true, joinedAt: true },
       });
-      if (existing && (existing.status === "ACTIVE" || existing.status === "PENDING")) return existing;
+      if (existing && (existing.status === "ACTIVE" || existing.status === "PENDING")) {
+        return { ...existing, createdNow: false };
+      }
       if (existing) {
-        return tx.sceneMember.update({
+        const updated = await tx.sceneMember.update({
           where: { id: existing.id },
           data: { status: nextStatus, role: "MEMBER", joinedAt: new Date() },
           select: { id: true, status: true, role: true, joinedAt: true },
         });
+        return { ...updated, createdNow: true };
       }
-      return tx.sceneMember.create({
+      const created = await tx.sceneMember.create({
         data: { sceneId: scene.id, userId, status: nextStatus, role: "MEMBER" },
         select: { id: true, status: true, role: true, joinedAt: true },
       });
+      return { ...created, createdNow: true };
     });
     const pending = membership.status === "PENDING";
+
+    if (!pending && membership.createdNow) {
+      try {
+        await awardReputation({
+          userId,
+          ruleKey: "JOIN_SCENE",
+          idempotencyKey: `scene-join:${membership.id}`,
+          sourceType: "SCENE_MEMBERSHIP",
+          sourceId: membership.id,
+        });
+      } catch (error) {
+        console.error("Nochalant Scene-join reputation award failed.", error);
+      }
+    }
+
     return NextResponse.json({
       membership: { status: membership.status, role: membership.role, joinedAt: membership.joinedAt },
       message: pending ? "Your request is waiting for Scene approval." : "You joined the Scene.",
