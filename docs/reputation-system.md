@@ -37,5 +37,10 @@ A member may earn at most 100 reputation XP per Lagos calendar day. Purchases, p
 ## Integration requirement
 Call `awardReputation` only from trusted server handlers after the action has succeeded. Use source-specific idempotency keys, e.g. `scene-join:<sceneMemberId>`. Never add a client route that accepts an arbitrary user ID, rule key, or XP value.
 
+## Integrated award triggers
+- Successful email verification awards ONBOARDING_COMPLETE once per account.
+- A newly created or reactivated public Scene membership awards JOIN_SCENE. Pending private-Scene requests and repeat requests do not award XP.
+- Both triggers use source-specific idempotency keys. Award failures are logged and do not roll back the underlying account verification or membership action.
+
 ## Current scope
-The authenticated My Club ID API reads real profile, event, rank, badge, scene, squad, and membership records. Feature-specific award integrations, moderator tooling, reputation history UI, and automated tests remain separate follow-up work. Do not describe reputation awards as live until those integrations exist.
+The authenticated My Club ID API reads real profile, event, rank, badge, Scene, Squad, and membership records. The server-side award/reversal service and these two award triggers are implemented. Remaining work includes moderation tooling for reversals, reputation history UI, action integrations for reviewed constructive posts, earned helpful reactions, successful hosted events and accepted music feedback, plus automated service tests. Do not award reputation for unreviewed content, raw message volume, purchases, or paid placement.
