@@ -575,3 +575,13 @@ button { font: inherit; }
 @media(prefers-reduced-motion:reduce){.native-tab{transition:none}}
 
 .native-header-actions{justify-self:end;display:flex;align-items:center;gap:8px}.offline-draft-list{display:flex;flex-direction:column;gap:10px}.offline-draft-list article{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid #2a2a30;border-radius:14px;background:#111113}.offline-draft-list article>div{min-width:0;flex:1}.offline-draft-list article span{font-size:9px;font-weight:900;letter-spacing:.12em;color:var(--yellow)}.offline-draft-list article p{font-size:13px;line-height:1.5;overflow-wrap:anywhere}.offline-draft-list article small{color:#888;font-size:10px}.offline-draft-list article button{border:1px solid #493036;border-radius:20px;background:transparent;color:#ff9ba2;padding:7px 10px;font-size:10px}
+
+
+/* V2 identity collection actions and original vector artwork */
+.identity-icon-art svg{width:43px;height:43px;overflow:visible}
+.identity-icon-card button{min-height:30px;max-width:100%;padding:6px 9px;border:1px solid #514047;border-radius:999px;background:#24171b;color:#ffd5d9;font-size:.62rem;font-weight:800;line-height:1.25}
+.identity-icon-card button:disabled{opacity:.58;cursor:not-allowed}
+.identity-icon-card button:not(:disabled):active{transform:scale(.97)}
+.identity-icon-card{overflow:hidden}
+.identity-icon-card.is-selected{background:linear-gradient(160deg,#28151b,#19191b 65%)}
+@media(max-width:360px){.identity-icon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
