@@ -1,6 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { awardReputation } from "@/lib/reputation";
+import { evaluateBadgesForUser } from "@/lib/badges";
 
 export const runtime = "nodejs";
 
@@ -114,6 +116,14 @@ export async function POST(request: Request) {
           data: { transactionId: payment.id, processedAt: new Date() },
         });
       });
+      await awardReputation({
+        userId: payment.userId,
+        ruleKey: "JOIN_SCENE",
+        idempotencyKey: `scene-join:${sceneId}:${payment.userId}`,
+        sourceType: "SCENE_MEMBERSHIP",
+        sourceId: sceneId,
+      }).catch(error => console.error("Paid Scene reputation award failed.", error));
+      await evaluateBadgesForUser(payment.userId).catch(error => console.error("Paid Scene badge evaluation failed.", error));
       return NextResponse.json({ received: true, paid: true });
     }
 
