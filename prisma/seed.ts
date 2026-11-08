@@ -71,7 +71,7 @@ async function main() {
       id: `identity-${String(index + 1).padStart(3, "0")}`,
       name,
       category: iconCategories[Math.floor(index / 10)] ?? "Culture",
-      rarity: index < 20 ? Rarity.COMMON : index < 50 ? Rarity.UNCOMMON : index < 85 ? Rarity.RARE : index < 108 ? Rarity.EPIC : Rarity.LEGENDARY,
+      rarity: index < 20 ? Rarity.COMMON : index < 50 ? Rarity.UNCOMMON : index < 85 ? Rarity.RARE : index < 108 ? Rarity.EPIC : index < 110 ? Rarity.LEGENDARY : Rarity.FOUNDERS_EDITION,
       unlockCondition: index >= 110
         ? { type: "ADMIN_ONLY" }
         : { type: "REPUTATION_XP", minXp: index < 20 ? 0 : index < 50 ? 100 : index < 85 ? 300 : index < 108 ? 700 : 1500 },
