@@ -78,6 +78,68 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (["refund.created", "refund.paid", "refund.failed"].includes(event.type)) {
+      if (event.type !== "refund.paid") {
+        await prisma.paymentWebhookEvent.update({
+          where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
+          data: { processedAt: new Date() },
+        });
+        return NextResponse.json({ received: true, refundEvent: event.type });
+      }
+      const chargeId = typeof event.data.charge_id === "string" ? event.data.charge_id : "";
+      const currency = typeof event.data.currency === "string" ? event.data.currency.toUpperCase() : "";
+      const refundText = typeof event.data.refunded_amount === "string" ? event.data.refunded_amount : "";
+      const refundMatch = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(refundText);
+      const refundedMinor = refundMatch ? Number(refundMatch[1]) * 100 + Number((refundMatch[2] || "").padEnd(2, "0")) : NaN;
+      if (!chargeId || !Number.isSafeInteger(refundedMinor) || refundedMinor <= 0 || !/^[A-Z]{3}$/.test(currency)) {
+        await prisma.paymentWebhookEvent.update({
+          where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
+          data: { processedAt: new Date() },
+        });
+        return NextResponse.json({ error: "Invalid refund details." }, { status: 400 });
+      }
+      const candidates = await prisma.paymentTransaction.findMany({
+        where: { provider: "bachs", status: "SUCCESSFUL", purpose: { startsWith: "SCENE_ACCESS:" } },
+        orderBy: { createdAt: "desc" }, take: 500,
+      });
+      const payment = candidates.find(item => {
+        const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata as Record<string, unknown> : {};
+        return metadata.chargeId === chargeId;
+      });
+      if (!payment) {
+        await prisma.paymentWebhookEvent.delete({
+          where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
+        });
+        return NextResponse.json({ received: false, retry: true, error: "Refund payment mapping is not available yet." }, { status: 503 });
+      }
+      if (currency !== payment.currency || BigInt(refundedMinor) > payment.amountKobo) {
+        await prisma.paymentWebhookEvent.update({
+          where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
+          data: { processedAt: new Date() },
+        });
+        return NextResponse.json({ error: "Refund amount or currency does not match the payment." }, { status: 400 });
+      }
+      const fullyRefunded = BigInt(refundedMinor) === payment.amountKobo;
+      const sceneId = payment.purpose.slice("SCENE_ACCESS:".length);
+      await prisma.$transaction(async tx => {
+        if (fullyRefunded) {
+          await tx.paymentTransaction.updateMany({
+            where: { id: payment.id, status: "SUCCESSFUL" },
+            data: { status: "REFUNDED", metadata: { ...(payment.metadata as Record<string, unknown> || {}), refundedAmountKobo: refundedMinor, refundEventId: String(event.id) } },
+          });
+          await tx.sceneMember.updateMany({
+            where: { sceneId, userId: payment.userId, status: "ACTIVE" },
+            data: { status: "CANCELLED" },
+          });
+        }
+        await tx.paymentWebhookEvent.update({
+          where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
+          data: { transactionId: payment.id, processedAt: new Date() },
+        });
+      });
+      return NextResponse.json({ received: true, refunded: fullyRefunded });
+    }
+
     const checkoutId = typeof event.data?.checkout_id === "string" ? event.data.checkout_id : "";
     if (!checkoutId || checkoutId.length > 200) {
       await prisma.paymentWebhookEvent.update({ where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } }, data: { processedAt: new Date() } });
