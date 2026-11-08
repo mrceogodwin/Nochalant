@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         profile: {
           create: {
             clubId: `NC-${randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`,
-            identityIconId: parsed.data.identity,
+            identityIconId: null,
           },
         },
         interests: {
@@ -148,6 +148,23 @@ export async function POST(request: NextRequest) {
       select: { id: true, displayName: true },
     });
     userId = user.id;
+
+    // Every new member receives the eight starter identities; the requested
+    // onboarding choice becomes the primary identity when it matches a starter.
+    const starterIcons = await prisma.iconCatalog.findMany({
+      where: { id: { in: Array.from({ length: 8 }, (_, index) => `starter-${String(index + 1).padStart(3, "0")}`) }, active: true },
+      select: { id: true, name: true },
+      orderBy: { id: "asc" },
+    });
+    if (starterIcons.length !== 8) throw new Error("Starter identity catalogue is not seeded.");
+    const primaryIcon = starterIcons.find((icon) => icon.name.toLowerCase() === parsed.data.identity.toLowerCase()) ?? starterIcons[0];
+    await prisma.$transaction([
+      prisma.userIcon.createMany({
+        data: starterIcons.map((icon) => ({ userId: user.id, iconId: icon.id, isPrimary: icon.id === primaryIcon.id })),
+        skipDuplicates: true,
+      }),
+      prisma.userProfile.update({ where: { userId: user.id }, data: { identityIconId: primaryIcon.id } }),
+    ]);
 
     const result = await resend.emails.send({
       from: emailFrom,
