@@ -49,6 +49,9 @@ export async function POST(_request: Request, context: { params: Promise<{ slug:
     orderBy: { createdAt: "desc" },
   });
   if (payment?.checkoutUrl) return NextResponse.json({ checkoutUrl: payment.checkoutUrl, reused: true });
+  if (payment && Date.now() - payment.createdAt.getTime() >= 86400000) {
+    return NextResponse.json({ error: "This earlier checkout needs payment reconciliation before a new attempt can be created. Contact support; do not pay again." }, { status: 409 });
+  }
 
   if (!payment) {
     const reference = "NCH-SCENE-" + randomUUID().replaceAll("-", "").toUpperCase();
