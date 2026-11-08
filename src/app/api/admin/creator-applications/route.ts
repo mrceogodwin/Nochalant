@@ -27,6 +27,7 @@ export async function PATCH(request: NextRequest) {
   const input = body as Record<string, unknown>;
   const id = typeof input.id === "string" ? input.id : "";
   const status = input.status;
+  const nextStatus = status as "APPROVED" | "REJECTED" | "SUSPENDED";
   const reviewNote = typeof input.reviewNote === "string" ? input.reviewNote.trim().slice(0, 1000) : null;
   if (!id || !["APPROVED", "REJECTED", "SUSPENDED"].includes(String(status))) {
     return NextResponse.json({ error: "A valid application ID and review decision are required." }, { status: 400 });
@@ -41,7 +42,7 @@ export async function PATCH(request: NextRequest) {
   const updated = await prisma.$transaction(async (tx) => {
     const application = await tx.creatorMonetizationApplication.update({
       where: { id },
-      data: { status: status as "APPROVED" | "REJECTED" | "SUSPENDED", reviewedById: admin.id, reviewNote, reviewedAt: new Date() },
+      data: { status: nextStatus, reviewedById: admin.id, reviewNote, reviewedAt: new Date() },
       select: { id: true, status: true, reviewNote: true, reviewedAt: true },
     });
     await tx.auditLog.create({
@@ -50,7 +51,7 @@ export async function PATCH(request: NextRequest) {
         action: "CREATOR_MONETISATION_APPLICATION_REVIEWED",
         targetType: "CreatorMonetizationApplication",
         targetId: id,
-        metadata: { previousStatus: existing.status, newStatus: status, applicantUserId: existing.applicantUserId },
+        metadata: { previousStatus: existing.status, newStatus: nextStatus, applicantUserId: existing.applicantUserId },
       },
     });
     return application;
