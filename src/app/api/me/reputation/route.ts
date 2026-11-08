@@ -41,6 +41,7 @@ export async function GET() {
         select: { points: true },
       },
       userBadges: {
+        where: { revokedAt: null },
         orderBy: { earnedAt: "desc" },
         take: 8,
         select: {
