@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { awardReputation } from "@/lib/reputation";
 
 export const runtime = "nodejs";
 
@@ -45,6 +46,20 @@ export async function GET(request: NextRequest) {
       where: { userId: record.userId },
     }),
   ]);
+
+  // Email verification completes the required registration/onboarding checklist.
+  // Reputation failure must never invalidate a successful account verification.
+  try {
+    await awardReputation({
+      userId: record.userId,
+      ruleKey: "ONBOARDING_COMPLETE",
+      idempotencyKey: `onboarding-complete:${record.userId}`,
+      sourceType: "ACCOUNT_VERIFICATION",
+      sourceId: record.userId,
+    });
+  } catch (error) {
+    console.error("Nochalant onboarding reputation award failed.", error);
+  }
 
   return NextResponse.redirect(new URL("/sign-in?verification=complete", request.url));
 }
