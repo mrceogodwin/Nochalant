@@ -10,6 +10,7 @@ const schema = z.object({
   description: z.string().trim().min(15).max(500),
   category: z.string().trim().min(2).max(32),
   visibility: z.enum(["PUBLIC", "PRIVATE", "PAID", "UNLISTED"]),
+  accessPriceNaira: z.number().int().positive().max(10000000).optional(),
   rules: z.array(z.string().trim().min(3).max(240)).max(12).default([]),
 }).strict();
 
@@ -25,6 +26,12 @@ export async function POST(request: NextRequest) {
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Check the Scene details and try again." }, { status: 400 });
+  if (parsed.data.visibility === "PAID" && !parsed.data.accessPriceNaira) {
+    return NextResponse.json({ error: "Set a valid one-time Scene access price in naira." }, { status: 400 });
+  }
+  if (parsed.data.visibility !== "PAID" && parsed.data.accessPriceNaira !== undefined) {
+    return NextResponse.json({ error: "Only paid Scenes can have an access price." }, { status: 400 });
+  }
 
   const base = slugify(parsed.data.name);
   if (!base) return NextResponse.json({ error: "Choose a different Scene name." }, { status: 400 });
@@ -44,6 +51,7 @@ export async function POST(request: NextRequest) {
           description: parsed.data.description,
           category: parsed.data.category,
           visibility: parsed.data.visibility,
+          accessPriceKobo: parsed.data.visibility === "PAID" ? BigInt(parsed.data.accessPriceNaira!) * 100n : null,
           rules: parsed.data.rules.length ? parsed.data.rules : [
             "Respect every member and their boundaries.",
             "No harassment, hate or targeted abuse.",
