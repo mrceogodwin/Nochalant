@@ -86,12 +86,14 @@ export async function POST(request: Request) {
         });
         return NextResponse.json({ received: true, refundEvent: event.type });
       }
-      const chargeId = typeof event.data.charge_id === "string" ? event.data.charge_id : "";
-      const currency = typeof event.data.currency === "string" ? event.data.currency.toUpperCase() : "";
-      const refundText = typeof event.data.refunded_amount === "string" ? event.data.refunded_amount : "";
+      const chargeId = typeof event.data.charge_id === "string" ? event.data.charge_id.trim() : "";
+      const refundId = typeof event.data.refund_id === "string" ? event.data.refund_id.trim() : "";
+      const refundReference = typeof event.data.reference === "string" ? event.data.reference.trim() : "";
+      const currency = typeof event.data.currency === "string" ? event.data.currency.trim().toUpperCase() : "";
+      const refundText = typeof event.data.refunded_amount === "string" ? event.data.refunded_amount.trim() : "";
       const refundMatch = /^(0|[1-9]\d*)(?:\.(\d{1,2}))?$/.exec(refundText);
       const refundedMinor = refundMatch ? Number(refundMatch[1]) * 100 + Number((refundMatch[2] || "").padEnd(2, "0")) : NaN;
-      if (!chargeId || !Number.isSafeInteger(refundedMinor) || refundedMinor <= 0 || !/^[A-Z]{3}$/.test(currency)) {
+      if (!chargeId || !refundId || !refundReference || !Number.isSafeInteger(refundedMinor) || refundedMinor <= 0 || !/^[A-Z]{3}$/.test(currency)) {
         await prisma.paymentWebhookEvent.update({
           where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
           data: { processedAt: new Date() },
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
       });
       const payment = candidates.find(item => {
         const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata as Record<string, unknown> : {};
-        return metadata.chargeId === chargeId;
+        return metadata.chargeId === chargeId && item.reference === refundReference;
       });
       if (!payment) {
         await prisma.paymentWebhookEvent.delete({
@@ -129,17 +131,24 @@ export async function POST(request: Request) {
       }
       const sceneId = payment.purpose.slice("SCENE_ACCESS:".length);
       const refundResult = await prisma.$transaction(async tx => {
+        const existingRefund = await tx.refund.findUnique({
+          where: { providerRef: refundId },
+          select: { transactionId: true, amountKobo: true },
+        });
+        if (existingRefund && (existingRefund.transactionId !== payment.id || existingRefund.amountKobo !== BigInt(refundedMinor))) {
+          throw new Error("Conflicting Bachs refund identifier or amount.");
+        }
         await tx.refund.upsert({
           where: { providerRef: refundId },
           create: {
             transactionId: payment.id, providerRef: refundId,
             amountKobo: BigInt(refundedMinor), reason: "Bachs provider refund",
-            status: "SUCCESSFUL",
+            status: "successful",
           },
           update: {},
         });
         const totals = await tx.refund.aggregate({
-          where: { transactionId: payment.id, status: "SUCCESSFUL" },
+          where: { transactionId: payment.id, status: "successful" },
           _sum: { amountKobo: true },
         });
         const totalRefunded = totals._sum.amountKobo ?? 0n;
