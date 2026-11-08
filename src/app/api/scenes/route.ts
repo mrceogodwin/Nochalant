@@ -87,7 +87,7 @@ export async function GET() {
     where: {
       active: true,
       OR: [
-        { visibility: "PUBLIC" },
+        { visibility: { in: ["PUBLIC", "PAID"] } },
         ...(userId ? [{ members: { some: { userId, status: "ACTIVE" as const } } }] : []),
       ],
     },
