@@ -31,7 +31,19 @@ export default function CreatorApplicationsAdminPage() {
   }
 
   useEffect(() => {
-    load().catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Unable to load applications.")).finally(() => setLoading(false));
+    let active = true;
+    fetch("/api/admin/creator-applications", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to load creator applications.");
+        return data.applications as Application[];
+      })
+      .then((data) => { if (active) setItems(data); })
+      .catch((reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Unable to load applications.");
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
   async function review(id: string, status: "APPROVED" | "REJECTED" | "SUSPENDED") {
