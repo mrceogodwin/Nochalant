@@ -55,5 +55,6 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.8",
     "@types/web-push": "^3.6.4"
-  }
+  },
+  "packageManager": "pnpm@10.0.0"
 }
