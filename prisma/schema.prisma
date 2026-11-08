@@ -136,6 +136,7 @@ model User {
   reputationEvents ReputationEvent[]
   userIcons      UserIcon[]
   userBadges     UserBadge[]
+  badgeRevocations UserBadge[] @relation("BadgeRevoker")
   auditActions   AuditLog[] @relation("AuditActor")
   adminAssignments AdminAssignment[]
   @@index([createdAt])
