@@ -34,7 +34,23 @@ export default function CreatorEarningsPage() {
   }
 
   useEffect(() => {
-    refresh().catch((error: unknown) => setNotice(error instanceof Error ? error.message : "Unable to load creator earnings.")).finally(() => setLoading(false));
+    let active = true;
+    fetch("/api/me/creator-earnings", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to load creator earnings.");
+        return data;
+      })
+      .then((data) => {
+        if (!active) return;
+        setApplications(data.applications);
+        setWallet(data.wallet);
+      })
+      .catch((error: unknown) => {
+        if (active) setNotice(error instanceof Error ? error.message : "Unable to load creator earnings.");
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
   function toggleFeature(value: string) {
