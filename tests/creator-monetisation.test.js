@@ -14,13 +14,14 @@ test("creator monetisation requires an explicit review status", () => {
 });
 
 test("creator ledger is idempotent and records availability and reversals", () => {
-  const ledger = schema.slice(schema.indexOf("model CreatorLedgerEntry"), schema.indexOf("\\n}", schema.indexOf("model CreatorLedgerEntry")));
+  const start = schema.indexOf("model CreatorLedgerEntry");
+  const end = schema.indexOf("\n}", start);
+  const ledger = schema.slice(start, end);
   assert.match(ledger, /idempotencyKey String @unique/);
-  assert.match(ledger, /availableAt\\s+DateTime\\?/);
-  assert.match(ledger, /reversedAt\\s+DateTime\\?/);
+  assert.match(ledger, /availableAt\s+DateTime\?/);
+  assert.match(ledger, /reversedAt\s+DateTime\?/);
   assert.match(migration, /CreatorLedgerEntry_idempotencyKey_key/);
 });
-
 test("creator application endpoint authenticates, validates features and blocks duplicate active applications", () => {
   assert.match(api, /if \(!userId\).*401/s);
   assert.match(api, /FEATURES\.has/);
