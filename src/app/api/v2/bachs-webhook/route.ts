@@ -119,13 +119,38 @@ export async function POST(request: Request) {
         });
         return NextResponse.json({ error: "Refund amount or currency does not match the payment." }, { status: 400 });
       }
-      const fullyRefunded = BigInt(refundedMinor) === payment.amountKobo;
+      const refundId = typeof event.data.refund_id === "string" ? event.data.refund_id : "";
+      if (!refundId || refundId.length > 200) {
+        await prisma.paymentWebhookEvent.update({
+          where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
+          data: { processedAt: new Date() },
+        });
+        return NextResponse.json({ error: "Missing refund identifier." }, { status: 400 });
+      }
       const sceneId = payment.purpose.slice("SCENE_ACCESS:".length);
-      await prisma.$transaction(async tx => {
+      const refundResult = await prisma.$transaction(async tx => {
+        await tx.refund.upsert({
+          where: { providerRef: refundId },
+          create: {
+            transactionId: payment.id, providerRef: refundId,
+            amountKobo: BigInt(refundedMinor), reason: "Bachs provider refund",
+            status: "SUCCESSFUL",
+          },
+          update: {},
+        });
+        const totals = await tx.refund.aggregate({
+          where: { transactionId: payment.id, status: "SUCCESSFUL" },
+          _sum: { amountKobo: true },
+        });
+        const totalRefunded = totals._sum.amountKobo ?? 0n;
+        const fullyRefunded = totalRefunded >= payment.amountKobo;
         if (fullyRefunded) {
           await tx.paymentTransaction.updateMany({
             where: { id: payment.id, status: "SUCCESSFUL" },
-            data: { status: "REFUNDED", metadata: { ...(payment.metadata as Record<string, unknown> || {}), refundedAmountKobo: refundedMinor, refundEventId: String(event.id) } },
+            data: {
+              status: "REFUNDED",
+              metadata: { ...(payment.metadata as Record<string, unknown> || {}), refundedAmountKobo: totalRefunded.toString(), refundEventId: String(event.id) },
+            },
           });
           await tx.sceneMember.updateMany({
             where: { sceneId, userId: payment.userId, status: "ACTIVE" },
@@ -136,8 +161,9 @@ export async function POST(request: Request) {
           where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } },
           data: { transactionId: payment.id, processedAt: new Date() },
         });
+        return { fullyRefunded, totalRefunded: totalRefunded.toString() };
       });
-      return NextResponse.json({ received: true, refunded: fullyRefunded });
+      return NextResponse.json({ received: true, refunded: refundResult.fullyRefunded, totalRefundedKobo: refundResult.totalRefunded });
     }
 
     const checkoutId = typeof event.data?.checkout_id === "string" ? event.data.checkout_id : "";
