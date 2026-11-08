@@ -55,6 +55,7 @@ export default async function AdminDashboard() {
         <div className="admin-action-list">
           <Link href="/admin/moderation"><span>⚑</span><div><strong>Trust & Safety</strong><small>Reports, cases, decisions and appeals</small></div><b>→</b></Link>
           <Link href="/admin/members"><span>♙</span><div><strong>Member management</strong><small>Search accounts and review verification and status</small></div><b>→</b></Link>
+          <Link href="/admin/achievements"><span>✦</span><div><strong>Achievements & badges</strong><small>Badge catalogue, earned rewards and moderation</small></div><b>→</b></Link>
           <div className="admin-disabled"><span>◈</span><div><strong>Scenes & Squads</strong><small>Community review, ownership and visibility</small></div><em>Not enabled</em></div>
           <div className="admin-disabled"><span>₦</span><div><strong>Payments & memberships</strong><small>Transactions, plans, refunds and entitlements</small></div><em>Not enabled</em></div>
           <div className="admin-disabled"><span>⚙</span><div><strong>Platform configuration</strong><small>Feature flags, policies, banners and global settings</small></div><em>Not enabled</em></div>
