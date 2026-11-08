@@ -232,6 +232,10 @@ CREATE TABLE "PaymentTransaction" (
     "currency" TEXT NOT NULL DEFAULT 'NGN',
     "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "purpose" TEXT NOT NULL,
+    "idempotencyKey" TEXT,
+    "providerCheckoutId" TEXT,
+    "checkoutUrl" TEXT,
+    "metadata" JSONB,
     "verifiedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -915,6 +919,12 @@ CREATE UNIQUE INDEX "MembershipEntitlement_membershipId_key_key" ON "MembershipE
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PaymentTransaction_reference_key" ON "PaymentTransaction"("reference");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PaymentTransaction_idempotencyKey_key" ON "PaymentTransaction"("idempotencyKey");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PaymentTransaction_providerCheckoutId_key" ON "PaymentTransaction"("providerCheckoutId");
 
 -- CreateIndex
 CREATE INDEX "PaymentTransaction_userId_createdAt_idx" ON "PaymentTransaction"("userId", "createdAt");
