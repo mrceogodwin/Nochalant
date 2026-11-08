@@ -63,7 +63,7 @@ export default function MyClub() {
             </div>
           </section>
           <Link href="/my-club/reputation" className="membership-row"><span>↗</span><div><strong>Reputation history</strong><small>See every XP award and moderation reversal</small></div><b>›</b></Link>
-          <Link href="/leaderboard" className="membership-row"><span>♛</span><div><strong>Club leaderboard</strong><small>Discover the community's top contributors</small></div><b>›</b></Link>
+          <Link href="/leaderboard" className="membership-row"><span>♛</span><div><strong>Club leaderboard</strong><small>Discover the community&apos;s top contributors</small></div><b>›</b></Link>
           <div className="queue-heading"><h2>My Badges</h2><Link href="/my-club/badges">View collection</Link></div>
           {member.badges.length ? <div className="badge-row">
             {member.badges.map((badge) => <div key={badge.id} title={badge.description}><span>✦</span><small>{badge.name}</small></div>)}
