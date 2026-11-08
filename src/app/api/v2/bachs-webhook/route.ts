@@ -1,9 +1,28 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isValidBachsEventEnvelope, matchesBachsSuccessfulPayment } from "../../../../../api/_lib/bachs-webhook-validation.js";
 
 export const runtime = "nodejs";
+
+type BachsEvent = { id: string; type: string; data: Record<string, unknown> };
+
+function isValidBachsEventEnvelope(value: unknown): value is BachsEvent {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const event = value as Record<string, unknown>;
+  return typeof event.id === "string" && !!event.id.trim() && event.id.length <= 200 &&
+    typeof event.type === "string" && !!event.type.trim() && event.type.length <= 120 &&
+    !!event.data && typeof event.data === "object" && !Array.isArray(event.data);
+}
+
+function matchesBachsSuccessfulPayment(data: Record<string, unknown>, amountKobo: bigint, currencyExpected: string) {
+  const amountText = typeof data.amount === "number" || typeof data.amount === "string" ? String(data.amount).trim() : "";
+  const match = /^(0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(amountText);
+  const amountMinor = match ? Number(match[1]) * 100 + Number((match[2] || "").padEnd(2, "0")) : NaN;
+  const currency = typeof data.currency === "string" ? data.currency.trim().toUpperCase() : "";
+  return Number.isSafeInteger(amountMinor) && amountMinor > 0 &&
+    BigInt(amountMinor) === amountKobo && currency === currencyExpected.toUpperCase() &&
+    typeof data.status === "string" && data.status.trim().toUpperCase() === "SUCCEEDED";
+}
 
 function verifySignature(raw: string, headers: Headers, secret: string) {
   const v2 = headers.get("x-bachs-signature-v2");
@@ -71,10 +90,7 @@ export async function POST(request: Request) {
     }
 
     if (event.type === "collection.succeeded") {
-      const matches = matchesBachsSuccessfulPayment(event.data, {
-        amount_minor: Number(payment.amountKobo),
-        currency: payment.currency,
-      });
+      const matches = matchesBachsSuccessfulPayment(event.data, payment.amountKobo, payment.currency);
       if (!matches) {
         await prisma.paymentWebhookEvent.update({ where: { provider_eventId: { provider: "bachs", eventId: String(event.id) } }, data: { processedAt: new Date() } });
         return NextResponse.json({ error: "Payment amount, currency or status mismatch." }, { status: 400 });
