@@ -72,7 +72,9 @@ async function main() {
       name,
       category: iconCategories[Math.floor(index / 10)] ?? "Culture",
       rarity: index < 20 ? Rarity.COMMON : index < 50 ? Rarity.UNCOMMON : index < 85 ? Rarity.RARE : index < 108 ? Rarity.EPIC : Rarity.LEGENDARY,
-      unlockCondition: index < 10 ? { type: "STARTER_OR_ACTIVITY" } : { type: "ACHIEVEMENT_OR_ADMIN" },
+      unlockCondition: index >= 110
+        ? { type: "ADMIN_ONLY" }
+        : { type: "REPUTATION_XP", minXp: index < 20 ? 0 : index < 50 ? 100 : index < 85 ? 300 : index < 108 ? 700 : 1500 },
     })),
     ...starterIdentities.map((name, index) => ({
       id: `starter-${String(index + 1).padStart(3, "0")}`,
@@ -86,11 +88,11 @@ async function main() {
   for (const icon of allIcons) {
     await prisma.iconCatalog.upsert({
       where: { id: icon.id },
-      update: { name: icon.name, category: icon.category, rarity: icon.rarity, unlockCondition: icon.unlockCondition, active: true },
+      update: { name: icon.name, category: icon.category, rarity: icon.rarity, unlockCondition: icon.unlockCondition, svgPath: `/icons/identities/sprite.svg#${icon.id}`, active: true },
       create: {
         ...icon,
         description: `${icon.name} identity from the Nochalant Club collection.`,
-        svgPath: `/icons/identities/${icon.id}.svg`,
+        svgPath: `/icons/identities/sprite.svg#${icon.id}`,
       },
     });
   }
