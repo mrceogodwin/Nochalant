@@ -320,6 +320,10 @@ model PaymentTransaction {
   currency        String @default("NGN")
   status          PaymentStatus @default(PENDING)
   purpose         String
+  idempotencyKey  String? @unique
+  providerCheckoutId String? @unique
+  checkoutUrl     String?
+  metadata        Json?
   verifiedAt      DateTime?
   createdAt       DateTime @default(now())
   webhookEvents   PaymentWebhookEvent[]
