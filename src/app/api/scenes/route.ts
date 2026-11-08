@@ -32,6 +32,12 @@ export async function POST(request: NextRequest) {
   if (parsed.data.visibility !== "PAID" && parsed.data.accessPriceNaira !== undefined) {
     return NextResponse.json({ error: "Only paid Scenes can have an access price." }, { status: 400 });
   }
+  if (parsed.data.visibility === "PAID") {
+    const approvedCreator = await prisma.creatorMonetizationApplication.findFirst({
+      where: { applicantUserId: userId, status: "APPROVED" }, select: { id: true },
+    });
+    if (!approvedCreator) return NextResponse.json({ error: "Apply for and receive creator monetisation approval before launching a paid Scene." }, { status: 403 });
+  }
 
   const base = slugify(parsed.data.name);
   if (!base) return NextResponse.json({ error: "Choose a different Scene name." }, { status: 400 });
