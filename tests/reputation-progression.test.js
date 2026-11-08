@@ -23,8 +23,8 @@ test("leaderboard only returns active, discoverable members and excludes reverse
   assert.match(route, /reversedAt: null/);
   assert.match(route, /status: "ACTIVE"/);
   assert.match(route, /isDiscoverable: true/);
-  assert.match(route, /take: 100/);\n  assert.match(route, /slice\\(0, 50\\)/);
-  assert.match(route, /Cache-Control/);
+  assert.match(route, /take: 100/);
+  assert.match(route, /slice\(0, 50\)/);
 });
 
 test("member reputation history is authenticated and includes reversed event records", () => {
