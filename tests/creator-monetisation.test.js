@@ -14,7 +14,10 @@ test("creator monetisation requires an explicit review status", () => {
 });
 
 test("creator ledger is idempotent and records availability and reversals", () => {
-  assert.match(schema, /model CreatorLedgerEntry[\s\S]*idempotencyKey String @unique[\s\S]*availableAt DateTime\?[\s\S]*reversedAt DateTime\?/);
+  const ledger = schema.slice(schema.indexOf("model CreatorLedgerEntry"), schema.indexOf("\\n}", schema.indexOf("model CreatorLedgerEntry")));
+  assert.match(ledger, /idempotencyKey String @unique/);
+  assert.match(ledger, /availableAt\\s+DateTime\\?/);
+  assert.match(ledger, /reversedAt\\s+DateTime\\?/);
   assert.match(migration, /CreatorLedgerEntry_idempotencyKey_key/);
 });
 
