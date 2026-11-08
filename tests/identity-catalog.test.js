@@ -1,9 +1,10 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(__dirname, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sprite = fs.readFileSync(path.join(root, "public/icons/identities/sprite.svg"), "utf8");
 const seed = fs.readFileSync(path.join(root, "prisma/seed.ts"), "utf8");
 const registration = fs.readFileSync(path.join(root, "src/app/api/register/route.ts"), "utf8");
