@@ -1,14 +1,169 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { Crown, Flame, Ghost, Zap, Skull, Moon, Gem, Music2, Eye, Swords, Sparkles, Mic, Diamond, Heart, CircleHelp, Star, Headphones, Disc3, Camera, Palette, Users, Trophy, Shield, WandSparkles, Compass, Glasses, BadgeCheck } from "lucide-react";
 
-type IconItem={id:string;name:string;description:string;category:string;rarity:string;owned:boolean;selected:boolean};
-const artwork:Record<string,typeof Crown>={"Crown":Crown,"Royalty":Crown,"Fire":Flame,"Phantom":Ghost,"Electric":Zap,"Rebel":Skull,"Night Owl":Moon,"Elite":Gem,"Sound":Music2,"Observer":Eye,"Warrior":Swords,"Mystery":CircleHelp,"Icon":Sparkles,"Voice":Mic,"Rare":Diamond,"Lover":Heart,"Headphones":Headphones,"Vinyl":Disc3,"Camera":Camera,"Artist":Palette,"Connector":Users,"Champion":Trophy,"Guardian":Shield,"Visionary":WandSparkles,"Explorer":Compass,"Trendsetter":Star,"Creative":Palette,"Social Butterfly":Users,"The Observer":Eye,"The Rebel":Skull,"The Music Head":Headphones,"The Night Owl":Moon,"The Curator":Crown,"The Creative":Sparkles,"The Connector":Users,"The Social One":Users};
-const categories=["All","Starter","Royalty","Nightlife","Music","Alternative Culture","Fashion","Social","Creative","Mystery","Competitive","Exclusive","Culture"];
-export default function IdentityIconsPage(){
- const [icons,setIcons]=useState<IconItem[]>([]),[category,setCategory]=useState("All"),[loading,setLoading]=useState(true),[error,setError]=useState("");
- useEffect(()=>{let live=true;fetch("/api/icons").then(async r=>{if(!r.ok)throw new Error();return r.json()}).then(d=>{if(live)setIcons(d.icons||[])}).catch(()=>{if(live)setError("The icon collection is temporarily unavailable.")}).finally(()=>{if(live)setLoading(false)});return()=>{live=false}},[]);
- const visible=useMemo(()=>icons.filter(i=>category==="All"||i.category===category),[icons,category]);
- return <main className="feed-shell"><header className="screen-heading"><Link href="/my-club" className="selection-hint">← My Club ID</Link><h1>Identity Collection</h1><p>Choose the symbol that represents your place in the Club.</p></header><div className="queue-heading"><h2>Club icons</h2><span className="selection-hint">{icons.length} identities</span></div><div className="feed-tabs discover-filters">{categories.map(c=><button key={c} className={category===c?"selected":""} onClick={()=>setCategory(c)}>{c}</button>)}</div>{loading?<div className="empty-state">Loading your collection…</div>:error?<div className="empty-state">{error}</div>:<div className="identity-icon-grid">{visible.map(item=>{const Art=artwork[item.name]||BadgeCheck;return <article key={item.id} className={"identity-icon-card "+(item.selected?"is-selected":"")}><span className="identity-icon-art"><Art size={29} strokeWidth={2.1}/></span><strong>{item.name}</strong><small>{item.rarity.replace("_"," ")}</small>{item.owned?<span className="identity-owned">Unlocked</span>:<span className="identity-locked">Locked</span>}</article>})}</div>}<p className="selection-hint">Icons are earned through participation and achievements. Membership purchases do not grant reputation or earned status.</p><nav className="bottom-nav"><Link href="/club">⌂<small>Home</small></Link><Link href="/discover">◉<small>Discover</small></Link><Link className="create-button" href="/club/create">＋</Link><Link href="/chats">▢<small>Chats</small></Link><Link className="active" href="/my-club">♙<small>My Club</small></Link></nav></main>;
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Lock, Sparkles } from "lucide-react";
+
+type IconItem = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  rarity: string;
+  svgPath: string;
+  owned: boolean;
+  selected: boolean;
+  unlockable: boolean;
+  unlockLabel: string;
+};
+
+const rarityLabel: Record<string, string> = {
+  COMMON: "Common",
+  UNCOMMON: "Uncommon",
+  RARE: "Rare",
+  EPIC: "Epic",
+  LEGENDARY: "Legendary",
+  FOUNDERS_EDITION: "Founders edition",
+};
+
+const rarityStyle: Record<string, string> = {
+  COMMON: "border-white/10",
+  UNCOMMON: "border-sky-300/30",
+  RARE: "border-violet-300/40",
+  EPIC: "border-rose-300/50",
+  LEGENDARY: "border-amber-300/60",
+  FOUNDERS_EDITION: "border-emerald-300/60",
+};
+
+export default function IdentityIconsPage() {
+  const [icons, setIcons] = useState<IconItem[]>([]);
+  const [category, setCategory] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState("");
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    const response = await fetch("/api/icons", { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "The identity collection is unavailable.");
+    setIcons(data.icons ?? []);
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/icons", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "The identity collection is unavailable.");
+        return data.icons as IconItem[];
+      })
+      .then((items) => { if (live) setIcons(items ?? []); })
+      .catch((reason: unknown) => {
+        if (live) setError(reason instanceof Error ? reason.message : "The identity collection is unavailable.");
+      })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, []);
+
+  const categories = useMemo(
+    () => ["All", ...Array.from(new Set(icons.map((icon) => icon.category))).sort()],
+    [icons],
+  );
+  const visible = useMemo(
+    () => icons.filter((icon) => category === "All" || icon.category === category),
+    [icons, category],
+  );
+  const ownedCount = icons.filter((icon) => icon.owned).length;
+  const selected = icons.find((icon) => icon.selected);
+
+  async function performAction(icon: IconItem) {
+    setBusyId(icon.id);
+    setError("");
+    try {
+      const endpoint = icon.owned ? "/api/me/icons/select" : "/api/me/icons/unlock";
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ iconId: icon.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "This identity could not be updated.");
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "This identity could not be updated.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  return (
+    <main className="feed-shell">
+      <header className="screen-heading">
+        <Link href="/my-club" className="selection-hint">← My Club ID</Link>
+        <h1>Identity Collection</h1>
+        <p>Earn your symbols. Choose the one that represents your place in the Club.</p>
+      </header>
+
+      <section className="membership-row" aria-label="Collection progress">
+        <div className="w-full">
+          <div className="flex items-center justify-between gap-3">
+            <strong>{ownedCount} of {icons.length} unlocked</strong>
+            <span className="selection-hint">{selected ? `Wearing ${selected.name}` : "Choose your identity"}</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-[#ed2939]" style={{ width: `${icons.length ? (ownedCount / icons.length) * 100 : 0}%` }} />
+          </div>
+        </div>
+      </section>
+
+      <div className="queue-heading">
+        <h2>Club identities</h2>
+        <span className="selection-hint">{visible.length} shown</span>
+      </div>
+
+      <div className="feed-tabs discover-filters" aria-label="Filter identity categories">
+        {categories.map((item) => (
+          <button key={item} className={category === item ? "selected" : ""} onClick={() => setCategory(item)}>{item}</button>
+        ))}
+      </div>
+
+      {error ? <div className="empty-state" role="alert">{error}</div> : null}
+      {loading ? <div className="empty-state" role="status">Loading your collection…</div> : (
+        <div className="identity-icon-grid">
+          {visible.map((item) => (
+            <article key={item.id} className={`identity-icon-card ${item.selected ? "is-selected" : ""} ${rarityStyle[item.rarity] ?? ""}`}>
+              <span className="identity-icon-art">
+                <svg viewBox="0 0 64 64" role="img" aria-label={item.name}>
+                  <use href={item.svgPath} />
+                </svg>
+              </span>
+              <strong>{item.name}</strong>
+              <small>{rarityLabel[item.rarity] ?? item.rarity.replaceAll("_", " ")}</small>
+              <span className={item.owned ? "identity-owned" : "identity-locked"}>
+                {item.selected ? "Selected" : item.owned ? "Unlocked" : "Locked"}
+              </span>
+              {item.owned ? (
+                <button type="button" disabled={item.selected || busyId === item.id} onClick={() => void performAction(item)}>
+                  {busyId === item.id ? "Saving…" : item.selected ? <><Check size={13} /> Wearing</> : "Wear identity"}
+                </button>
+              ) : (
+                <button type="button" disabled={!item.unlockable || busyId === item.id} onClick={() => void performAction(item)}>
+                  {busyId === item.id ? "Unlocking…" : item.unlockable ? <><Sparkles size={13} /> Unlock</> : <><Lock size={12} /> {item.unlockLabel}</>}
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+
+      <p className="selection-hint">Reputation and achievements unlock identities. Buying a membership never grants earned status or reputation XP.</p>
+      <nav className="bottom-nav">
+        <Link href="/club">⌂<small>Home</small></Link>
+        <Link href="/discover">◉<small>Discover</small></Link>
+        <Link className="create-button" href="/club/create">＋</Link>
+        <Link href="/chats">▢<small>Chats</small></Link>
+        <Link className="active" href="/my-club">♙<small>My Club</small></Link>
+      </nav>
+    </main>
+  );
 }
