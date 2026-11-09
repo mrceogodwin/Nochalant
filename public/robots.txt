@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /control-room
-Disallow: /dashboard
-Disallow: /api/
-Sitemap: https://nochalant.com/sitemap.xml
