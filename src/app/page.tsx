@@ -3,7 +3,7 @@ export default function WelcomePage() {
     <main className="welcome-art-screen" aria-label="Welcome to Nochalant Club">
       <div className="welcome-art-frame">
         <img
-          src="https://at.adobe.com/PPiav51SeQ53Vm9h"
+          src="/nochalant-welcome.webp"
           alt="Nochalant Club — An independent social club, 18+. Welcome to the club. Your people. Your scene. Your rules."
           className="welcome-art-image"
           fetchPriority="high"
