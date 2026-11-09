@@ -100,7 +100,7 @@ async function main() {
   for (const icon of allIcons) {
     await prisma.iconCatalog.upsert({
       where: { id: icon.id },
-      update: { name: icon.name, category: icon.category, rarity: icon.rarity, unlockCondition: icon.unlockCondition, svgPath: `/icons/identities/sprite.svg#${icon.id}`, active: true },
+      update: { name: icon.name, category: icon.category, rarity: icon.rarity, unlockCondition: icon.unlockCondition, svgPath: `/icons/identities/sprite.svg#${icon.id.startsWith("starter-") ? `identity-${icon.id.slice("starter-".length)}` : icon.id}`, active: true },
       create: {
         ...icon,
         description: `${icon.name} identity from the Nochalant Club collection.`,
