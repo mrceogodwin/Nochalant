@@ -1,0 +1,32 @@
+{
+  "interests": [
+    { "id": "Gossip", "emoji": "💬" },
+    { "id": "Music", "emoji": "🎵" },
+    { "id": "Movies & TV", "emoji": "🎬" },
+    { "id": "Games", "emoji": "🎮" },
+    { "id": "Trending", "emoji": "🔥" },
+    { "id": "Relationships", "emoji": "❤️" },
+    { "id": "Sports", "emoji": "🏀" },
+    { "id": "Lifestyle", "emoji": "💼" },
+    { "id": "Naija & Culture", "emoji": "✨" }
+  ],
+  "gifts": [
+    { "id": "rose", "name": "Rose", "price": 200, "emoji": "🌹", "category": "love", "sort": 1 },
+    { "id": "fire", "name": "Fire", "price": 500, "emoji": "🔥", "category": "popular", "sort": 2 },
+    { "id": "heart", "name": "Heart", "price": 500, "emoji": "❤️", "category": "love", "sort": 3 },
+    { "id": "applause", "name": "Applause", "price": 700, "emoji": "👏", "category": "support", "sort": 4 },
+    { "id": "popcorn", "name": "Popcorn", "price": 1000, "emoji": "🍿", "category": "fun", "sort": 5 },
+    { "id": "crown", "name": "Crown", "price": 2000, "emoji": "👑", "category": "luxury", "sort": 6 },
+    { "id": "shades", "name": "Cool Shades", "price": 3000, "emoji": "🕶️", "category": "luxury", "sort": 7 },
+    { "id": "cheers", "name": "Cheers", "price": 5000, "emoji": "🥂", "category": "fun", "sort": 8 },
+    { "id": "ride", "name": "Super Ride", "price": 10000, "emoji": "🏎️", "category": "luxury", "sort": 9 },
+    { "id": "mic", "name": "Mic Drop", "price": 15000, "emoji": "🎤", "category": "fun", "sort": 10 },
+    { "id": "diamond", "name": "Diamond", "price": 25000, "emoji": "💎", "category": "luxury", "sort": 11 },
+    { "id": "boost", "name": "Boost", "price": 50000, "emoji": "🚀", "category": "support", "sort": 12 }
+  ],
+  "plans": [
+    { "id": "monthly", "name": "Monthly", "price": 2999, "detail": "per month", "badge": null },
+    { "id": "quarterly", "name": "Quarterly", "price": 7999, "detail": "(₦2,666/month)", "badge": "Most Popular" },
+    { "id": "yearly", "name": "Yearly", "price": 26999, "detail": "(₦2,249/month)", "badge": "Save 25%" }
+  ]
+}
