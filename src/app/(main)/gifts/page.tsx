@@ -5,6 +5,7 @@ import { BackHeader } from "@/components/shell";
 import { requireUser } from "@/lib/auth";
 import { listGifts, listPeople } from "@/lib/data";
 import { formatNaira } from "@/lib/format";
+import { activeProvider, paymentBrand } from "@/lib/payments/provider";
 
 const cats = ["popular", "love", "luxury", "fun", "support"];
 
@@ -19,7 +20,10 @@ export default async function GiftsPage({ searchParams }: { searchParams: Promis
       <BackHeader back="/home" />
       <div className="relative">
         <h1 className="mt-3 text-4xl font-extrabold leading-none">Gifts & Rewards</h1>
-        <p className="mt-1 max-w-[230px] text-sm text-zinc-300">Send gifts, show love, support creators and unlock special perks.</p>
+        <p className="mt-1 max-w-[230px] text-sm text-zinc-300">
+          Send gifts, show love, support creators and unlock special perks.
+          {activeProvider() === "test" ? " Test mode spends your wallet." : ` Checkout is a one-time ${paymentBrand()} payment.`}
+        </p>
         <span className="absolute right-0 top-0"><Mascot size={96} /></span>
       </div>
       <div className="no-scrollbar mt-4 flex gap-2 overflow-x-auto">

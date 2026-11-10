@@ -290,3 +290,18 @@ CREATE INDEX IF NOT EXISTS scene_messages_scene_idx ON social.scene_messages (sc
 CREATE INDEX IF NOT EXISTS posts_group_idx ON social.posts (group_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS chat_messages_chat_idx ON social.chat_messages (chat_id, created_at);
 CREATE INDEX IF NOT EXISTS notifications_user_idx ON social.notifications (user_id, created_at DESC);
+
+ALTER TABLE social.payments ADD COLUMN IF NOT EXISTS provider text NOT NULL DEFAULT 'test';
+ALTER TABLE social.payments ADD COLUMN IF NOT EXISTS checkout_id text;
+ALTER TABLE social.payments ADD COLUMN IF NOT EXISTS gift_id text;
+ALTER TABLE social.payments ADD COLUMN IF NOT EXISTS counterparty_id uuid;
+ALTER TABLE social.payments ADD COLUMN IF NOT EXISTS scene_id uuid;
+
+ALTER TABLE social.users ADD COLUMN IF NOT EXISTS bachs_account_id text;
+ALTER TABLE social.users ADD COLUMN IF NOT EXISTS bachs_destination_id text;
+
+CREATE TABLE IF NOT EXISTS social.payment_events (
+  event_id text PRIMARY KEY,
+  reference text,
+  received_at timestamptz NOT NULL DEFAULT now()
+);

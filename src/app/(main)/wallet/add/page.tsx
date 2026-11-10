@@ -1,5 +1,5 @@
 import { completeTestPayment, startTopUp } from "@/lib/actions";
-import { paystackConfigured } from "@/lib/auth";
+import { activeProvider, paymentBrand } from "@/lib/payments/provider";
 import { BackHeader } from "@/components/shell";
 import { getDb, type Row } from "@/lib/db";
 
@@ -16,15 +16,17 @@ export default async function AddFundsPage({ searchParams }: { searchParams: Pro
       <BackHeader back="/wallet" />
       <h1 className="mt-4 text-3xl font-extrabold">Add funds</h1>
       <p className="mt-2 text-sm text-zinc-400">
-        {paystackConfigured() ? "You’ll pay with Paystack." : "Paystack keys are not set, so this top-up runs in test mode and credits the wallet without a charge."}
+        {activeProvider() === "test"
+          ? `${paymentBrand()} keys are not set, so this top-up runs in test mode and credits the wallet without a charge.`
+          : `You’ll pay with ${paymentBrand()}. The wallet is credited only after a verified collection.succeeded webhook.`}
       </p>
-      {params.error ? <p className="mt-2 text-sm text-amber-300">Paystack did not start. You can finish in test mode.</p> : null}
+      {params.error ? <p className="mt-2 text-sm text-amber-300">{params.error}</p> : null}
       {status ? <p className="mt-2 text-sm">Payment {status}</p> : null}
       <form action={startTopUp} className="mt-4 space-y-3">
         <input name="amount" type="number" min={100} step={100} defaultValue={5000} className="field h-12 w-full rounded-full px-4" />
         <button className="orange-fill h-12 w-full rounded-full font-bold">Continue</button>
       </form>
-      {params.reference && !paystackConfigured() ? (
+      {params.reference && activeProvider() === "test" ? (
         <form action={completeTestPayment.bind(null, params.reference)} className="mt-3">
           <button className="h-12 w-full rounded-full border border-[#ff7a00] font-bold">Complete test top-up</button>
         </form>

@@ -3,6 +3,7 @@ import { PlanPicker } from "@/components/forms";
 import { BackHeader } from "@/components/shell";
 import { PERKS } from "@/lib/catalog";
 import { requireUser } from "@/lib/auth";
+import { paymentBrand } from "@/lib/payments/provider";
 
 export default async function ProPage() {
   const user = await requireUser();
@@ -27,7 +28,7 @@ export default async function ProPage() {
         {user.isPro ? <p className="mb-3 text-sm text-[#ffb000]">You’re on the {user.proPlan} plan.</p> : null}
         <PlanPicker />
       </div>
-      <p className="mt-3 text-center text-xs text-zinc-400">Secure payment via Paystack</p>
+      <p className="mt-3 text-center text-xs text-zinc-400">Secure payment via {paymentBrand()}</p>
       <details className="card mt-4 rounded-2xl px-4 py-3">
         <summary className="cursor-pointer font-bold">What’s included in Pro?</summary>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-300">
@@ -38,7 +39,9 @@ export default async function ProPage() {
       </details>
       <details className="card mt-2 rounded-2xl px-4 py-3">
         <summary className="cursor-pointer font-bold">Frequently Asked Questions</summary>
-        <p className="mt-2 text-sm text-zinc-300">Plans renew until you cancel. Test mode completes a local upgrade when Paystack keys are absent. With PAYSTACK_SECRET_KEY, checkout opens Paystack and the webhook marks the plan paid.</p>
+        <p className="mt-2 text-sm text-zinc-300">
+          Plans are Bachs recurring products: Monthly ₦2,999, Quarterly ₦7,999 and Yearly ₦26,999. Access is granted only after a signed collection.succeeded webhook. Without API keys, checkout stays in test mode. Paystack remains available with PAYMENT_PROVIDER=paystack.
+        </p>
       </details>
     </main>
   );

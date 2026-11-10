@@ -37,7 +37,29 @@ Open http://localhost:3000. Sign up with email and password, or sign in as the o
 - Discover, live Scenes, scene chat, speak requests, groups, posts, comments, follows, and the chat inbox
 - Wallet balance, gifts between members, leaderboard, events with reminders, and profile tools
 - Whot, chess (Checkmate), and Ludo against a bot
-- Pro checkout and wallet top-up. Without Paystack keys these run in test mode and update the account locally
+- Pro, wallet top-ups and gift purchases. Bachs is the default provider. Without keys these run in test mode. Paystack stays available with `PAYMENT_PROVIDER=paystack`
+
+## Payments
+
+`PAYMENT_PROVIDER=bachs` (the default) or `paystack`. If the chosen provider has no key, checkout stays in test mode and a button on the confirmation page fulfils the order locally.
+
+Bachs amounts are decimal strings with an ISO currency, for example `"2999.00"` and `NGN`, never kobo. Sandbox is `https://sandbox-api.bachs.io` with an `sk_sandbox_` key. Production is `https://api.bachs.io` with an `sk_live_` key. Leaving `BACHS_API_BASE` empty picks that URL from the key prefix.
+
+Pro plans are recurring products created through checkout (there is no direct create-subscription call):
+
+- Monthly, ₦2,999, every month
+- Quarterly, ₦7,999, every 3 months
+- Yearly, ₦26,999, every year
+
+Wallet top-ups and gift purchases are one-time checkouts. Pro, wallet credit and gifts are granted only from a verified `collection.succeeded` webhook. The success redirect does not fulfil the order.
+
+Register this HTTPS URL in the Bachs dashboard, subscribed at least to `collection.succeeded`:
+
+`https://nochalant.vercel.app/api/bachs/webhook`
+
+Copy that endpoint’s signing secret into `BACHS_WEBHOOK_SECRET`. During a secret rotation, keep the old one in `BACHS_WEBHOOK_SECRET_PREVIOUS`. Bachs refuses `localhost` success URLs, including in the sandbox, so `NEXT_PUBLIC_APP_URL` must be a public https origin.
+
+Withdrawals use Bachs Connect: a recipient account, an NGN transfer, then a payout to a Nigerian bank (`POST /v1/payouts`). That needs the platform `connect` capability and an available NGN balance. Bachs documents subscriptions as USD-card-only today; the products are still priced in NGN, and a sandbox rejection is shown on the checkout screen.
 
 ## Stubbed until credentials exist
 
@@ -45,8 +67,8 @@ Open http://localhost:3000. Sign up with email and password, or sign in as the o
 | --- | --- | --- |
 | Google sign-in | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Button explains that the keys are missing. Redirect URI: `{APP_URL}/api/auth/google/callback` |
 | Apple sign-in | `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` | Button is on the sign-up screen. Apple’s token exchange is not finished; email sign-up is the working path |
-| Paystack charges | `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY` | Test checkout marks Pro or wallet credit without a card charge. With the secret, checkout opens Paystack and `POST /api/paystack/webhook` confirms `charge.success` |
-| Paystack transfers | `PAYSTACK_SECRET_KEY` | Withdrawals are saved as pending review. They are not sent to a bank |
+| Bachs checkout, gifts and NGN bank payouts | `BACHS_API_KEY`, `BACHS_WEBHOOK_SECRET` | Test checkout fulfils locally. Optional: `BACHS_API_BASE`, `BACHS_WEBHOOK_SECRET_PREVIOUS`, `BACHS_PRODUCT_PRO_MONTHLY`, `BACHS_PRODUCT_PRO_QUARTERLY`, `BACHS_PRODUCT_PRO_YEARLY` |
+| Paystack, only when `PAYMENT_PROVIDER=paystack` | `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY` | Test checkout without the secret. With it, checkout opens Paystack and `POST /api/paystack/webhook` confirms `charge.success` |
 | Live voice | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Speak turns the microphone on for this device only. Other people do not hear it. `GET /api/livekit` reports whether LiveKit is configured |
 | Password reset email | a mail provider | The forgot-password screen points people to fluxbeatempire@gmail.com |
 | Multiplayer games | a game server | Whot, chess, and Ludo are local versus a bot |

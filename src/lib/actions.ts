@@ -3,10 +3,23 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+function rethrowRedirect(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  ) {
+    throw error;
+  }
+}
 import { INTERESTS, planById } from "./catalog";
 import { getDb, type Row } from "./db";
-import { clearSession, createSession, paystackConfigured, requireUser } from "./auth";
+import { clearSession, createSession, requireUser } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
+import { createBachsCheckout, payoutToNigerianBank } from "./payments/bachs";
+import { activeProvider, appOrigin } from "./payments/provider";
 import { markPaymentPaid } from "./payments";
 import { slugify } from "./format";
 
@@ -492,6 +505,37 @@ export async function sendGift(formData: FormData) {
   const toUser = clean(formData.get("toUser"));
   const sceneId = clean(formData.get("sceneId"));
   const db = getDb();
+  const provider = activeProvider();
+  if (provider !== "test") {
+    const gifts = (await db`SELECT price_naira, name FROM social.gifts WHERE id = ${giftId} LIMIT 1`) as Row[];
+    if (!gifts[0] || !toUser || toUser === user.id) return { error: "Pick a gift and someone to receive it." };
+    const price = Number(gifts[0].price_naira);
+    const reference = `nc_${randomUUID()}`;
+    await db`
+      INSERT INTO social.payments (user_id, reference, purpose, amount_naira, status, provider, gift_id, counterparty_id, scene_id)
+      VALUES (
+        ${user.id}, ${reference}, 'gift', ${price}, 'pending', ${provider}, ${giftId}, ${toUser}, ${sceneId || null}
+      )
+    `;
+    try {
+      const checkout = await startHostedCheckout({
+        user,
+        reference,
+        purpose: "gift",
+        amountNaira: price,
+        successPath: "/gifts",
+        cancelPath: "/gifts",
+        metadata: { gift_id: giftId, to_user: toUser },
+      });
+      if (checkout.checkoutId) {
+        await db`UPDATE social.payments SET checkout_id = ${checkout.checkoutId} WHERE reference = ${reference}`;
+      }
+      redirect(checkout.url);
+    } catch (error) {
+      rethrowRedirect(error);
+      return { error: error instanceof Error ? error.message : "Checkout could not start." };
+    }
+  }
   const gifts = (await db`SELECT price_naira, name FROM social.gifts WHERE id = ${giftId} LIMIT 1`) as Row[];
   if (!gifts[0] || !toUser || toUser === user.id) return { error: "Pick a gift and someone to receive it." };
   const price = Number(gifts[0].price_naira);
@@ -546,18 +590,31 @@ export async function remindEvent(eventId: string) {
   revalidatePath("/events");
 }
 
-export async function startCheckout(planId: string) {
-  const user = await requireUser();
-  const plan = planById(planId);
-  if (!plan) return;
-  const db = getDb();
-  const reference = `nc_${randomUUID()}`;
-  await db`
-    INSERT INTO social.payments (user_id, reference, purpose, plan, amount_naira, status)
-    VALUES (${user.id}, ${reference}, 'pro', ${plan.id}, ${plan.price}, 'pending')
-  `;
-  if (!paystackConfigured()) redirect(`/pro/checkout?reference=${reference}`);
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+async function startHostedCheckout(input: {
+  user: { id: string; email: string; displayName: string };
+  reference: string;
+  purpose: "pro" | "wallet" | "gift";
+  amountNaira: number;
+  planId?: string;
+  successPath: string;
+  cancelPath: string;
+  metadata?: Record<string, string>;
+}) {
+  const provider = activeProvider();
+  if (provider === "bachs") {
+    return createBachsCheckout({
+      reference: input.reference,
+      email: input.user.email,
+      name: input.user.displayName,
+      purpose: input.purpose,
+      amountNaira: input.amountNaira,
+      planId: input.planId,
+      successPath: input.successPath,
+      cancelPath: input.cancelPath,
+      metadata: { user_id: input.user.id, ...input.metadata },
+    });
+  }
+  const origin = appOrigin();
   const response = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",
     headers: {
@@ -565,16 +622,49 @@ export async function startCheckout(planId: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      email: user.email,
-      amount: plan.price * 100,
-      reference,
-      callback_url: `${origin}/pro/callback?reference=${reference}`,
-      metadata: { plan: plan.id, purpose: "pro" },
+      email: input.user.email,
+      amount: input.amountNaira * 100,
+      reference: input.reference,
+      callback_url: `${origin}${input.successPath}?reference=${input.reference}`,
+      metadata: { purpose: input.purpose, plan: input.planId, ...input.metadata },
     }),
   });
   const json = (await response.json()) as { status?: boolean; data?: { authorization_url?: string } };
-  if (!json.status || !json.data?.authorization_url) redirect(`/pro/checkout?reference=${reference}&error=paystack`);
-  redirect(json.data.authorization_url);
+  if (!json.status || !json.data?.authorization_url) throw new Error("Paystack did not start this charge.");
+  return { url: json.data.authorization_url, checkoutId: "" };
+}
+
+export async function startCheckout(planId: string) {
+  const user = await requireUser();
+  const plan = planById(planId);
+  if (!plan) return;
+  const db = getDb();
+  const provider = activeProvider();
+  const reference = `nc_${randomUUID()}`;
+  await db`
+    INSERT INTO social.payments (user_id, reference, purpose, plan, amount_naira, status, provider)
+    VALUES (${user.id}, ${reference}, 'pro', ${plan.id}, ${plan.price}, 'pending', ${provider})
+  `;
+  if (provider === "test") redirect(`/pro/checkout?reference=${reference}`);
+  try {
+    const checkout = await startHostedCheckout({
+      user,
+      reference,
+      purpose: "pro",
+      amountNaira: plan.price,
+      planId: plan.id,
+      successPath: "/pro/callback",
+      cancelPath: "/pro",
+    });
+    if (checkout.checkoutId) {
+      await db`UPDATE social.payments SET checkout_id = ${checkout.checkoutId} WHERE reference = ${reference}`;
+    }
+    redirect(checkout.url);
+  } catch (error) {
+    rethrowRedirect(error);
+    const message = error instanceof Error ? error.message : "checkout";
+    redirect(`/pro/checkout?reference=${reference}&error=${encodeURIComponent(message)}`);
+  }
 }
 
 export async function startTopUp(formData: FormData) {
@@ -582,30 +672,31 @@ export async function startTopUp(formData: FormData) {
   const amount = Math.round(Number(formData.get("amount")));
   if (!Number.isFinite(amount) || amount < 100 || amount > 1_000_000) return;
   const db = getDb();
+  const provider = activeProvider();
   const reference = `nc_${randomUUID()}`;
   await db`
-    INSERT INTO social.payments (user_id, reference, purpose, amount_naira, status)
-    VALUES (${user.id}, ${reference}, 'wallet', ${amount}, 'pending')
+    INSERT INTO social.payments (user_id, reference, purpose, amount_naira, status, provider)
+    VALUES (${user.id}, ${reference}, 'wallet', ${amount}, 'pending', ${provider})
   `;
-  if (!paystackConfigured()) redirect(`/wallet/add?reference=${reference}`);
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const response = await fetch("https://api.paystack.co/transaction/initialize", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: user.email,
-      amount: amount * 100,
+  if (provider === "test") redirect(`/wallet/add?reference=${reference}`);
+  try {
+    const checkout = await startHostedCheckout({
+      user,
       reference,
-      callback_url: `${origin}/wallet/add?reference=${reference}`,
-      metadata: { purpose: "wallet" },
-    }),
-  });
-  const json = (await response.json()) as { status?: boolean; data?: { authorization_url?: string } };
-  if (!json.status || !json.data?.authorization_url) redirect(`/wallet/add?reference=${reference}&error=paystack`);
-  redirect(json.data.authorization_url);
+      purpose: "wallet",
+      amountNaira: amount,
+      successPath: "/wallet/add",
+      cancelPath: "/wallet",
+    });
+    if (checkout.checkoutId) {
+      await db`UPDATE social.payments SET checkout_id = ${checkout.checkoutId} WHERE reference = ${reference}`;
+    }
+    redirect(checkout.url);
+  } catch (error) {
+    rethrowRedirect(error);
+    const message = error instanceof Error ? error.message : "checkout";
+    redirect(`/wallet/add?reference=${reference}&error=${encodeURIComponent(message)}`);
+  }
 }
 
 export async function completeTestPayment(reference: string) {
@@ -615,7 +706,7 @@ export async function completeTestPayment(reference: string) {
     SELECT user_id FROM social.payments WHERE reference = ${reference} LIMIT 1
   `) as Row[];
   if (!rows[0] || String(rows[0].user_id) !== user.id) return;
-  if (paystackConfigured()) return;
+  if (activeProvider() !== "test") return;
   await markPaymentPaid(reference);
   revalidatePath("/wallet");
   revalidatePath("/profile");
@@ -633,18 +724,39 @@ export async function withdraw(formData: FormData) {
     UPDATE social.users
     SET wallet_naira = wallet_naira - ${amount}, bank_name = ${bank}, account_number = ${account}
     WHERE id = ${user.id} AND wallet_naira >= ${amount}
-    RETURNING id
+    RETURNING id, bachs_account_id
   `) as Row[];
-  if (!paid.length) return;
+  if (!paid.length) {
+    redirect("/wallet/withdraw?error=Not+enough+balance");
+  }
+  let detail = `To ${bank} ****${account.slice(-4)} · pending review`;
+  if (activeProvider() === "bachs") {
+    const reference = `wd_${randomUUID()}`;
+    try {
+      const payout = await payoutToNigerianBank({
+        reference,
+        email: user.email,
+        displayName: user.displayName,
+        amountNaira: amount,
+        bankName: bank,
+        accountNumber: account,
+        existingAccountId: paid[0].bachs_account_id ? String(paid[0].bachs_account_id) : null,
+      });
+      await db`
+        UPDATE social.users
+        SET bachs_account_id = ${payout.accountId}, bachs_destination_id = ${payout.destinationId}
+        WHERE id = ${user.id}
+      `;
+      detail = `To ${bank} ****${account.slice(-4)} · Bachs payout ${reference}`;
+    } catch (error) {
+      await db`UPDATE social.users SET wallet_naira = wallet_naira + ${amount} WHERE id = ${user.id}`;
+      const message = error instanceof Error ? error.message : "Bachs payout failed";
+      redirect(`/wallet/withdraw?error=${encodeURIComponent(message)}`);
+    }
+  }
   await db`
     INSERT INTO social.transactions (user_id, kind, amount_naira, title, detail)
-    VALUES (
-      ${user.id},
-      'withdrawal',
-      ${-amount},
-      'Withdrawal',
-      ${`To ${bank} ****${account.slice(-4)} · pending review`}
-    )
+    VALUES (${user.id}, 'withdrawal', ${-amount}, 'Withdrawal', ${detail})
   `;
   revalidatePath("/wallet");
   redirect("/wallet");

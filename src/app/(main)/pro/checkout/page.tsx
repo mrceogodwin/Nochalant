@@ -1,5 +1,5 @@
 import { completeTestPayment } from "@/lib/actions";
-import { paystackConfigured } from "@/lib/auth";
+import { activeProvider, paymentBrand } from "@/lib/payments/provider";
 import { BackHeader } from "@/components/shell";
 import { getDb, type Row } from "@/lib/db";
 
@@ -22,12 +22,12 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         <p className="mt-2 text-zinc-400">No payment was found.</p>
       )}
       <p className="mt-3 text-sm text-zinc-400">
-        {paystackConfigured()
-          ? "If Paystack did not open, confirm PAYSTACK_SECRET_KEY and that the callback URL is allowed."
-          : "Test mode is on. Completing this marks the account Pro without charging a card."}
+        {activeProvider() === "test"
+          ? "Test mode is on. Completing this marks the account Pro without a charge. With Bachs keys, only a signed webhook grants Pro."
+          : `Checkout runs on ${paymentBrand()}. This page does not grant Pro. Access starts when collection.succeeded is verified.`}
       </p>
-      {params.error ? <p className="mt-2 text-sm text-amber-300">Paystack could not start this charge.</p> : null}
-      {params.reference && !paystackConfigured() ? (
+      {params.error ? <p className="mt-2 text-sm text-amber-300">{params.error}</p> : null}
+      {params.reference && activeProvider() === "test" ? (
         <form action={completeTestPayment.bind(null, params.reference)} className="mt-5">
           <button className="orange-fill h-14 w-full rounded-full font-extrabold">Complete test payment</button>
         </form>
